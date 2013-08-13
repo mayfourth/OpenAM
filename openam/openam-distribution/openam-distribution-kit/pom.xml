@@ -123,11 +123,6 @@
         </dependency>
         <dependency>
             <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-distribution-amadmsetup</artifactId>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-distribution-diagnostics</artifactId>
             <type>zip</type>
         </dependency>
