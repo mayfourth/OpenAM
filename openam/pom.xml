@@ -933,20 +933,6 @@
                 <version>1.2.5</version>
             </dependency>
 
-            <dependency>
-                <groupId>com.sun.messaging.mq</groupId>
-                <artifactId>imq</artifactId>
-                <version>4.4.2</version>
-                <!-- Originally ? -->
-            </dependency>
-
-            <dependency>
-                <groupId>org.glassfish.mq</groupId>
-                <artifactId>imq</artifactId>
-                <version>4.5.2</version>
-                <!-- Originally 4.1 ? -->
-            </dependency>
-
             <!-- TODO j2ee -->
 
             <dependency>

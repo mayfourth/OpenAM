@@ -5,7 +5,7 @@
     <!--
     * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
     *
-    * Copyright (c) 2011-2012 ForgeRock Inc. All Rights Reserved
+    * Copyright (c) 2011-2013 ForgeRock AS. All Rights Reserved
     *
     * The contents of this file are subject to the terms
     * of the Common Development and Distribution License
@@ -110,14 +110,6 @@
         <dependency>
                 <groupId>org.forgerock.opendj</groupId>
                 <artifactId>opendj-server</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.messaging.mq</groupId>
-            <artifactId>jms</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.messaging.mq</groupId>
-            <artifactId>imq</artifactId>
         </dependency>
     </dependencies>
 </project>
