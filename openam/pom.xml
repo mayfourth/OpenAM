@@ -190,8 +190,6 @@
 
         <module>openam-ldap-utils</module>
         <module>openam-datastore</module>
-        <!-- OpenAM Locale - Common Module -->
-        <module>openam-locale</module>
 
         <!-- OpenAM Shared - Common Module -->
         <module>openam-shared</module>
@@ -589,11 +587,6 @@
                 <artifactId>openam-example-clientsdk-war</artifactId>
                 <version>${project.version}</version>
                 <type>war</type>
-            </dependency>
-            <dependency>
-                <groupId>org.forgerock.openam</groupId>
-                <artifactId>openam-locale</artifactId>
-                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.forgerock.openam</groupId>
@@ -1881,6 +1874,11 @@
                     <groupId>org.codehaus.cargo</groupId>
                     <artifactId>cargo-maven2-plugin</artifactId>
                     <version>1.4.3</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.goldin</groupId>
+                    <artifactId>copy-maven-plugin</artifactId>
+                    <version>0.2.5</version>
                 </plugin>
             </plugins>
         </pluginManagement>
