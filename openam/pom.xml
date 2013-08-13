@@ -775,7 +775,12 @@
             </dependency>
             <dependency>
                 <groupId>org.forgerock.openam</groupId>
-                <artifactId>openam-distribution-amadmsetup</artifactId>
+                <artifactId>openam-configurator-tool</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.forgerock.openam</groupId>
+                <artifactId>openam-upgrade-tool</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
