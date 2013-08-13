@@ -63,8 +63,7 @@
                             <Specification-Version>${project.version} - ${maven.build.timestamp}</Specification-Version>
                             <Specification-Vendor>ForgeRock</Specification-Vendor>
                             <Implementation-Title>OpenAM Diagnostics</Implementation-Title>
-                            <Implementation-Version>${project.version} - ${maven.build.timestamp}
-                            </Implementation-Version>
+                            <Implementation-Version>${project.version} - ${maven.build.timestamp}</Implementation-Version>
                             <Implementation-Vendor>ForgeRock</Implementation-Vendor>
                             <Built-By>${user.name}</Built-By>
                             <Build-Jdk>${java.version}</Build-Jdk>
@@ -79,46 +78,22 @@
                     </archive>
                 </configuration>
             </plugin>
-
         </plugins>
-
-        <resources>
-            <resource>
-                <filtering>false</filtering>
-                <directory>src/main/resources</directory>
-                <includes>
-                    <include>**/*</include>
-                </includes>
-                <excludes>
-                    <exclude>version_information.txt</exclude>
-                </excludes>
-            </resource>
-            <resource>
-                <filtering>true</filtering>
-                <directory>src/main/resources</directory>
-                <includes>
-                    <include>version_information.txt</include>
-                </includes>
-            </resource>
-        </resources>
     </build>
 
     <dependencies>
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-shared</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-diagnostics-schema</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

@@ -74,17 +74,14 @@
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-diagnostics-schema</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-diagnostics-base</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-diagnostics-plugins</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.forgerock.openam</groupId>
@@ -107,8 +104,8 @@
             <artifactId>webservices-rt</artifactId>
         </dependency>
         <dependency>
-                <groupId>org.forgerock.opendj</groupId>
-                <artifactId>opendj-server</artifactId>
+            <groupId>org.forgerock.opendj</groupId>
+            <artifactId>opendj-server</artifactId>
         </dependency>
     </dependencies>
 </project>

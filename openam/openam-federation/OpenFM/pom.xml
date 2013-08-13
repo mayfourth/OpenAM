@@ -64,7 +64,7 @@
 
                                 <copy todir="${project.build.directory}/classes" filtering="true">
                                     <fileset
-                                            dir="${project.basedir}/../../openam-locale/src/main/resources/openfm-locale/">
+                                        dir="${project.basedir}/../../openam-locale/src/main/resources/openfm-locale/">
                                         <include name="deployablewar.properties" />
                                     </fileset>
                                 </copy>
@@ -142,11 +142,8 @@
                     </archive>
                 </configuration>
             </plugin>
-
         </plugins>
-
     </build>
-
 
     <dependencies>
         <dependency>
@@ -156,10 +153,6 @@
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-entitlements</artifactId>
         </dependency>
 
         <dependency>
@@ -175,7 +168,6 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <scope>test</scope>
         </dependency>
 
     </dependencies>

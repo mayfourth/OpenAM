@@ -35,8 +35,7 @@
 
     <!-- Component Definition -->
     <name>OpenAM Distribution Packaging</name>
-    <description>OpenAM Final Module Distribution Package.
-    </description>
+    <description>OpenAM Final Module Distribution Package.</description>
     <artifactId>openam-distribution</artifactId>
     <packaging>pom</packaging>
 

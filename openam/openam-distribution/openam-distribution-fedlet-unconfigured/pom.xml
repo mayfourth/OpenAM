@@ -35,15 +35,13 @@
 
     <!-- Component Definition -->
     <name>OpenAM Distribution Fedlet UnConfigured</name>
-    <description>OpenAM Distribution Fedlet UnConfigured.
-    </description>
+    <description>OpenAM Distribution Fedlet UnConfigured.</description>
     <artifactId>openam-distribution-fedlet-unconfigured</artifactId>
     <packaging>pom</packaging>
 
     <!-- Build -->
     <build>
         <plugins>
-
             <!-- Pre-Packaging step for Zip Elements. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -65,7 +63,7 @@
 
                                 <copy todir="${project.build.outputDirectory}/locale/en_US" filtering="true">
                                     <fileset
-                                            dir="${project.basedir}/../../openam-locale/src/main/resources/federation-locale">
+                                        dir="${project.basedir}/../../openam-locale/src/main/resources/federation-locale">
                                         <include name="*.properties" />
                                         <exclude name="Services.properties" />
                                         <exclude name="ums.properties" />
@@ -142,11 +140,8 @@
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
-
     </build>
-
 
     <dependencies>
 
@@ -231,11 +226,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.sun.tools.ws</groupId>
-            <artifactId>webservices-tools</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>xalan</groupId>
             <artifactId>xalan</artifactId>
         </dependency>
@@ -269,7 +259,6 @@
             <groupId>xml-security</groupId>
             <artifactId>xmlsec</artifactId>
         </dependency>
-
     </dependencies>
 </project>
 

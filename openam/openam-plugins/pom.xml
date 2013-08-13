@@ -43,17 +43,5 @@
     <modules>
         <module>openam-auth-postauthentication</module>
     </modules>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-shared</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-core</artifactId>
-        </dependency>
-    </dependencies>
-
 </project>
 

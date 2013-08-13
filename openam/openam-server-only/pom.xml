@@ -41,7 +41,6 @@
 
     <!-- Build -->
     <build>
-
         <plugins>
             <!-- Pre-Packaging step for WAR elements. -->
             <plugin>
@@ -94,11 +93,6 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
@@ -131,24 +125,17 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
                     <packagingExcludes>
-                        WEB-INF/lib/ant-contrib-1.0b3.jar,
                         WEB-INF/lib/jersey-core-1.1.5.2.jar,
                         WEB-INF/lib/jaxb-api-1.0.6.jar,
                         WEB-INF/lib/jaxb-impl-1.0.6.jar,
                         WEB-INF/lib/jaxb-libs-1.0.6.jar,
                         WEB-INF/lib/jaxb-xjc-1.0.6.jar,
-                        WEB-INF/lib/jdom-2.0.1.jar,
                         WEB-INF/lib/jaxp-api-1.4.2.jar,
-                        WEB-INF/lib/jaxws-api-2.2.8.jar,
-                        WEB-INF/lib/jaxws-rt-2.2.7-promoted-b73.jar,
-                        WEB-INF/lib/stax-api-1.0-2.jar,
-                        WEB-INF/lib/webservices-api-2.1-b16.jar
                     </packagingExcludes>
                     <archive>
                         <manifestEntries>
@@ -381,18 +368,6 @@
             </resource>
 
         </resources>
-
-        <testResources>
-            <testResource>
-                <filtering>true</filtering>
-                <directory>src/test/resources</directory>
-                <includes>
-                    <include>**/*</include>
-                </includes>
-            </testResource>
-        </testResources>
-
-
     </build>
 
 
@@ -400,21 +375,8 @@
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-ui-ria</artifactId>
-            <version>${project.version}</version>
-            <classifier>www</classifier>
             <type>zip</type>
-        </dependency>
-
-        <dependency>
-            <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-installtools</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-build-tools</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
+            <classifier>www</classifier>
         </dependency>
 
         <dependency>
@@ -440,19 +402,16 @@
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-cli-definitions</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-cli-impl</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-server-auth-ui</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -597,11 +556,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-auth-safeword</artifactId>
-        </dependency>
-
-        <dependency>
             <artifactId>openam-auth-securid</artifactId>
             <groupId>org.forgerock.openam</groupId>
         </dependency>
@@ -614,13 +568,11 @@
         <dependency>
             <artifactId>json-resource</artifactId>
             <groupId>org.forgerock.commons</groupId>
-            <version>${forgerock.json.version}</version>
         </dependency>
 
         <dependency>
             <artifactId>json-resource-servlet</artifactId>
             <groupId>org.forgerock.commons</groupId>
-            <version>${forgerock.json.version}</version>
         </dependency>
 
 
@@ -678,7 +630,5 @@
             <groupId>xerces-J</groupId>
             <artifactId>xml-serializer</artifactId>
         </dependency>
-
     </dependencies>
-
 </project>

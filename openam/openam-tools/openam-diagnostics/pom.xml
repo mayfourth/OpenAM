@@ -43,12 +43,10 @@
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-shared</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-diagnostics-schema</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
     <modules>

@@ -35,8 +35,7 @@
 
     <!-- Component Definition -->
     <name>OpenAM Distribution ssoConfiguratorTools</name>
-    <description>OpenAM Distribution SSO Configurator Tools Kit.
-    </description>
+    <description>OpenAM Distribution SSO Configurator Tools Kit.</description>
     <artifactId>openam-distribution-ssoconfiguratortools</artifactId>
     <packaging>pom</packaging>
 
@@ -95,7 +94,6 @@
 
             <!-- Pre-Packaging step for Zip Elements. -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
@@ -310,18 +308,13 @@
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
-
     </build>
 
-
     <dependencies>
-
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-core</artifactId>
         </dependency>
-
     </dependencies>
 </project>

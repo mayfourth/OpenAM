@@ -35,8 +35,7 @@
 
     <!-- Component Definition -->
     <name>OpenAM JAXRPC Schema</name>
-    <description>OpenAM JAXRPC Schema Components
-    </description>
+    <description>OpenAM JAXRPC Schema Components</description>
     <artifactId>openam-jaxrpc-schema</artifactId>
     <packaging>jar</packaging>
 
@@ -71,7 +70,6 @@
 
                                 <!-- Clean-up duplicate generated WSDL and Classes -->
                                 <delete file="${project.basedir}/IdentityManagementServices.wsdl" />
-
                             </target>
                         </configuration>
                         <goals>
@@ -93,10 +91,10 @@
                             <classpathPrefix>lib/</classpathPrefix>
                         </manifest>
                         <manifestEntries>
-                            <Specification-Title>OpenAM Identity Services JAXRPC</Specification-Title>
+                            <Specification-Title>OpenAM JAXRPC Schema</Specification-Title>
                             <Specification-Version>${project.version} - ${maven.build.timestamp}</Specification-Version>
                             <Specification-Vendor>ForgeRock</Specification-Vendor>
-                            <Implementation-Title>OpenAM Identity Services JAXRPC</Implementation-Title>
+                            <Implementation-Title>OpenAM JAXRPC Schema</Implementation-Title>
                             <Implementation-Version>${project.version} - ${maven.build.timestamp}
                             </Implementation-Version>
                             <Implementation-Vendor>ForgeRock</Implementation-Vendor>
@@ -120,18 +118,10 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
-
         </plugins>
-
     </build>
 
     <dependencies>
-
-        <dependency>
-            <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-idsvcs-schema</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-federation-library</artifactId>
@@ -171,8 +161,6 @@
             <groupId>external</groupId>
             <artifactId>webservices-api</artifactId>
         </dependency>
-
     </dependencies>
-
 </project>
 

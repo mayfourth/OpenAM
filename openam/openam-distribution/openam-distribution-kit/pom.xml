@@ -35,8 +35,7 @@
 
     <!-- Component Definition -->
     <name>OpenAM Distribution Kit</name>
-    <description>OpenAM Distribution Kit, containing all distributable artifacts.
-    </description>
+    <description>OpenAM Distribution Kit, containing all distributable artifacts.</description>
     <artifactId>openam-distribution-kit</artifactId>
     <packaging>pom</packaging>
 
@@ -99,9 +98,7 @@
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
-
     </build>
 
     <dependencies>
