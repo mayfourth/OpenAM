@@ -166,11 +166,6 @@
             <artifactId>openam-saml2-schema</artifactId>
         </dependency>
 
-<!--        <dependency>
-            <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-rest</artifactId>
-        </dependency>-->
-
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>

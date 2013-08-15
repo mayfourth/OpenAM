@@ -26,7 +26,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-
     <!-- Build Notes:
 
          To Build all of OpenAM use the following Maven Command:
@@ -103,12 +102,10 @@
         <!-- **************************************************************** -->
 
         <!-- Java Properties -->
-
         <java.source.version>1.5</java.source.version>
-        <!-- Backed off from 1.6 -->
-
         <java.target.version>1.5</java.target.version>
-        <!-- Backed off from 1.6 -->
+        <federation.java.source.version>1.6</federation.java.source.version>
+        <federation.java.target.version>1.6</federation.java.target.version>
 
         <!-- Surefire Argument Line -->
         <java.surefire.options>-Xms2g -Xmx2g -XX:MaxPermSize=512m</java.surefire.options>
