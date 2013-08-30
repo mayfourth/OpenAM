@@ -227,7 +227,7 @@
         <module>openam-oauth</module>
 
         <!-- OpenAM OAuth2 Token Service -->
-        <module>openam-oauth2</module>
+        <!--module>openam-oauth2</module-->
 
         <module>openam-common-auth-ui</module>
 

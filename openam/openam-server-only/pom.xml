@@ -571,10 +571,10 @@
             <artifactId>openam-oauth2-common</artifactId>
         </dependency>
 
-        <dependency>
+        <!--dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-oauth2-rest</artifactId>
-        </dependency>
+        </dependency-->
 
         <dependency>
             <groupId>org.freemarker</groupId>
