@@ -27,29 +27,27 @@
  */
 
 /*
- * Portions Copyrighted 2011-2012 ForgeRock Inc
+ * Portions Copyrighted 2011-2013 ForgeRock Inc
  */
 package com.sun.identity.monitoring;
 
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.InstanceNotFoundException;
-import javax.management.JMException;
-import javax.management.JMRuntimeException;
-import javax.management.ObjectName;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.RuntimeOperationsException;
+import com.iplanet.am.util.SystemProperties;
+import com.iplanet.services.ldap.DSConfigMgr;
+import com.iplanet.services.ldap.Server;
+import com.iplanet.services.ldap.ServerGroup;
+import com.sun.identity.shared.Constants;
+import com.sun.identity.shared.debug.Debug;
+import com.sun.identity.sm.DNMapper;
 import com.sun.jdmk.comm.AuthInfo;
 import com.sun.jdmk.comm.HtmlAdaptorServer;
 import com.sun.management.comm.SnmpAdaptorServer;
 import com.sun.management.snmp.SnmpStatusException;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
@@ -60,19 +58,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import com.iplanet.am.util.SystemProperties;
-import com.iplanet.services.ldap.DSConfigMgr;
-import com.iplanet.services.ldap.Server;
-import com.iplanet.services.ldap.ServerGroup;
-import com.sun.identity.shared.Constants;
-import com.sun.identity.shared.debug.Debug;
-import com.sun.identity.sm.DNMapper;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.InstanceNotFoundException;
+import javax.management.JMException;
+import javax.management.JMRuntimeException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
+import javax.management.RuntimeOperationsException;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
+import org.forgerock.openam.monitoring.cts.CtsMonitoringImpl;
+import org.forgerock.openam.monitoring.cts.FORGEROCK_OPENAM_CTS_MIB;
+import org.forgerock.openam.monitoring.cts.FORGEROCK_OPENAM_CTS_MIBImpl;
 
 
 /**
@@ -108,7 +110,8 @@ public class Agent {
     private static MBeanServer server;
     private static ObjectName htmlObjName;
     private static ObjectName snmpObjName;
-    private static ObjectName mibObjName;
+    private static ObjectName sunMibObjName;
+    private static ObjectName forgerockCtsMibObjName;
     private static int monHtmlPort;
     private static int monSnmpPort;
     private static int monRmiPort;
@@ -128,7 +131,10 @@ public class Agent {
     private static String startDate;
     private static JMXConnectorServer cs;
 
+    //static mib references
     static SUN_OPENSSO_SERVER_MIBImpl mib2;
+    static FORGEROCK_OPENAM_CTS_MIBImpl mib3;
+
     private static SSOServerInfo agentSvrInfo;
     private static Map<String, Integer> realm2Index = new HashMap<String, Integer>();  // realm name to index map
     private static Map<Integer, String> index2Realm = new HashMap<Integer, String>();  // index to realm name map
@@ -175,19 +181,25 @@ public class Agent {
 
     public static void stopRMI() {
         if (monitoringEnabled && monRmiPortEnabled && (cs != null)) {
-            if ((server != null) && (mibObjName != null)) {
+            if ((server != null)) {
                 try {
-                    server.unregisterMBean(mibObjName);
+                    if (sunMibObjName != null) {
+                        server.unregisterMBean(sunMibObjName);
+                    }
+
+                    if (forgerockCtsMibObjName != null) {
+                        server.unregisterMBean(forgerockCtsMibObjName);
+                    }
                 } catch (InstanceNotFoundException ex) {
                     if (debug.warningEnabled()) {
                         debug.warning(
-                            "Agent.stopRMI: error unregistering OpenSSO:" +
+                            "Agent.stopRMI: error unregistering MBean:" +
                                 ex.getMessage());
                     }
                 } catch (MBeanRegistrationException ex) {
                     if (debug.warningEnabled()) {
                         debug.warning(
-                            "Agent.stopRMI: error unregistering OpenSSO:" +
+                            "Agent.stopRMI: error unregistering MBean:" +
                                 ex.getMessage());
                     }
                 }
@@ -544,12 +556,17 @@ public class Agent {
 
         // Create the MIB II (RFC 1213), add to the MBean server.
         try {
-            mibObjName =
+            sunMibObjName =
                 new ObjectName("snmp:class=SUN_OPENSSO_SERVER_MIB");
+            forgerockCtsMibObjName =
+                    new ObjectName("snmp:class=FORGEROCK_OPENAM_CTS_MIB");
             if (debug.messageEnabled()) {
                 debug.message(classMethod +
                     "Adding SUN_OPENSSO_SERVER_MIB to MBean server " +
-                    "with name '" + mibObjName + "'");
+                    "with name '" + sunMibObjName + "'");
+                debug.message(classMethod +
+                        "Adding FORGEROCK_OPENAM_CTS_MIB to MBean server " +
+                        "with name '" + forgerockCtsMibObjName + "'");
             }
         } catch (MalformedObjectNameException ex) {
             // from ObjectName
@@ -564,6 +581,7 @@ public class Agent {
         // Create an instance of the customized MIB
         try {
             mib2 = new SUN_OPENSSO_SERVER_MIBImpl();
+            mib3 = new FORGEROCK_OPENAM_CTS_MIBImpl();
         } catch (RuntimeException ex) {
             debug.error (classMethod + "Runtime error instantiating MIB", ex);
             return MON_CREATEMIB_PROBLEM;
@@ -573,7 +591,8 @@ public class Agent {
         }
 
         try {
-            server.registerMBean(mib2, mibObjName);
+            server.registerMBean(mib2, sunMibObjName);
+            server.registerMBean(mib3, forgerockCtsMibObjName);
         } catch (RuntimeOperationsException ex) {
             // from registerMBean
             if (debug.warningEnabled()) {
@@ -759,6 +778,7 @@ public class Agent {
                      *  SNMP.
                      */
                     mib2.setSnmpAdaptor(snmpAdaptor);  // throws no exception
+                    mib3.setSnmpAdaptor(snmpAdaptor);
 
                     monSNMPStarted = true;
                 }
@@ -958,6 +978,13 @@ public class Agent {
      */
     public static SsoServerTopologyImpl getTopologyMBean() {
         return mib2 == null ? null : mib2.getTopologyGroup();
+    }
+
+    /**
+     *  Return the pointer to the CTSMonitor mbean
+     */
+    public static CtsMonitoringImpl getCtsMonitoringMBean() {
+        return mib3 == null ? null : mib3.getCtsMonitoringGroup();
     }
 
     /**
@@ -3200,7 +3227,8 @@ public class Agent {
         final MBeanServer server;
         final ObjectName htmlObjName;
         final ObjectName snmpObjName;
-        final ObjectName mibObjName;
+        final ObjectName sunMibObjName;
+        final ObjectName forgerockCtsMibObjName;
         final ObjectName trapGeneratorObjName;
         int htmlPort = 8082;
         int snmpPort = 11161;
@@ -3288,15 +3316,23 @@ public class Agent {
       
             // Create the MIB II (RFC 1213) and add it to the MBean server.
             //
-            mibObjName= new ObjectName("snmp:class=SUN_OPENSSO_SERVER_MIB");
+            sunMibObjName = new ObjectName("snmp:class=SUN_OPENSSO_SERVER_MIB");
             println(
                 "Adding SUN_OPENSSO_SERVER_MIB-MIB to MBean server with name" +
-                "\n    " + mibObjName);
+                "\n    " + sunMibObjName);
 
             // Create an instance of the customized MIB
             //
             SUN_OPENSSO_SERVER_MIB mib2 = new SUN_OPENSSO_SERVER_MIB();
-            server.registerMBean(mib2, mibObjName);
+            server.registerMBean(mib2, sunMibObjName);
+
+            forgerockCtsMibObjName = new ObjectName("snmp:class=FORGEROCK_OPENAM_CTS_MIB");
+            println(
+                    "Adding SUN_OPENSSO_SERVER_MIB-MIB to MBean server with name" +
+                            "\n    " + forgerockCtsMibObjName);
+
+            FORGEROCK_OPENAM_CTS_MIB mib3 = new FORGEROCK_OPENAM_CTS_MIB();
+            server.registerMBean(mib3, forgerockCtsMibObjName);
       
             // Bind the SNMP adaptor to the MIB in order to make the MIB 
             // accessible through the SNMP protocol adaptor.

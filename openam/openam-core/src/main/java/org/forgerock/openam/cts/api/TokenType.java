@@ -27,4 +27,21 @@ public enum TokenType {
     SAML2(),
     OAUTH(),
     REST();
+
+    /**
+     * Retrieves the appropriate TokenType from the list of avaliable
+     * enums that matches on the ordinal index.
+     *
+     * @param ordinalIndex the ordinal index to look up
+     * @return the TokenType this ordinal value represents, null otherwise
+     */
+    public static TokenType getTokenFromOrdinalIndex(int ordinalIndex) {
+
+        if(ordinalIndex < 0 || ordinalIndex > TokenType.values().length) {
+            return null;
+        }
+
+        return TokenType.values()[ordinalIndex];
+    }
+
 }
