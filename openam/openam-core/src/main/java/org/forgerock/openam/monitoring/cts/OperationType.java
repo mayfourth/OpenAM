@@ -17,8 +17,20 @@
 
 package org.forgerock.openam.monitoring.cts;
 
+/**
+ * Defines the available CRUDL operations which can be performed on {@link org.forgerock.openam.cts.api.TokenType}
+ * tokens.
+ *
+ * If new operations are added, this enum must be updated via APPENDING to the end of the enum list.
+ *
+ * Existing operations MUST STAY in the order they are defined. This is validated by OperationTypeTest.
+ */
 public enum OperationType {
 
-    CREATE, READ, UPDATE, DELETE, LIST;
+    CREATE(),
+    READ(),
+    UPDATE(),
+    DELETE(),
+    LIST()
 
 }

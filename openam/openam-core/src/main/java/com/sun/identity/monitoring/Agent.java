@@ -27,7 +27,7 @@
  */
 
 /*
- * Portions Copyrighted 2011-2013 ForgeRock Inc
+ * Portions Copyrighted 2011-2013 ForgeRock AS
  */
 package com.sun.identity.monitoring;
 
@@ -132,8 +132,8 @@ public class Agent {
     private static JMXConnectorServer cs;
 
     //static mib references
-    static SUN_OPENSSO_SERVER_MIBImpl mib2;
-    static FORGEROCK_OPENAM_CTS_MIBImpl mib3;
+    static SUN_OPENSSO_SERVER_MIBImpl sunMib;
+    static FORGEROCK_OPENAM_CTS_MIBImpl forgerockCtsMib;
 
     private static SSOServerInfo agentSvrInfo;
     private static Map<String, Integer> realm2Index = new HashMap<String, Integer>();  // realm name to index map
@@ -580,8 +580,8 @@ public class Agent {
 
         // Create an instance of the customized MIB
         try {
-            mib2 = new SUN_OPENSSO_SERVER_MIBImpl();
-            mib3 = new FORGEROCK_OPENAM_CTS_MIBImpl();
+            sunMib = new SUN_OPENSSO_SERVER_MIBImpl();
+            forgerockCtsMib = new FORGEROCK_OPENAM_CTS_MIBImpl();
         } catch (RuntimeException ex) {
             debug.error (classMethod + "Runtime error instantiating MIB", ex);
             return MON_CREATEMIB_PROBLEM;
@@ -591,8 +591,8 @@ public class Agent {
         }
 
         try {
-            server.registerMBean(mib2, sunMibObjName);
-            server.registerMBean(mib3, forgerockCtsMibObjName);
+            server.registerMBean(sunMib, sunMibObjName);
+            server.registerMBean(forgerockCtsMib, forgerockCtsMibObjName);
         } catch (RuntimeOperationsException ex) {
             // from registerMBean
             if (debug.warningEnabled()) {
@@ -777,8 +777,8 @@ public class Agent {
                      *  its objects will be addressable through HTML but not
                      *  SNMP.
                      */
-                    mib2.setSnmpAdaptor(snmpAdaptor);  // throws no exception
-                    mib3.setSnmpAdaptor(snmpAdaptor);
+                    sunMib.setSnmpAdaptor(snmpAdaptor);  // throws no exception
+                    forgerockCtsMib.setSnmpAdaptor(snmpAdaptor);
 
                     monSNMPStarted = true;
                 }
@@ -910,109 +910,109 @@ public class Agent {
      *  Return the pointer to the authentication service mbean
      */
     public static SsoServerAuthSvcImpl getAuthSvcMBean() {
-        return mib2 == null ? null : mib2.getAuthSvcGroup();
+        return sunMib == null ? null : sunMib.getAuthSvcGroup();
     }
 
     public static SsoServerConnPoolSvcImpl getConnPoolSvcMBean() {
-        return mib2 == null ? null : mib2.getConnPoolGroup();
+        return sunMib == null ? null : sunMib.getConnPoolGroup();
     }
 
     /**
      *  Return the pointer to the session service mbean
      */
     public static SsoServerSessSvcImpl getSessSvcMBean() {
-        return mib2 == null ? null : mib2.getSessSvcGroup();
+        return sunMib == null ? null : sunMib.getSessSvcGroup();
     }
 
     /**
      *  Return the pointer to the logging service mbean
      */
     public static SsoServerLoggingSvcImpl getLoggingSvcMBean() {
-        return mib2 == null ? null : mib2.getLoggingSvcGroup();
+        return sunMib == null ? null : sunMib.getLoggingSvcGroup();
     }
 
     /**
      *  Return the pointer to the policy service mbean
      */
     public static SsoServerPolicySvcImpl getPolicySvcMBean() {
-        return mib2 == null ? null : mib2.getPolicySvcGroup();
+        return sunMib == null ? null : sunMib.getPolicySvcGroup();
     }
 
     /**
      *  Return the pointer to the IdRepo service mbean
      */
     public static SsoServerIdRepoSvcImpl getIdrepoSvcMBean() {
-        return mib2 == null ? null : mib2.getIdrepoSvcGroup();
+        return sunMib == null ? null : sunMib.getIdrepoSvcGroup();
     }
 
     /**
      *  Return the pointer to the service service mbean
      */
     public static SsoServerSvcMgmtSvcImpl getSmSvcMBean() {
-        return mib2 == null ? null : mib2.getSmSvcGroup();
+        return sunMib == null ? null : sunMib.getSmSvcGroup();
     }
 
     /**
      *  Return the pointer to the SAML1 service mbean
      */
     public static SsoServerSAML1SvcImpl getSaml1SvcMBean() {
-        return mib2 == null ? null : mib2.getSaml1SvcGroup();
+        return sunMib == null ? null : sunMib.getSaml1SvcGroup();
     }
 
     /**
      *  Return the pointer to the SAML2 service mbean
      */
     public static SsoServerSAML2SvcImpl getSaml2SvcMBean() {
-        return mib2 == null ? null : mib2.getSaml2SvcGroup();
+        return sunMib == null ? null : sunMib.getSaml2SvcGroup();
     }
 
     /**
      *  Return the pointer to the IDFF service mbean
      */
     public static SsoServerIDFFSvcImpl getIdffSvcMBean() {
-        return mib2 == null ? null : mib2.getIdffSvcGroup();
+        return sunMib == null ? null : sunMib.getIdffSvcGroup();
     }
 
     /**
      *  Return the pointer to the Topology mbean
      */
     public static SsoServerTopologyImpl getTopologyMBean() {
-        return mib2 == null ? null : mib2.getTopologyGroup();
+        return sunMib == null ? null : sunMib.getTopologyGroup();
     }
 
     /**
      *  Return the pointer to the CTSMonitor mbean
      */
     public static CtsMonitoringImpl getCtsMonitoringMBean() {
-        return mib3 == null ? null : mib3.getCtsMonitoringGroup();
+        return forgerockCtsMib == null ? null : forgerockCtsMib.getCtsMonitoringGroup();
     }
 
     /**
      *  Return the pointer to the Server Instance mbean
      */
     public static SsoServerInstanceImpl getSvrInstanceMBean() {
-        return mib2 == null ? null : mib2.getSvrInstanceGroup();
+        return sunMib == null ? null : sunMib.getSvrInstanceGroup();
     }
 
     /**
      *  Return the pointer to the Fed COTs mbean
      */
     public static SsoServerFedCOTsImpl getFedCOTsMBean() {
-        return mib2 == null ? null : mib2.getFedCotsGroup();
+        return sunMib == null ? null : sunMib.getFedCotsGroup();
     }
 
     /**
      *  Return the pointer to the Federation Entities mbean
      */
     public static SsoServerFedEntitiesImpl getFedEntsMBean() {
-        return mib2 == null ? null : mib2.getFedEntitiesGroup();
+        return sunMib == null ? null : sunMib.getFedEntitiesGroup();
     }
 
     /**
      *  Return the pointer to the Entitlements Service mbean
      */
     public static SsoServerEntitlementSvcImpl getEntitlementsGroup() {
-        return mib2 == null ? null : mib2.getEntitlementsGroup();
+        return sunMib == null ? null : sunMib.getEntitlementsGroup();
     }
 
     public static String getSsoProtocol() {
@@ -1142,9 +1142,9 @@ public class Agent {
             String svrURL = namingTable.get(siteId);
             String siteName = urlSites.get(svrURL);
             String escSiteName = getEscapedString(siteName);
-            SsoServerTopologyImpl tg = mib2.getTopologyGroup();
+            SsoServerTopologyImpl tg = sunMib.getTopologyGroup();
             if (siteId.equals(svrId)) { // is a site
-                SsoServerSitesEntryImpl ssse = new SsoServerSitesEntryImpl(mib2);
+                SsoServerSitesEntryImpl ssse = new SsoServerSitesEntryImpl(sunMib);
                 Integer sid = Integer.valueOf(0);
                 try {
                     sid = Integer.valueOf(siteId);
@@ -1180,7 +1180,7 @@ public class Agent {
                 }
             } else { // is a server
                 SsoServerSiteMapEntryImpl ssse =
-                    new SsoServerSiteMapEntryImpl(mib2);
+                    new SsoServerSiteMapEntryImpl(sunMib);
                 ssse.MapServerURL = namingTable.get(svrId);
                 ssse.MapSiteName = escSiteName;
                 ssse.MapId = siteId;
@@ -1243,7 +1243,7 @@ public class Agent {
         StringBuilder sb =
             new StringBuilder("receiving list of realms (size = ");
         sb.append(realmList.size()).append("):\n");
-        SsoServerInstanceImpl sig = mib2.getSvrInstanceGroup();
+        SsoServerInstanceImpl sig = sunMib.getSvrInstanceGroup();
         TableSsoServerRealmTable rtab = null;
         if (sig != null) {
             try {
@@ -1256,7 +1256,7 @@ public class Agent {
         int realmsAdded = 0;
         for (int i = 0; i < realmList.size(); i++) {
             String ss = realmList.get(i);
-            SsoServerRealmEntryImpl rei = new SsoServerRealmEntryImpl(mib2);
+            SsoServerRealmEntryImpl rei = new SsoServerRealmEntryImpl(sunMib);
             rei.SsoServerRealmIndex = Integer.valueOf(i+1);
             String ss2 = ss;
             ss2 = getEscapedString(ss2);
@@ -1317,7 +1317,7 @@ public class Agent {
         String[] nms = MonitoringUtil.getNetworkMonitorNames();
 
         if ((nms != null) && (nms.length > 0)) {
-            SsoServerEntitlementSvc esi = mib2.getEntitlementsGroup();
+            SsoServerEntitlementSvc esi = sunMib.getEntitlementsGroup();
             if (esi != null) {
                 try {
                     TableSsoServerEntitlementExecStatsTable etab =
@@ -1326,7 +1326,7 @@ public class Agent {
                     for (int i = 0; i < nms.length; i++) {
                         String str = nms[i];
                         SsoServerEntitlementExecStatsEntryImpl ssi =
-                            new SsoServerEntitlementExecStatsEntryImpl(mib2);
+                            new SsoServerEntitlementExecStatsEntryImpl(sunMib);
                         ssi.EntitlementNetworkMonitorName = str;
                         ssi.EntitlementMonitorThruPut = 0L;
                         ssi.EntitlementMonitorTotalTime = 0L;
@@ -1374,7 +1374,7 @@ public class Agent {
                         String ss = realmList.get(i);
                         Integer Ii = Integer.valueOf(i+1);
                         SsoServerEntitlementPolicyStatsEntryImpl ssi =
-                            new SsoServerEntitlementPolicyStatsEntryImpl(mib2);
+                            new SsoServerEntitlementPolicyStatsEntryImpl(sunMib);
                         ssi.EntitlementPolicyCaches = 0;
                         ssi.EntitlementReferralCaches = 0;
                         ssi.EntitlementPolicyStatsIndex = Integer.valueOf(i+1);
@@ -1440,7 +1440,7 @@ public class Agent {
                 " in realm2Index map");
             return -1;
         }
-        SsoServerAuthSvcImpl sig = mib2.getAuthSvcGroup();
+        SsoServerAuthSvcImpl sig = sunMib.getAuthSvcGroup();
         TableSsoServerAuthModulesTable atab = null;
         if (sig != null) {
             try {
@@ -1471,7 +1471,7 @@ public class Agent {
                     append(", value(type) = ").append(modType).append("\n");
             }
             SsoServerAuthModulesEntryImpl aei =
-                new SsoServerAuthModulesEntryImpl(mib2);
+                new SsoServerAuthModulesEntryImpl(sunMib);
             aei.SsoServerRealmIndex = realmIndex;
             aei.AuthModuleIndex = new Integer(i++);
             aei.AuthModuleName = modInst;
@@ -1562,11 +1562,11 @@ public class Agent {
             return;
         }
 
-        SsoServerPolicyAgents sss = mib2.getPolicyAgentsGroup();
+        SsoServerPolicyAgents sss = sunMib.getPolicyAgentsGroup();
         TableSsoServerPolicy22AgentTable t22tab = null;
         TableSsoServerPolicyJ2EEAgentTable j2eetab = null;
         TableSsoServerPolicyWebAgentTable watab = null;
-        SsoServerWSSAgents ssa = mib2.getWssAgentsGroup();
+        SsoServerWSSAgents ssa = sunMib.getWssAgentsGroup();
         TableSsoServerWSSAgentsSTSAgentTable ststab = null;
         TableSsoServerWSSAgentsWSPAgentTable wsptab = null;
         TableSsoServerWSSAgentsWSCAgentTable wsctab = null;
@@ -1652,7 +1652,7 @@ public class Agent {
                         "com.sun.identity.agents.config.agenturi.prefix");
                 String lurl = hm.get("com.sun.identity.agents.config.login.url");
                 SsoServerPolicyWebAgentEntryImpl aei =
-                    new SsoServerPolicyWebAgentEntryImpl(mib2);
+                    new SsoServerPolicyWebAgentEntryImpl(sunMib);
                 aei.SsoServerRealmIndex = ri;
                 aei.PolicyWebAgentIndex = new Integer(wai++);
                 aei.PolicyWebAgentName = agtname;
@@ -1681,7 +1681,7 @@ public class Agent {
                 }
             } else if (atype.equals("2.2_Agent")) {
                 SsoServerPolicy22AgentEntryImpl aei =
-                    new SsoServerPolicy22AgentEntryImpl(mib2);
+                    new SsoServerPolicy22AgentEntryImpl(sunMib);
                 aei.SsoServerRealmIndex = ri;
                 aei.Policy22AgentIndex = new Integer(t22i++);
                 aei.Policy22AgentName = agtname;
@@ -1708,7 +1708,7 @@ public class Agent {
                 }
             } else if (atype.equals("J2EEAgent")) {
                 SsoServerPolicyJ2EEAgentEntryImpl aei =
-                    new SsoServerPolicyJ2EEAgentEntryImpl(mib2);
+                    new SsoServerPolicyJ2EEAgentEntryImpl(sunMib);
                 String aurl =
                     hm.get("com.sun.identity.client.notification.url");
                 if (aurl == null) {
@@ -1744,7 +1744,7 @@ public class Agent {
                 }
             } else if (atype.equals("WSPAgent")) {
                 SsoServerWSSAgentsWSPAgentEntryImpl aei =
-                    new SsoServerWSSAgentsWSPAgentEntryImpl(mib2);
+                    new SsoServerWSSAgentsWSPAgentEntryImpl(sunMib);
                 String wep = hm.get("wsendpoint");
                 if (wep == null) {
                     wep = NotAvail;
@@ -1792,7 +1792,7 @@ public class Agent {
                 }
             } else if (atype.equals("WSCAgent")) {
                 SsoServerWSSAgentsWSCAgentEntryImpl aei =
-                    new SsoServerWSSAgentsWSCAgentEntryImpl(mib2);
+                    new SsoServerWSSAgentsWSCAgentEntryImpl(sunMib);
                 String wep = hm.get("wsendpoint");
                 if (wep == null) {
                     wep = None;
@@ -1833,7 +1833,7 @@ public class Agent {
                 }
             } else if (atype.equals("STSAgent")) {
                 SsoServerWSSAgentsSTSAgentEntryImpl aei =
-                    new SsoServerWSSAgentsSTSAgentEntryImpl(mib2);
+                    new SsoServerWSSAgentsSTSAgentEntryImpl(sunMib);
                 String sep = hm.get("stsendpoint");
                 aei.WssAgentsSTSAgentName = agtname;
                 aei.WssAgentsSTSAgentSvcTokenEndPoint = sep;
@@ -1864,7 +1864,7 @@ public class Agent {
                 }
             } else if (atype.equals("DiscoveryAgent")) {
                 SsoServerWSSAgentsDSCAgentEntryImpl aei =
-                    new SsoServerWSSAgentsDSCAgentEntryImpl(mib2);
+                    new SsoServerWSSAgentsDSCAgentEntryImpl(sunMib);
                 String dep = hm.get("discoveryendpoint");
                 if (dep == null) {
                     dep = NotAvail;
@@ -1954,10 +1954,10 @@ public class Agent {
          *  only doing the J2EEAgent and WebAgent Groups
          *  for now.
          */
-        SsoServerPolicyAgents sss = mib2.getPolicyAgentsGroup();
+        SsoServerPolicyAgents sss = sunMib.getPolicyAgentsGroup();
         TableSsoServerPolicyJ2EEGroupTable j2eetab = null;
         TableSsoServerPolicyWebGroupTable wgtab = null;
-        SsoServerWSSAgents ssa = mib2.getWssAgentsGroup();
+        SsoServerWSSAgents ssa = sunMib.getWssAgentsGroup();
         TableSsoServerWSSAgentsSTSAgtGrpTable ststab = null;
         TableSsoServerWSSAgentsWSPAgtGrpTable wsptab = null;
         TableSsoServerWSSAgentsWSCAgtGrpTable wsctab = null;
@@ -2029,7 +2029,7 @@ public class Agent {
                 String lurl =
                     hm.get("com.sun.identity.agents.config.login.url");
                 SsoServerPolicyWebGroupEntryImpl aei =
-                    new SsoServerPolicyWebGroupEntryImpl(mib2);
+                    new SsoServerPolicyWebGroupEntryImpl(sunMib);
                 aei.SsoServerRealmIndex = ri;
                 aei.PolicyWebGroupIndex = new Integer(wai++);
                 aei.PolicyWebGroupName = agtname;
@@ -2059,7 +2059,7 @@ public class Agent {
                     continue;  // no table to put it into
                 }
                 SsoServerPolicyJ2EEGroupEntryImpl aei =
-                    new SsoServerPolicyJ2EEGroupEntryImpl(mib2);
+                    new SsoServerPolicyJ2EEGroupEntryImpl(sunMib);
                 String lurl =
                     hm.get("com.sun.identity.agents.config.login.url");
                 aei.PolicyJ2EEGroupServerURL = lurl;
@@ -2091,7 +2091,7 @@ public class Agent {
                     continue;  // no table to put it into
                 }
                 SsoServerWSSAgentsWSPAgtGrpEntryImpl aei =
-                    new SsoServerWSSAgentsWSPAgtGrpEntryImpl(mib2);
+                    new SsoServerWSSAgentsWSPAgtGrpEntryImpl(sunMib);
                 String wep = hm.get("wsendpoint");
                 if (wep == null) {
                     wep = NotAvail;
@@ -2131,7 +2131,7 @@ public class Agent {
                     continue;  // no table to put it into
                 }
                 SsoServerWSSAgentsWSCAgtGrpEntryImpl aei =
-                    new SsoServerWSSAgentsWSCAgtGrpEntryImpl(mib2);
+                    new SsoServerWSSAgentsWSCAgtGrpEntryImpl(sunMib);
                 String wep = hm.get("wsendpoint");
                 if (wep == null) {
                     wep = NotAvail;
@@ -2171,7 +2171,7 @@ public class Agent {
                     continue;  // no table to put it into
                 }
                 SsoServerWSSAgentsSTSAgtGrpEntryImpl aei =
-                    new SsoServerWSSAgentsSTSAgtGrpEntryImpl(mib2);
+                    new SsoServerWSSAgentsSTSAgtGrpEntryImpl(sunMib);
                 String sep = hm.get("stsendpoint");
                 if (sep == null) {
                     sep = NotAvail;
@@ -2208,7 +2208,7 @@ public class Agent {
                     continue;  // no table to put it into
                 }
                 SsoServerWSSAgentsDSCAgtGrpEntryImpl aei =
-                    new SsoServerWSSAgentsDSCAgtGrpEntryImpl(mib2);
+                    new SsoServerWSSAgentsDSCAgtGrpEntryImpl(sunMib);
                 String dep = hm.get("discoveryendpoint");
                 if (dep == null) {
                     dep = NotAvail;
@@ -2283,12 +2283,12 @@ public class Agent {
             }
 
             SsoServerSAML1TrustPrtnrsEntryImpl sstpe =
-                new SsoServerSAML1TrustPrtnrsEntryImpl(mib2);
+                new SsoServerSAML1TrustPrtnrsEntryImpl(sunMib);
             sstpe.SAML1TrustPrtnrIndex = new Integer(i+1);
             sstpe.SAML1TrustPrtnrName = getEscapedString(pName);
 
             SsoServerSAML1Svc sss =
-                (SsoServerSAML1SvcImpl)mib2.getSaml1SvcGroup();
+                (SsoServerSAML1SvcImpl) sunMib.getSaml1SvcGroup();
             TableSsoServerSAML1TrustPrtnrsTable tptab = null;
             if (sss != null) {
                 try {
@@ -2338,7 +2338,7 @@ public class Agent {
         
         // assertions
         SsoServerSAML1CacheEntryImpl ssce =
-                new SsoServerSAML1CacheEntryImpl(mib2);
+                new SsoServerSAML1CacheEntryImpl(sunMib);
         ssce.SAML1CacheIndex = Integer.valueOf(1);
         ssce.SAML1CacheName = "Assertion_Cache";
         ssce.SAML1CacheMisses = 0L;
@@ -2346,7 +2346,7 @@ public class Agent {
         ssce.SAML1CacheWrites = 0L;
         ssce.SAML1CacheReads = 0L;
 
-        SsoServerSAML1SvcImpl sss = mib2.getSaml1SvcGroup();
+        SsoServerSAML1SvcImpl sss = sunMib.getSaml1SvcGroup();
         TableSsoServerSAML1CacheTable tptab = null;
 
         if (sss != null) {
@@ -2381,7 +2381,7 @@ public class Agent {
             }
 
             // artifacts
-            ssce = new SsoServerSAML1CacheEntryImpl(mib2);
+            ssce = new SsoServerSAML1CacheEntryImpl(sunMib);
             ssce.SAML1CacheIndex = Integer.valueOf(2);
             ssce.SAML1CacheName = "Artifact_Cache";
             ssce.SAML1CacheMisses = 0L;
@@ -2413,7 +2413,7 @@ public class Agent {
         // SOAPReceiver endpoint
         if (!skipSAML1EndPoints) {
         SsoServerSAML1EndPointEntryImpl ssee =
-                new SsoServerSAML1EndPointEntryImpl(mib2);
+                new SsoServerSAML1EndPointEntryImpl(sunMib);
         ssee.SAML1EndPointIndex = Integer.valueOf(1);
         ssee.SAML1EndPointName = "SOAPReceiver_EndPoint";
         ssee.SAML1EndPointRqtFailed = 0L;
@@ -2457,7 +2457,7 @@ public class Agent {
             }
 
             // POSTProfile table
-            ssee = new SsoServerSAML1EndPointEntryImpl(mib2);
+            ssee = new SsoServerSAML1EndPointEntryImpl(sunMib);
             ssee.SAML1EndPointIndex = Integer.valueOf(2);
             ssee.SAML1EndPointName = "POSTProfile_EndPoint";
             ssee.SAML1EndPointRqtFailed = 0L;
@@ -2490,7 +2490,7 @@ public class Agent {
             }
 
             // SAMLAware/ArtifactProfile table
-            ssee = new SsoServerSAML1EndPointEntryImpl(mib2);
+            ssee = new SsoServerSAML1EndPointEntryImpl(sunMib);
             ssee.SAML1EndPointIndex = Integer.valueOf(3);
             ssee.SAML1EndPointName = "SAMLAware_EndPoint";
             ssee.SAML1EndPointRqtFailed = 0L;
@@ -2583,7 +2583,7 @@ public class Agent {
                     }
 
                     SsoServerFedCOTsEntryImpl cei =
-                        new SsoServerFedCOTsEntryImpl(mib2);
+                        new SsoServerFedCOTsEntryImpl(sunMib);
                     cei.SsoServerRealmIndex = ri;
                     cei.FedCOTName = ss;
                     cei.FedCOTIndex = new Integer(i++);
@@ -2669,7 +2669,7 @@ public class Agent {
                     String roles = hm.get("roles");
 
                     SsoServerFedEntitiesEntryImpl cei =
-                        new SsoServerFedEntitiesEntryImpl(mib2);
+                        new SsoServerFedEntitiesEntryImpl(sunMib);
                     cei.SsoServerRealmIndex = ri;
                     cei.FedEntityName = getEscapedString(entname);
                     cei.FedEntityIndex = new Integer(tabinx++);
@@ -2713,7 +2713,7 @@ public class Agent {
                         }
 
                         SsoServerSAML2IDPEntryImpl sei =
-                            new SsoServerSAML2IDPEntryImpl(mib2);
+                            new SsoServerSAML2IDPEntryImpl(sunMib);
                         sei.SAML2IDPArtifactsIssued = 0L;
                         sei.SAML2IDPAssertionsIssued = 0L;
                         sei.SAML2IDPInvalRqtsRcvd = 0L;
@@ -2760,7 +2760,7 @@ public class Agent {
                             continue;
                         }
                         SsoServerSAML2SPEntryImpl sei =
-                            new SsoServerSAML2SPEntryImpl(mib2);
+                            new SsoServerSAML2SPEntryImpl(sunMib);
                         sei.SAML2SPInvalidArtifactsRcvd = 0L;
                         sei.SAML2SPValidAssertionsRcvd = 0L;
                         sei.SAML2SPRqtsSent = 0L;
@@ -2824,7 +2824,7 @@ public class Agent {
                     String roles = hm.get("roles");
 
                     SsoServerFedEntitiesEntryImpl cei =
-                        new SsoServerFedEntitiesEntryImpl(mib2);
+                        new SsoServerFedEntitiesEntryImpl(sunMib);
                     cei.SsoServerRealmIndex = ri;
                     cei.FedEntityName = getEscapedString(entname);
                     cei.FedEntityIndex = new Integer(tabinx++);
@@ -2887,7 +2887,7 @@ public class Agent {
                     String roles = hm.get("roles");
 
                     SsoServerFedEntitiesEntryImpl cei =
-                        new SsoServerFedEntitiesEntryImpl(mib2);
+                        new SsoServerFedEntitiesEntryImpl(sunMib);
                     cei.SsoServerRealmIndex = ri;
                     cei.FedEntityName = getEscapedString(entname);
                     cei.FedEntityIndex = new Integer(tabinx++);
@@ -2976,7 +2976,7 @@ public class Agent {
                         }
 
                         SsoServerFedCOTMemberEntryImpl cmi =
-                            new SsoServerFedCOTMemberEntryImpl(mib2);
+                            new SsoServerFedCOTMemberEntryImpl(sunMib);
                         cmi.FedCOTMemberType = "SAMLv2";
                         cmi.FedCOTMemberName = getEscapedString(mbm);
                         cmi.FedCOTMemberIndex = new Integer(mi++);
@@ -3019,7 +3019,7 @@ public class Agent {
                             sb.append("    ").append(mbm).append("\n");
                         }
                         SsoServerFedCOTMemberEntryImpl cmi =
-                            new SsoServerFedCOTMemberEntryImpl(mib2);
+                            new SsoServerFedCOTMemberEntryImpl(sunMib);
                         cmi.FedCOTMemberType = "IDFF";
                         cmi.FedCOTMemberName = getEscapedString(mbm);
                         cmi.FedCOTMemberIndex = new Integer(mi++);
@@ -3064,7 +3064,7 @@ public class Agent {
                             sb.append("    ").append(mbm).append("\n");
                         }
                         SsoServerFedCOTMemberEntryImpl cmi =
-                            new SsoServerFedCOTMemberEntryImpl(mib2);
+                            new SsoServerFedCOTMemberEntryImpl(sunMib);
                         cmi.FedCOTMemberType = "WSFed";
                         cmi.FedCOTMemberName = getEscapedString(mbm);
                         cmi.FedCOTMemberIndex = new Integer(mi++);
@@ -3328,7 +3328,7 @@ public class Agent {
 
             forgerockCtsMibObjName = new ObjectName("snmp:class=FORGEROCK_OPENAM_CTS_MIB");
             println(
-                    "Adding SUN_OPENSSO_SERVER_MIB-MIB to MBean server with name" +
+                    "Adding FORGEROCK_OPENAM_CTS_MIB-MIB to MBean server with name" +
                             "\n    " + forgerockCtsMibObjName);
 
             FORGEROCK_OPENAM_CTS_MIB mib3 = new FORGEROCK_OPENAM_CTS_MIB();

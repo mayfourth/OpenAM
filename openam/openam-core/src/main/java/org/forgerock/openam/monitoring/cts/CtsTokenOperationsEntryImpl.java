@@ -20,28 +20,24 @@ package org.forgerock.openam.monitoring.cts;
 import com.sun.identity.shared.debug.Debug;
 import com.sun.management.snmp.SnmpStatusException;
 import com.sun.management.snmp.agent.SnmpMib;
-import java.util.Collection;
+import javax.inject.Named;
 import org.forgerock.openam.cts.api.CoreTokenConstants;
 import org.forgerock.openam.cts.api.TokenType;
 import org.forgerock.openam.cts.api.fields.CoreTokenField;
 import org.forgerock.openam.cts.exceptions.CoreTokenException;
-import org.forgerock.openam.cts.impl.query.QueryBuilder;
 import org.forgerock.openam.cts.impl.query.QueryFactory;
-import org.forgerock.openam.cts.impl.query.QueryFilter;
-import org.forgerock.opendj.ldap.Entry;
+import org.forgerock.openam.utils.Enums;
 import org.forgerock.opendj.ldap.Filter;
 
-import javax.inject.Named;
-
 /**
- * Implementation of the CTSTokenOperationsEntry.
+ * These are operations which only take a token type as the input.
  *
- * These are operations which take only as an arguemtn the token type.
+ * That is, the functions in this class represent SNMP-exposed attributes
+ * which take as input a single token type.
  *
  * For example, querying for the total number of a given type of token in the CTS at
  * any given moment.
  *
- * These are operations which only take a token type as the input.
  */
 public class CtsTokenOperationsEntryImpl extends CtsTokenOperationsEntry {
 
@@ -50,8 +46,6 @@ public class CtsTokenOperationsEntryImpl extends CtsTokenOperationsEntry {
 
     //for building up our query
     private final QueryFactory factory;
-
-    private final static Long ERROR = -1l;
 
     /**
      * Constructor allows us to pass in the QueryFactory as well as the
@@ -80,69 +74,42 @@ public class CtsTokenOperationsEntryImpl extends CtsTokenOperationsEntry {
 
         try {
             // -1 as our indexes start at 1, instead of 0.
-            token = getTokenFromOrdinalIndex( getTokenTableIndex().intValue() - 1 );
+            token = Enums.getEnumFromOrdinal(TokenType.class, getTokenTableIndex().intValue() - 1);
         } catch (SnmpStatusException e) {
+            String message = "Unable to determine token type from supplied index.";
             if (debug.messageEnabled()) {
-                debug.error("Unable to determine token type from supplied index.");
+                debug.error(message, e);
             }
-            return ERROR;
+            throw new InvalidSNMPQueryException(message, e);
         }
 
         if (token == null) {
+            String message = "Token type returned was null. Check supplied index.";
             if (debug.messageEnabled()) {
-                debug.error("Token type returned was null. Check supplied index.");
+                debug.error(message);
             }
-            return ERROR;
+            throw new InvalidSNMPQueryException(message);
         }
 
         //create the filter to restrict by token type
-        final QueryFilter.QueryFilterBuilder filterBuilder = factory.createFilter().and();
-        filterBuilder.attribute(CoreTokenField.TOKEN_TYPE, token);
-
-        final Filter filter = filterBuilder.build();
-
-        //create the query itself
-        final QueryBuilder builder = factory.createInstance();
-        builder.returnTheseAttributes(CoreTokenField.TOKEN_ID);
-        builder.withFilter(filter);
+        final Filter filter = factory.createFilter().and().attribute(CoreTokenField.TOKEN_TYPE, token).build();
 
         try {
 
-            Collection<Entry> results = builder.executeRawResults();
-            result = results.size();
+            result = factory.createInstance()
+                    .returnTheseAttributes(CoreTokenField.TOKEN_ID)
+                    .withFilter(filter)
+                    .executeRawResults().size();
 
         } catch (CoreTokenException e) {
+            String message = "CTS Persistence did not return a valid result.";
             if (debug.messageEnabled()) {
-                debug.error("CTS Persistence did not return a valid result.");
+                debug.error(message, e);
             }
-
-            return ERROR;
+            throw new InvalidSNMPQueryException(message, e);
         }
 
         return result;
-    }
-
-    /**
-     * Retrieves the appropriate TokenType from the list of avaliable
-     * enums that matches on the ordinal index.
-     *
-     * @param ordinalIndex the ordinal index to look up
-     * @return the TokenType this ordinal value represents, null otherwise
-     */
-    private TokenType getTokenFromOrdinalIndex(int ordinalIndex) {
-
-        if (ordinalIndex < 0 || ordinalIndex > TokenType.values().length) {
-            return null;
-        }
-
-        return TokenType.values()[ordinalIndex];
-    }
-
-    /**
-     * Exposing a public setter for ease of testing
-     */
-    public void setTokenTableIndex(long index) {
-        this.TokenTableIndex = index;
     }
 
 }

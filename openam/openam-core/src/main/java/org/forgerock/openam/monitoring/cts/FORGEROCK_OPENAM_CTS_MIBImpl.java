@@ -23,7 +23,7 @@ import javax.management.ObjectName;
 import org.forgerock.openam.cts.api.TokenType;
 
 /**
- * The class is used for representing "SUN-OPENSSO-SERVER-MIB".
+ * The class is used for representing "FORGEROCK-OPENAM-CTS-MIB".
  * You can edit the file if you want to modify the behavior of the MIB.
  */
 public class FORGEROCK_OPENAM_CTS_MIBImpl extends FORGEROCK_OPENAM_CTS_MIB implements Serializable {
@@ -39,7 +39,7 @@ public class FORGEROCK_OPENAM_CTS_MIBImpl extends FORGEROCK_OPENAM_CTS_MIB imple
 
     // ------------------------------------------------------------
     //
-    // Initialization of the "SsoServerCTSMonitoring" group.
+    // Initialization of the "CTSMonitoring" group.
     //
     // ------------------------------------------------------------
 
@@ -68,14 +68,7 @@ public class FORGEROCK_OPENAM_CTS_MIBImpl extends FORGEROCK_OPENAM_CTS_MIB imple
             ObjectName groupObjname,
             MBeanServer server)
     {
-
-        // Note that when using standard metadata,
-        // the returned object must implement the "SsoServerCTSMonitoringMBean"
-        // interface.
-        if (server != null)
-            ctsMonitoringGroup = new CtsMonitoringImpl<OperationType, TokenType>(this, server, OperationType.class, TokenType.class);
-        else
-            ctsMonitoringGroup = new CtsMonitoringImpl<OperationType, TokenType>(this, OperationType.class, TokenType.class);
+        ctsMonitoringGroup = new CtsMonitoringImpl<OperationType, TokenType>(this, OperationType.class, TokenType.class);
 
         return ctsMonitoringGroup;
     }

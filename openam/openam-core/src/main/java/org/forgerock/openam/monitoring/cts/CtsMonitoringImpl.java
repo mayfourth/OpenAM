@@ -25,13 +25,11 @@ import com.sun.management.snmp.agent.SnmpMib;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import javax.management.MBeanServer;
 import org.forgerock.openam.cts.api.CoreTokenConstants;
 import org.forgerock.openam.cts.impl.query.QueryFactory;
 import org.forgerock.openam.guice.InjectorHolder;
 
 /**
- * The class extends the "SsoServerCTSMonitoring" class.
  *
  * This class acts as the implementation of the root node of the monitoring tree structure
  * that is exposed by the monitoring service. Elements of the tree under this node are of
@@ -84,27 +82,15 @@ public class CtsMonitoringImpl<E extends Enum<E>, F extends Enum<F>> extends Cts
      * tables to the implementations, complete with appropriate setup knowledge.
      *
      * @param myMib the mib file we are loading the snmp server from
-     * @param server the mbean server we register to
-     * @param crudItemClass enum representing crud operations
-     * @param tokenItemClass enum representing tokens
-     */
-    public CtsMonitoringImpl(SnmpMib myMib, MBeanServer server, Class<E> crudItemClass, Class<F> tokenItemClass) {
-        super(myMib);
-
-        setCrudItems(crudItemClass);
-        setTokenItems(tokenItemClass);
-        init(myMib, server);
-    }
-
-    /**
-     * Constructor with the MBeanServer being set to null,
-     *
-     * @param myMib the mib file we are loading the snmp server from
      * @param crudItemClass enum representing crud operations
      * @param tokenItemClass enum representing tokens
      */
     public CtsMonitoringImpl(SnmpMib myMib, Class<E> crudItemClass, Class<F> tokenItemClass) {
-        this(myMib, null, crudItemClass, tokenItemClass);
+        super(myMib);
+
+        setCrudItems(crudItemClass);
+        setTokenItems(tokenItemClass);
+        init(myMib);
     }
 
     /**
@@ -131,9 +117,8 @@ public class CtsMonitoringImpl<E extends Enum<E>, F extends Enum<F>> extends Cts
      * data structures they act as queryable endpoints for.
      *
      * @param myMib The mib file which caused generation of this class
-     * @param server The MBean server (if applicable)
      */
-    private void init(SnmpMib myMib, MBeanServer server) {
+    private void init(SnmpMib myMib) {
         if (debug == null) {
             final Key<Debug> key = Key.get(Debug.class, Names.named(CoreTokenConstants.CTS_MONITOR_DEBUG));
             debug = InjectorHolder.getInstance(key);
@@ -180,7 +165,7 @@ public class CtsMonitoringImpl<E extends Enum<E>, F extends Enum<F>> extends Cts
 
         } catch (SnmpStatusException e) {
             if(debug.messageEnabled()) {
-                debug.error("Unable to set up CTS Monitoring tables. CTS monitoring not available.");
+                debug.error("Unable to set up CTS Monitoring tables. CTS monitoring not available.", e);
             }
         }
 

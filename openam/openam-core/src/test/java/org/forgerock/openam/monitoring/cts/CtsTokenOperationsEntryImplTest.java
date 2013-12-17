@@ -20,7 +20,6 @@ package org.forgerock.openam.monitoring.cts;
 import com.sun.identity.shared.debug.Debug;
 import com.sun.management.snmp.agent.SnmpMib;
 import java.util.ArrayList;
-import static org.fest.assertions.Fail.fail;
 import org.forgerock.openam.cts.api.TokenType;
 import org.forgerock.openam.cts.api.fields.CoreTokenField;
 import org.forgerock.openam.cts.exceptions.CoreTokenException;
@@ -30,7 +29,6 @@ import org.forgerock.openam.cts.impl.query.QueryFilter;
 import org.forgerock.opendj.ldap.Entry;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.testng.AssertJUnit.assertEquals;
 import org.testng.annotations.BeforeMethod;
@@ -54,31 +52,42 @@ public class CtsTokenOperationsEntryImplTest {
         entryImpl = new CtsTokenOperationsEntryImpl(factory, myMib, debug);
     }
 
-    @Test
-    public void getTotalCountTest() {
-        //given
-        entryImpl.setTokenTableIndex(1l); // 1 -> 0 because of different indexes
+    /**
+     * Sets up the implementation to execute and query the system in a mocked fashion.
+     *
+     * @param queryFilterBuilder
+     * @param queryBuilder
+     * @throws CoreTokenException
+     */
+    private void performSetup(QueryFilter.QueryFilterBuilder queryFilterBuilder,
+                                QueryBuilder queryBuilder, TokenType token) throws CoreTokenException {
+        entryImpl.TokenTableIndex = 1l;
 
-        TokenType token = TokenType.values()[0];
-        ArrayList<Entry> results = new ArrayList<Entry>();
-
-        Entry mockEntry = mock(Entry.class);
-        results.add(mockEntry);
-
-        QueryBuilder queryBuilder = mock(QueryBuilder.class);
-        QueryFilter.QueryFilterBuilder queryFilterBuilder = mock(QueryFilter.QueryFilterBuilder.class);
         QueryFilter queryFilter = mock(QueryFilter.class);
-
-        given(factory.createInstance()).willReturn(queryBuilder);
 
         given(factory.createFilter()).willReturn(queryFilter);
         given(queryFilter.and()).willReturn(queryFilterBuilder);
+        given(queryFilterBuilder.attribute(CoreTokenField.TOKEN_TYPE, token)).willReturn(queryFilterBuilder);
 
-        try {
-            given(queryBuilder.executeRawResults()).willReturn(results);
-        } catch (CoreTokenException e) {
-            fail();
-        }
+        given(factory.createInstance()).willReturn(queryBuilder);
+        given(queryBuilder.returnTheseAttributes(CoreTokenField.TOKEN_ID)).willReturn(queryBuilder);
+        given(queryBuilder.withFilter(null)).willReturn(queryBuilder);
+    }
+
+    @Test
+    public void getTotalCountTest() throws CoreTokenException {
+
+        //given
+        QueryFilter.QueryFilterBuilder queryFilterBuilder = mock(QueryFilter.QueryFilterBuilder.class);
+        TokenType token = TokenType.values()[0];
+        QueryBuilder queryBuilder = mock(QueryBuilder.class);
+
+        ArrayList<Entry> results = new ArrayList<Entry>();
+        Entry mockEntry = mock(Entry.class);
+        results.add(mockEntry);
+
+        performSetup(queryFilterBuilder, queryBuilder, token);
+        given(queryBuilder.executeRawResults()).willReturn(results);
 
         //when
         long result = entryImpl.getTotalCount();
@@ -90,50 +99,35 @@ public class CtsTokenOperationsEntryImplTest {
         assertEquals(1l, result);
     }
 
-    @Test
-    public void getTotalCountTestErrorInvalidToken() {
+    @Test(expectedExceptions = InvalidSNMPQueryException.class)
+    public void getTotalCountTestErrorPersistentStoreFail() throws CoreTokenException {
+
         //given
-        entryImpl.setTokenTableIndex(-1l);
+        QueryFilter.QueryFilterBuilder queryFilterBuilder = mock(QueryFilter.QueryFilterBuilder.class);
+        TokenType token = TokenType.values()[0];
+        QueryBuilder queryBuilder = mock(QueryBuilder.class);
+
+        performSetup(queryFilterBuilder, queryBuilder, token);
+
+        given(queryBuilder.executeRawResults()).willThrow(new CoreTokenException("Error"));
 
         //when
-        long result = entryImpl.getTotalCount();
+        entryImpl.getTotalCount();
 
         //then
-        verify(debug, times(1)).messageEnabled();
-        assertEquals(-1l, result);
-
+        //throw exception
     }
 
-    @Test
-    public void getTotalCountTestErrorPersistentStoreFail() {
+    @Test(expectedExceptions = InvalidSNMPQueryException.class)
+    public void getTotalCountTestErrorInvalidToken() {
         //given
-        entryImpl.setTokenTableIndex(1l); // 1 -> 0 because of different indexes
+        entryImpl.TokenTableIndex = -1l;
 
-        TokenType token = TokenType.values()[0];
-
-        QueryBuilder queryBuilder = mock(QueryBuilder.class);
-        QueryFilter.QueryFilterBuilder queryFilterBuilder = mock(QueryFilter.QueryFilterBuilder.class);
-        QueryFilter queryFilter = mock(QueryFilter.class);
-
-        given(factory.createInstance()).willReturn(queryBuilder);
-
-        given(factory.createFilter()).willReturn(queryFilter);
-        given(queryFilter.and()).willReturn(queryFilterBuilder);
-
-        try {
-            given(queryBuilder.executeRawResults()).willThrow(new CoreTokenException("Error"));
-        } catch (CoreTokenException e) {
-            fail();
-        }
-
-        //given
-        long result = entryImpl.getTotalCount();
+        //when
+        entryImpl.getTotalCount();
 
         //then
-        verify(queryFilterBuilder).attribute(CoreTokenField.TOKEN_TYPE, token);
-        verify(queryBuilder).returnTheseAttributes(CoreTokenField.TOKEN_ID);
-
-        assertEquals(-1l, result);
+        //throw exception
     }
 
 }
