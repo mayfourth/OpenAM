@@ -20,6 +20,7 @@ package org.forgerock.openam.monitoring.cts;
 import com.sun.identity.shared.debug.Debug;
 import com.sun.management.snmp.agent.SnmpMib;
 
+//NYI
 public class CtsCRUDOperationsPerTokenTypeEntryImpl extends CtsCRUDOperationsPerTokenTypeEntry {
 
     private Debug debug;

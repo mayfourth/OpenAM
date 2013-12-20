@@ -60,7 +60,7 @@ public class CtsTokenOperationsEntryImplTest {
      * @throws CoreTokenException
      */
     private void performSetup(QueryFilter.QueryFilterBuilder queryFilterBuilder,
-                                QueryBuilder queryBuilder, TokenType token) throws CoreTokenException {
+                              QueryBuilder queryBuilder, TokenType token) throws CoreTokenException {
         entryImpl.TokenTableIndex = 1l;
 
         QueryFilter queryFilter = mock(QueryFilter.class);

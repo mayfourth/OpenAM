@@ -20,12 +20,12 @@ package org.forgerock.openam.utils;
 public class Enums {
 
     /**
-     * Retrieves the appropriate TokenType from the list of avaliable
+     * Retrieves the appropriate Enum from the list of avaliable
      * enums that matches on the ordinal index.
      *
      * @param clazz a class of type Enum
      * @param ordinalIndex the ordinal index to look up
-     * @return the TokenType this ordinal value represents, null otherwise
+     * @return the Enum this ordinal value represents, null otherwise
      */
     public static <E extends Enum<E>> E getEnumFromOrdinal(Class<E> clazz, int ordinalIndex) {
 

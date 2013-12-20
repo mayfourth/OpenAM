@@ -30,10 +30,10 @@ import org.forgerock.openam.utils.Enums;
 import org.forgerock.opendj.ldap.Filter;
 
 /**
- * These are operations which only take a token type as the input.
+ * This class represents those operations which only take a token type as the input.
  *
- * That is, the functions in this class represent SNMP-exposed attributes
- * which take as input a single token type.
+ * The token type is input as part of the OID which results in this class being called and
+ * is available through {@link org.forgerock.openam.monitoring.cts.CtsTokenOperationsEntry#getTokenTableIndex()}.
  *
  * For example, querying for the total number of a given type of token in the CTS at
  * any given moment.
