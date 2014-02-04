@@ -16,26 +16,29 @@
 package org.forgerock.openam.upgrade.steps;
 
 import com.sun.identity.common.configuration.ServerConfiguration;
-import static com.sun.identity.common.configuration.ServerConfiguration.DEFAULT_SERVER_CONFIG;
-import static com.sun.identity.common.configuration.ServerConfiguration.DEFAULT_SERVER_ID;
+import org.forgerock.openam.upgrade.ServerUpgrade;
+import org.forgerock.openam.upgrade.UpgradeException;
+import org.forgerock.openam.upgrade.UpgradeProgress;
+import org.forgerock.openam.upgrade.UpgradeStepInfo;
+import org.forgerock.openam.upgrade.UpgradeUtils;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.forgerock.openam.upgrade.ServerUpgrade;
-import org.forgerock.openam.upgrade.UpgradeException;
-import org.forgerock.openam.upgrade.UpgradeProgress;
+
+import static com.sun.identity.common.configuration.ServerConfiguration.DEFAULT_SERVER_CONFIG;
+import static com.sun.identity.common.configuration.ServerConfiguration.DEFAULT_SERVER_ID;
 import static org.forgerock.openam.upgrade.UpgradeServices.LF;
 import static org.forgerock.openam.upgrade.UpgradeServices.tagSwapReport;
-import org.forgerock.openam.upgrade.UpgradeStepInfo;
-import org.forgerock.openam.upgrade.UpgradeUtils;
 
 /**
  * Detects changes made to default server properties and upgrades them if required.
  *
  * @author Peter Major
  */
-@UpgradeStepInfo(dependsOn = "*")
+@UpgradeStepInfo (dependsOn = "org.forgerock.openam.upgrade.steps.UpgradeServiceSchemaStep")
+// TODO undo this
 public class UpgradeServerDefaultsStep extends AbstractUpgradeStep {
 
     private static final String NEW_ATTRS = "%NEW_ATTRS%";

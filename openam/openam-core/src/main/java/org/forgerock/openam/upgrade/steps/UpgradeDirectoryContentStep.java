@@ -16,15 +16,16 @@
 package org.forgerock.openam.upgrade.steps;
 
 import com.sun.identity.setup.AMSetupServlet;
-import com.sun.identity.setup.EmbeddedOpenDS;
 import com.sun.identity.sm.SMSEntry;
-import java.util.HashMap;
-import java.util.Map;
 import org.forgerock.openam.upgrade.DirectoryContentUpgrader;
 import org.forgerock.openam.upgrade.UpgradeException;
+import org.forgerock.openam.upgrade.UpgradeStepInfo;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.forgerock.openam.upgrade.UpgradeServices.LF;
 import static org.forgerock.openam.upgrade.UpgradeServices.tagSwapReport;
-import org.forgerock.openam.upgrade.UpgradeStepInfo;
 
 /**
  * This upgrade step is meant to upgrade the directory schema/content for external configuration stores. For the
@@ -32,7 +33,8 @@ import org.forgerock.openam.upgrade.UpgradeStepInfo;
  *
  * @author Peter Major
  */
-@UpgradeStepInfo
+@UpgradeStepInfo (dependsOn = "org.forgerock.openam.upgrade.steps.UpgradeEntitlementsStep")
+// TODO undo this
 public class UpgradeDirectoryContentStep extends AbstractUpgradeStep {
 
     private static final String DIRECTORY_DATA = "%DIRECTORY_DATA%";
@@ -40,17 +42,20 @@ public class UpgradeDirectoryContentStep extends AbstractUpgradeStep {
 
     @Override
     public boolean isApplicable() {
+        // TODO verify this
         //if in case of embedded, the upgrade should have happen long before this
-        return !EmbeddedOpenDS.isStarted() && upgrader.isApplicable();
+//        return !EmbeddedOpenDS.isStarted() && upgrader.isApplicable();
+        return upgrader.isApplicable();
     }
 
     @Override
     public void initialize() throws UpgradeException {
-        if (!EmbeddedOpenDS.isStarted()) {
+        // TODO verify this
+//        if (!EmbeddedOpenDS.isStarted()) {
             String baseDir = AMSetupServlet.getBaseDir();
             String baseDN = SMSEntry.getRootSuffix();
             upgrader = new DirectoryContentUpgrader(baseDir, baseDN);
-        }
+//        }
     }
 
     @Override

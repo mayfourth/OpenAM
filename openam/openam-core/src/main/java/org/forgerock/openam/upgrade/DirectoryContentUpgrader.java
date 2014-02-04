@@ -21,15 +21,6 @@ import com.sun.identity.setup.SetupConstants;
 import com.sun.identity.shared.debug.Debug;
 import org.forgerock.openam.cts.api.CoreTokenConstants;
 import org.forgerock.openam.cts.api.fields.CoreTokenField;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.forgerock.openam.cts.impl.LDAPConfig;
 import org.forgerock.openam.guice.InjectorHolder;
 import org.forgerock.openam.sm.DataLayerConnectionFactory;
@@ -43,6 +34,15 @@ import org.forgerock.opendj.ldif.ChangeRecordReader;
 import org.forgerock.opendj.ldif.ChangeRecordWriter;
 import org.forgerock.opendj.ldif.ConnectionChangeRecordWriter;
 import org.forgerock.opendj.ldif.LDIFChangeRecordReader;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class is aiming to upgrade the content of the configuration store. The possible changes may involve directory
@@ -85,6 +85,7 @@ public class DirectoryContentUpgrader {
         upgraders.add(new CreateCTSContainer());
         if (EmbeddedOpenDS.isStarted()) {
             upgraders.add(new CreateCTSIndexes());
+            upgraders.add(new AddTokenTypeToCTSIndexes());
             upgraders.add(new AddDashboardSchema());
             upgraders.add(new AddDevicePrintSchema());
         }
@@ -283,6 +284,21 @@ public class DirectoryContentUpgrader {
         @Override
         public boolean isUpgradeNecessary(Connection conn, Schema schema) throws UpgradeException {
             DN indexDN = DN.valueOf("ds-cfg-attribute=" + CoreTokenField.EXPIRY_DATE.toString()
+                    + ",cn=Index,ds-cfg-backend-id=userRoot,cn=Backends,cn=config");
+            return !entryExists(conn, indexDN);
+        }
+    }
+
+    private class AddTokenTypeToCTSIndexes implements Upgrader {
+
+        @Override
+        public String getLDIFPath() {
+            return "/WEB-INF/template/ldif/sfha/cts-indices-12.ldif";
+        }
+
+        @Override
+        public boolean isUpgradeNecessary(Connection conn, Schema schema) throws UpgradeException {
+            DN indexDN = DN.valueOf("ds-cfg-attribute=" + CoreTokenField.TOKEN_TYPE.toString()
                     + ",cn=Index,ds-cfg-backend-id=userRoot,cn=Backends,cn=config");
             return !entryExists(conn, indexDN);
         }
