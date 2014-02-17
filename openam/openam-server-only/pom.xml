@@ -115,6 +115,27 @@
                             </artifactItems>
                         </configuration>
                     </execution>
+
+                    <execution>
+                        <id>Copy license</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${forgerock.license.groupId}</groupId>
+                                    <artifactId>${forgerock.license.artifactId}</artifactId>
+                                    <version>${forgerock.license.version}</version>
+                                    <type>txt</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/legal-notices</outputDirectory>
+                                    <destFileName>license.txt</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -212,7 +233,7 @@
                         </webResource>
                         <webResource>
                             <!-- Copy all licenses into the legal-notices directory. -->
-                            <directory>${project.parent.build.directory}/legal-notices</directory>
+                            <directory>${project.build.directory}/legal-notices</directory>
                             <includes>
                                 <include>**/**</include>
                             </includes>
@@ -278,6 +299,15 @@
                                 <include>**/**</include>
                             </includes>
                             <targetPath />
+                            <filtering>false</filtering>
+                        </webResource>
+                        <webResource>
+                            <directory>${project.basedir}/../openam-sts/openam-rest-sts/src/main/resources
+                            </directory>
+                            <includes>
+                                <include>stsstore.jks</include>
+                            </includes>
+                            <targetPath>WEB-INF/classes</targetPath>
                             <filtering>false</filtering>
                         </webResource>
                     </webResources>
@@ -579,7 +609,20 @@
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-oauth2-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.forgerock.openam</groupId>
+            <artifactId>openam-rest-sts</artifactId>
+        </dependency>
 
+        <dependency>
+            <groupId>org.forgerock.openam</groupId>
+            <artifactId>openam-common-sts</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.forgerock.openam</groupId>
+            <artifactId>openam-slf4j</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
