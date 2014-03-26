@@ -16,6 +16,7 @@
 
 package org.forgerock.openam.authentication.modules.oidc;
 
+import static org.forgerock.openam.authentication.modules.oidc.OpenIdConnectConfig.*;
 import com.sun.identity.authentication.spi.AMLoginModule;
 import com.sun.identity.authentication.spi.AuthLoginException;
 import com.sun.identity.authentication.util.ISAuthConstants;
@@ -40,6 +41,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.Principal;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Because the OpenIdResolver instances, responsible for validating ID Tokens for a given issuer, require pulling
@@ -63,55 +65,14 @@ import java.util.Map;
 public class OpenIdConnect extends AMLoginModule {
     private static Debug logger = Debug.getInstance("amAuth");
 
-    private static final String RESOURCE_BUNDLE_NAME = "amAuthOpenIdConnect";
-    private static final String HEADER_NAME_KEY = "openam-auth-openidconnect-header-name";
-    private static final String ISSUER_NAME_KEY = "openam-auth-openidconnect-issuer-name";
-    private static final String CRYPTO_CONTEXT_TYPE_KEY = "openam-auth-openidconnect-crypto-context-type";
-    private static final String CRYPTO_CONTEXT_VALUE_KEY = "openam-auth-openidconnect-crypto-context-value";
-
-    static final String CRYPTO_CONTEXT_TYPE_CONFIG_URL = ".well-known/openid-configuration_url";
-    static final String CRYPTO_CONTEXT_TYPE_JWK_URL = "jwk_url";
-    static final String CRYPTO_CONTEXT_TYPE_CLIENT_SECRET = "client_secret";
-
-    private static final String BUNDLE_KEY_VERIFICATION_FAILED = "verification_failed";
-    private static final String BUNDLE_KEY_ISSUER_MISMATCH = "issuer_mismatch";
-    private static final String BUNDLE_KEY_TOKEN_ISSUER_MISMATCH = "token_issuer_mismatch";
-    private static final String BUNDLE_KEY_JWT_PARSE_ERROR = "jwt_parse_error";
-    private static final String BUNDLE_KEY_MISSING_HEADER = "missing_header";
-    private static final String BUNDLE_KEY_JWK_NOT_LOADED = "jwk_not_loaded";
-
-    private String headerName;
-    private String configuredIssuer;
-    private String cryptoContextType;
-    private String cryptoContextValue;
-    private URL cryptoContextUrlValue;
     private OpenIdResolverCache openIdResolverCache;
     private JwtReconstruction jwtReconstruction;
+    private OpenIdConnectConfig config;
 
 
     @Override
     public void init(Subject subject, Map sharedState, Map options) {
-        headerName = CollectionHelper.getMapAttr(options, HEADER_NAME_KEY);
-        configuredIssuer = CollectionHelper.getMapAttr(options, ISSUER_NAME_KEY);
-        cryptoContextType = CollectionHelper.getMapAttr(options, CRYPTO_CONTEXT_TYPE_KEY);
-        cryptoContextValue = CollectionHelper.getMapAttr(options, CRYPTO_CONTEXT_VALUE_KEY);
-        Reject.ifNull(headerName, HEADER_NAME_KEY + " must be set in LoginModule options.");
-        Reject.ifNull(configuredIssuer, ISSUER_NAME_KEY + " must be set in LoginModule options.");
-        Reject.ifNull(cryptoContextType, CRYPTO_CONTEXT_TYPE_KEY + " must be set in LoginModule options.");
-        Reject.ifNull(cryptoContextValue, CRYPTO_CONTEXT_VALUE_KEY + " must be set in LoginModule options.");
-        Reject.ifFalse(CRYPTO_CONTEXT_TYPE_CLIENT_SECRET.equals(cryptoContextType) ||
-                CRYPTO_CONTEXT_TYPE_JWK_URL.equals(cryptoContextType) ||
-                CRYPTO_CONTEXT_TYPE_CONFIG_URL.equals(cryptoContextType), "The value corresponding to key " +
-                CRYPTO_CONTEXT_TYPE_KEY + " does not correspond to an expected value. Its value:" + cryptoContextType);
-        if (CRYPTO_CONTEXT_TYPE_CONFIG_URL.equals(cryptoContextType) || CRYPTO_CONTEXT_TYPE_JWK_URL.equals(cryptoContextType)) {
-            try {
-                cryptoContextUrlValue = new URL(cryptoContextValue);
-            } catch (MalformedURLException e) {
-                final String message = "The crypto context value string, " + cryptoContextValue + " is not in valid URL format: " + e;
-                logger.error(message, e);
-                throw new IllegalArgumentException(message);
-            }
-        }
+        config = new OpenIdConnectConfig(options);
         openIdResolverCache = InjectorHolder.getInstance(OpenIdResolverCache.class);
         Reject.ifNull(openIdResolverCache, "OpenIdResolverCache could not be obtained from the InjectorHolder!");
         jwtReconstruction = new JwtReconstruction();
@@ -124,9 +85,9 @@ public class OpenIdConnect extends AMLoginModule {
         Then dispatch validation to resolver.
          */
         final HttpServletRequest request = getHttpServletRequest();
-        final String jwtValue = request.getHeader(headerName);
+        final String jwtValue = request.getHeader(config.getHeaderName());
         if (jwtValue == null || jwtValue.isEmpty()) {
-            logger.error("No OpenIdConnect ID Token referenced by header value: " + headerName);
+            logger.error("No OpenIdConnect ID Token referenced by header value: " + config.getHeaderName());
             throw new AuthLoginException(RESOURCE_BUNDLE_NAME, BUNDLE_KEY_MISSING_HEADER, null);
         }
 
@@ -143,43 +104,53 @@ public class OpenIdConnect extends AMLoginModule {
 
         final JwtClaimsSet jwtClaimSet = retrievedJwt.getClaimsSet();
         final String jwtClaimSetIssuer = jwtClaimSet.getIssuer();
-        if (!configuredIssuer.equals(jwtClaimSetIssuer)) {
-            logger.error("The issuer configured for the module, " + configuredIssuer + ", and the issuer found in the token, " +
+        if (!config.getConfiguredIssuer().equals(jwtClaimSetIssuer)) {
+            logger.error("The issuer configured for the module, " + config.getConfiguredIssuer() + ", and the issuer found in the token, " +
                 jwtClaimSetIssuer +", do not match. This means that the token authentication was directed at the wrong module, " +
                     "or the targeted module is mis-configured.");
             throw new AuthLoginException(RESOURCE_BUNDLE_NAME, BUNDLE_KEY_TOKEN_ISSUER_MISMATCH, null);
         }
-        OpenIdResolver resolver = openIdResolverCache.getResolverForIssuer(cryptoContextValue);
+        OpenIdResolver resolver = openIdResolverCache.getResolverForIssuer(config.getCryptoContextValue());
 
         if (resolver == null) {
             if (logger.messageEnabled()) {
-                if (CRYPTO_CONTEXT_TYPE_CLIENT_SECRET.equals(cryptoContextType)) {
+                if (CRYPTO_CONTEXT_TYPE_CLIENT_SECRET.equals(config.getCryptoContextType())) {
                     logger.message("Creating OpenIdResolver for issuer " + jwtClaimSetIssuer + " using client secret");
                 } else {
                     logger.message("Creating OpenIdResolver for issuer " + jwtClaimSetIssuer + " using config url "
-                            + cryptoContextValue);
+                            + config.getCryptoContextValue());
                 }
             }
             try {
                 resolver = openIdResolverCache.createResolver(
-                        jwtClaimSetIssuer, cryptoContextType, cryptoContextValue, cryptoContextUrlValue);
+                        jwtClaimSetIssuer, config.getCryptoContextType(), config.getCryptoContextValue(), config.getCryptoContextUrlValue());
             } catch (IllegalStateException e) {
                 logger.error("Could not create OpenIdResolver for issuer " + jwtClaimSetIssuer +
-                        " using crypto context value " + cryptoContextValue + " :" + e);
+                        " using crypto context value " + config.getCryptoContextValue() + " :" + e);
                 throw new AuthLoginException(RESOURCE_BUNDLE_NAME, BUNDLE_KEY_ISSUER_MISMATCH, null);
             } catch (FailedToLoadJWKException e) {
                 logger.error("Could not create OpenIdResolver for issuer " + jwtClaimSetIssuer +
-                        " using crypto context value " + cryptoContextValue + " :" + e, e);
+                        " using crypto context value " + config.getCryptoContextValue() + " :" + e, e);
                 throw new AuthLoginException(RESOURCE_BUNDLE_NAME, BUNDLE_KEY_JWK_NOT_LOADED, null);
             }
         }
         try {
             resolver.validateIdentity(retrievedJwt);
+            mapPrincipal(jwtClaimSet);
             return ISAuthConstants.LOGIN_SUCCEED;
         } catch (OpenIdConnectVerificationException oice) {
             logger.warning("Verification of ID Token failed: " + oice);
             throw new AuthLoginException(RESOURCE_BUNDLE_NAME, BUNDLE_KEY_VERIFICATION_FAILED, null);
         }
+    }
+
+    /*
+    This method maps the jwt to a local Principal.
+     */
+    private void mapPrincipal(JwtClaimsSet jwtClaimsSet) {
+        logger.message("The principal in the jwt: " + jwtClaimsSet.getPrincipal());
+        logger.message("The jwt: " + jwtClaimsSet.toString());
+
     }
 
     @Override

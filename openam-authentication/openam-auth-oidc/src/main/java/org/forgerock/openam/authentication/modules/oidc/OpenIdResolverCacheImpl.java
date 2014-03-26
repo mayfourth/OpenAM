@@ -53,16 +53,16 @@ public class OpenIdResolverCacheImpl implements OpenIdResolverCache {
     public OpenIdResolver createResolver(String issuerFromJwk, String cryptoContextType, String cryptoContextValue,
                                          URL cryptoContextValueUrl) throws FailedToLoadJWKException {
         OpenIdResolver newResolver = null;
-        if (OpenIdConnect.CRYPTO_CONTEXT_TYPE_CLIENT_SECRET.equals(cryptoContextType)) {
+        if (OpenIdConnectConfig.CRYPTO_CONTEXT_TYPE_CLIENT_SECRET.equals(cryptoContextType)) {
             newResolver = openIdResolverFactory.createSharedSecretResolver(issuerFromJwk, cryptoContextValue);
-        } else if (OpenIdConnect.CRYPTO_CONTEXT_TYPE_CONFIG_URL.equals(cryptoContextType)) {
+        } else if (OpenIdConnectConfig.CRYPTO_CONTEXT_TYPE_CONFIG_URL.equals(cryptoContextType)) {
             newResolver = openIdResolverFactory.createFromOpenIDConfigUrl(cryptoContextValueUrl);
             //check is only relevant in this block, as issuer is specified in the json blob referenced by url.
             if (!issuerFromJwk.equals(newResolver.getIssuer())) {
                 throw new IllegalStateException("The specified issuer, " + issuerFromJwk + ", does not match the issuer, "
                         + newResolver.getIssuer() + " referenced by the configuration url, " + cryptoContextValue);
             }
-        } else if (OpenIdConnect.CRYPTO_CONTEXT_TYPE_JWK_URL.equals(cryptoContextType)) {
+        } else if (OpenIdConnectConfig.CRYPTO_CONTEXT_TYPE_JWK_URL.equals(cryptoContextType)) {
             newResolver = openIdResolverFactory.createJWKResolver(issuerFromJwk, cryptoContextValueUrl,
                     OpenIdConnectGuiceModule.RESOLVER_FACTORY_READ_TIMEOUT_MILLIS,
                     OpenIdConnectGuiceModule.RESOLVER_FACTORY_CONNECT_TIMEOUT_MILLIS);
