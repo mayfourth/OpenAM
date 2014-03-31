@@ -39,7 +39,9 @@ class OpenIdConnectConfig {
     static final String ISSUER_NAME_KEY = "openam-auth-openidconnect-issuer-name";
     static final String CRYPTO_CONTEXT_TYPE_KEY = "openam-auth-openidconnect-crypto-context-type";
     static final String CRYPTO_CONTEXT_VALUE_KEY = "openam-auth-openidconnect-crypto-context-value";
+    static final String PRINCIPAL_MAPPER_CLASS_KEY = "openam-auth-openidconnect-principal-mapper-class";
     static final String LOCAL_TO_JWK_ATTRIBUTE_MAPPINGS_KEY = "openam-auth-openidconnect-local-to-jwt-attribute-mappings";
+    static final String PROFILE_SERVICE_URL_KEY = "openam-auth-openidconnect-profile-service-url";
 
     static final String CRYPTO_CONTEXT_TYPE_CONFIG_URL = ".well-known/openid-configuration_url";
     static final String CRYPTO_CONTEXT_TYPE_JWK_URL = "jwk_url";
@@ -51,6 +53,8 @@ class OpenIdConnectConfig {
     static final String BUNDLE_KEY_JWT_PARSE_ERROR = "jwt_parse_error";
     static final String BUNDLE_KEY_MISSING_HEADER = "missing_header";
     static final String BUNDLE_KEY_JWK_NOT_LOADED = "jwk_not_loaded";
+    static final String BUNDLE_KEY_PRINCIPAL_MAPPER_INSTANTIATION_ERROR = "principal_mapper_instantiation_error";
+    static final String BUNDLE_KEY_PRINCIPAL_MAPPING_FAILURE = "principal_mapping_failure";
 
     private static final String EQUALS = "=";
 
@@ -58,6 +62,8 @@ class OpenIdConnectConfig {
     private final String configuredIssuer;
     private final String cryptoContextType;
     private final String cryptoContextValue;
+    private final URL profileServiceUrl;
+    private final String principalMapperClass;
     private final URL cryptoContextUrlValue;
     private final Map<String, String> localToJwkAttributeMappings;
 
@@ -67,11 +73,25 @@ class OpenIdConnectConfig {
         configuredIssuer = CollectionHelper.getMapAttr(options, ISSUER_NAME_KEY);
         cryptoContextType = CollectionHelper.getMapAttr(options, CRYPTO_CONTEXT_TYPE_KEY);
         cryptoContextValue = CollectionHelper.getMapAttr(options, CRYPTO_CONTEXT_VALUE_KEY);
+        principalMapperClass = CollectionHelper.getMapAttr(options, PRINCIPAL_MAPPER_CLASS_KEY);
+        String profileServiceString = CollectionHelper.getMapAttr(options, PROFILE_SERVICE_URL_KEY);
+        if (profileServiceString == null) {
+            profileServiceUrl = null;
+        } else {
+            try {
+                profileServiceUrl = new URL(profileServiceString);
+            } catch (MalformedURLException e) {
+                final String message = "The profile service url string, " + profileServiceString + " is not in valid URL format: " + e;
+                logger.error(message, e);
+                throw new IllegalArgumentException(message);
+            }
+        }
         Set<String> configuredLocalToJwkAttributeMappings = (Set<String>)options.get(LOCAL_TO_JWK_ATTRIBUTE_MAPPINGS_KEY);
         Reject.ifNull(headerName, HEADER_NAME_KEY + " must be set in LoginModule options.");
         Reject.ifNull(configuredIssuer, ISSUER_NAME_KEY + " must be set in LoginModule options.");
         Reject.ifNull(cryptoContextType, CRYPTO_CONTEXT_TYPE_KEY + " must be set in LoginModule options.");
         Reject.ifNull(cryptoContextValue, CRYPTO_CONTEXT_VALUE_KEY + " must be set in LoginModule options.");
+        Reject.ifNull(principalMapperClass, PRINCIPAL_MAPPER_CLASS_KEY + " must be set in LoginModule options.");
         Reject.ifNull(configuredLocalToJwkAttributeMappings, LOCAL_TO_JWK_ATTRIBUTE_MAPPINGS_KEY + " must be set in LoginModule options.");
         Reject.ifTrue(configuredLocalToJwkAttributeMappings.isEmpty(), LOCAL_TO_JWK_ATTRIBUTE_MAPPINGS_KEY + " must contain some valid mappings.");
         localToJwkAttributeMappings = parseLocalToJwkMappings(configuredLocalToJwkAttributeMappings);
@@ -128,8 +148,16 @@ class OpenIdConnectConfig {
         return cryptoContextValue;
     }
 
+    public String getPrincipalMapperClass() {
+        return principalMapperClass;
+    }
+
     public URL getCryptoContextUrlValue() {
         return cryptoContextUrlValue;
+    }
+
+    public URL getProfileServiceUrl() {
+        return profileServiceUrl;
     }
 
     public Map<String, String> getLocalToJwkAttributeMappings() {

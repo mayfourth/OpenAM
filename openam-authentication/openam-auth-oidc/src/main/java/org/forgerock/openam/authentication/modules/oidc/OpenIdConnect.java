@@ -68,10 +68,13 @@ public class OpenIdConnect extends AMLoginModule {
     private OpenIdResolverCache openIdResolverCache;
     private JwtReconstruction jwtReconstruction;
     private OpenIdConnectConfig config;
+    private String principalName;
 
 
     @Override
     public void init(Subject subject, Map sharedState, Map options) {
+        //TODO: the line below will throw a RuntimeException for various failure cases - need to determine who calls init,
+        //and what will happen in a RE is thrown here.
         config = new OpenIdConnectConfig(options);
         openIdResolverCache = InjectorHolder.getInstance(OpenIdResolverCache.class);
         Reject.ifNull(openIdResolverCache, "OpenIdResolverCache could not be obtained from the InjectorHolder!");
@@ -91,9 +94,9 @@ public class OpenIdConnect extends AMLoginModule {
             throw new AuthLoginException(RESOURCE_BUNDLE_NAME, BUNDLE_KEY_MISSING_HEADER, null);
         }
 
-        final SignedJwt retrievedJwt;
+        final SignedJwt signedJwt;
         try {
-            retrievedJwt = jwtReconstruction.reconstructJwt(jwtValue, SignedJwt.class);
+            signedJwt = jwtReconstruction.reconstructJwt(jwtValue, SignedJwt.class);
         } catch (InvalidJwtException ije) {
             logger.error("Could not reconstruct jwt from header value: " + ije);
             throw new AuthLoginException(RESOURCE_BUNDLE_NAME, BUNDLE_KEY_JWT_PARSE_ERROR, null);
@@ -102,7 +105,7 @@ public class OpenIdConnect extends AMLoginModule {
             throw new AuthLoginException(RESOURCE_BUNDLE_NAME, BUNDLE_KEY_JWT_PARSE_ERROR, null);
         }
 
-        final JwtClaimsSet jwtClaimSet = retrievedJwt.getClaimsSet();
+        final JwtClaimsSet jwtClaimSet = signedJwt.getClaimsSet();
         final String jwtClaimSetIssuer = jwtClaimSet.getIssuer();
         if (!config.getConfiguredIssuer().equals(jwtClaimSetIssuer)) {
             logger.error("The issuer configured for the module, " + config.getConfiguredIssuer() + ", and the issuer found in the token, " +
@@ -135,8 +138,8 @@ public class OpenIdConnect extends AMLoginModule {
             }
         }
         try {
-            resolver.validateIdentity(retrievedJwt);
-            mapPrincipal(jwtClaimSet);
+            resolver.validateIdentity(signedJwt);
+            mapPrincipal(jwtClaimSet, signedJwt);
             return ISAuthConstants.LOGIN_SUCCEED;
         } catch (OpenIdConnectVerificationException oice) {
             logger.warning("Verification of ID Token failed: " + oice);
@@ -147,25 +150,34 @@ public class OpenIdConnect extends AMLoginModule {
     /*
     This method maps the jwt to a local Principal.
      */
-    private void mapPrincipal(JwtClaimsSet jwtClaimsSet) {
-        logger.message("The principal in the jwt: " + jwtClaimsSet.getPrincipal());
-        logger.message("The jwt: " + jwtClaimsSet.toString());
+    private void mapPrincipal(JwtClaimsSet jwtClaimsSet, SignedJwt signedJwt) throws AuthLoginException {
+        PrincipalMapper principalMapper = instantiatePrincipalMapper();
+        Map<String, Set<String>> lookupAttrs =
+                principalMapper.getAttributesForPrincipalLookup(
+                        config.getLocalToJwkAttributeMappings(),
+                        signedJwt, jwtClaimsSet, config.getProfileServiceUrl());
+        principalName = principalMapper.lookupPrincipal(getAMIdentityRepository(getRequestOrg()), lookupAttrs);
+        if (principalName == null) {
+            logger.error("No principal could be mapped in oidc module.");
+            throw new AuthLoginException(RESOURCE_BUNDLE_NAME, BUNDLE_KEY_PRINCIPAL_MAPPING_FAILURE, null);
+        }
+    }
 
+    private PrincipalMapper instantiatePrincipalMapper() throws AuthLoginException {
+        try {
+            return Class.forName(config.getPrincipalMapperClass()).asSubclass(PrincipalMapper.class).
+                            newInstance();
+        } catch (Exception e) {
+            logger.error("Exception caught instantiating principal mapper class: " + e, e);
+            throw new AuthLoginException(RESOURCE_BUNDLE_NAME, BUNDLE_KEY_PRINCIPAL_MAPPER_INSTANTIATION_ERROR, null);
+        }
     }
 
     @Override
     public Principal getPrincipal() {
-        /*
-        TODO. A story will be added in sprint 53 to allow this authN module to be configured with an OIDC profile
-        url, which will be hit with the sub in the OIDC ID Token jwt, to pull some user-specific attributes, which will
-        then be mapped to the corresponding OpenAM attributes (like the OAuth2 LoginModule), which will then drive
-        user lookup in the OpenAM data store.
-        Right now, I am just returning the demo user, as this user is present in the root realm, and the Principal returned
-        from this method must be a Principal in the OpenAM datastore for authentication to succeed.
-         */
         return new Principal() {
             public String getName() {
-                return "demo";
+                return principalName;
             }
         };
     }

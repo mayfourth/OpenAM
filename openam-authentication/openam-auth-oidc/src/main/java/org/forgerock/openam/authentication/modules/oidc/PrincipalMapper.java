@@ -16,6 +16,7 @@
 
 package org.forgerock.openam.authentication.modules.oidc;
 
+import com.sun.identity.idm.AMIdentityRepository;
 import org.forgerock.json.jose.jws.SignedJwt;
 import org.forgerock.json.jose.jwt.JwtClaimsSet;
 
@@ -48,4 +49,6 @@ public interface PrincipalMapper {
                                                              SignedJwt jwt,
                                                              JwtClaimsSet jwtClaimsSet,
                                                              URL profileServiceUrl);
+
+    String lookupPrincipal(AMIdentityRepository idrepo, Map<String, Set<String>> attr);
 }
