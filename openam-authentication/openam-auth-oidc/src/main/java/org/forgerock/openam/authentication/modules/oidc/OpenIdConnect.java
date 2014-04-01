@@ -70,8 +70,6 @@ public class OpenIdConnect extends AMLoginModule {
 
     @Override
     public void init(Subject subject, Map sharedState, Map options) {
-        //TODO: the line below will throw a RuntimeException for various failure cases - need to determine who calls init,
-        //and what will happen in a RE is thrown here.
         config = new OpenIdConnectConfig(options);
         openIdResolverCache = InjectorHolder.getInstance(OpenIdResolverCache.class);
         Reject.ifNull(openIdResolverCache, "OpenIdResolverCache could not be obtained from the InjectorHolder!");

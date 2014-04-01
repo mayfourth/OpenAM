@@ -65,8 +65,7 @@ public class OpenIdResolverCacheImpl implements OpenIdResolverCache {
             }
         } else if (OpenIdConnectConfig.CRYPTO_CONTEXT_TYPE_JWK_URL.equals(cryptoContextType)) {
             newResolver = openIdResolverFactory.createJWKResolver(issuerFromJwk, cryptoContextValueUrl,
-                    HttpURLConnectionManager.getReadTimeout(),
-                    HttpURLConnectionManager.getConnectTimeout());
+                    HttpURLConnectionManager.getReadTimeout(), HttpURLConnectionManager.getConnectTimeout());
         } else {
             /*
             Should not enter this block, as the cryptoContextType was validated to be of the three expected types in
