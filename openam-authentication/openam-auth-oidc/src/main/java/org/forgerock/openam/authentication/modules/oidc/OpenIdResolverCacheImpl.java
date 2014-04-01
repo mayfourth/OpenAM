@@ -16,6 +16,7 @@
 
 package org.forgerock.openam.authentication.modules.oidc;
 
+import com.sun.identity.common.HttpURLConnectionManager;
 import org.forgerock.jaspi.modules.openid.exceptions.FailedToLoadJWKException;
 import org.forgerock.jaspi.modules.openid.resolvers.OpenIdResolver;
 import org.forgerock.jaspi.modules.openid.resolvers.OpenIdResolverFactory;
@@ -64,8 +65,8 @@ public class OpenIdResolverCacheImpl implements OpenIdResolverCache {
             }
         } else if (OpenIdConnectConfig.CRYPTO_CONTEXT_TYPE_JWK_URL.equals(cryptoContextType)) {
             newResolver = openIdResolverFactory.createJWKResolver(issuerFromJwk, cryptoContextValueUrl,
-                    OpenIdConnectGuiceModule.RESOLVER_FACTORY_READ_TIMEOUT_MILLIS,
-                    OpenIdConnectGuiceModule.RESOLVER_FACTORY_CONNECT_TIMEOUT_MILLIS);
+                    HttpURLConnectionManager.getReadTimeout(),
+                    HttpURLConnectionManager.getConnectTimeout());
         } else {
             /*
             Should not enter this block, as the cryptoContextType was validated to be of the three expected types in

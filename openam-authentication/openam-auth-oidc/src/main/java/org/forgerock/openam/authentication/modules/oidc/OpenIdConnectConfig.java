@@ -41,7 +41,6 @@ class OpenIdConnectConfig {
     static final String CRYPTO_CONTEXT_VALUE_KEY = "openam-auth-openidconnect-crypto-context-value";
     static final String PRINCIPAL_MAPPER_CLASS_KEY = "openam-auth-openidconnect-principal-mapper-class";
     static final String LOCAL_TO_JWK_ATTRIBUTE_MAPPINGS_KEY = "openam-auth-openidconnect-local-to-jwt-attribute-mappings";
-    static final String PROFILE_SERVICE_URL_KEY = "openam-auth-openidconnect-profile-service-url";
 
     static final String CRYPTO_CONTEXT_TYPE_CONFIG_URL = ".well-known/openid-configuration_url";
     static final String CRYPTO_CONTEXT_TYPE_JWK_URL = "jwk_url";
@@ -62,7 +61,6 @@ class OpenIdConnectConfig {
     private final String configuredIssuer;
     private final String cryptoContextType;
     private final String cryptoContextValue;
-    private final URL profileServiceUrl;
     private final String principalMapperClass;
     private final URL cryptoContextUrlValue;
     private final Map<String, String> localToJwkAttributeMappings;
@@ -74,18 +72,6 @@ class OpenIdConnectConfig {
         cryptoContextType = CollectionHelper.getMapAttr(options, CRYPTO_CONTEXT_TYPE_KEY);
         cryptoContextValue = CollectionHelper.getMapAttr(options, CRYPTO_CONTEXT_VALUE_KEY);
         principalMapperClass = CollectionHelper.getMapAttr(options, PRINCIPAL_MAPPER_CLASS_KEY);
-        String profileServiceString = CollectionHelper.getMapAttr(options, PROFILE_SERVICE_URL_KEY);
-        if (profileServiceString == null) {
-            profileServiceUrl = null;
-        } else {
-            try {
-                profileServiceUrl = new URL(profileServiceString);
-            } catch (MalformedURLException e) {
-                final String message = "The profile service url string, " + profileServiceString + " is not in valid URL format: " + e;
-                logger.error(message, e);
-                throw new IllegalArgumentException(message);
-            }
-        }
         Set<String> configuredLocalToJwkAttributeMappings = (Set<String>)options.get(LOCAL_TO_JWK_ATTRIBUTE_MAPPINGS_KEY);
         Reject.ifNull(headerName, HEADER_NAME_KEY + " must be set in LoginModule options.");
         Reject.ifNull(configuredIssuer, ISSUER_NAME_KEY + " must be set in LoginModule options.");
@@ -123,7 +109,19 @@ class OpenIdConnectConfig {
                 continue;
             }
             StringTokenizer tokenizer = new StringTokenizer(mapping, EQUALS);
-            parsedMappings.put(tokenizer.nextToken(), tokenizer.nextToken());
+            final String key = tokenizer.nextToken();
+            final String value = tokenizer.nextToken();
+            /*
+            The ldap_attr=jwt_attr mapping is user-generated, so I want to warn about duplicate entries. In a HashMap,
+            repeated insertion of the same key will over-write previous entries, but I want to warn about duplicate
+            entries, and will persist the first entry.
+             */
+            if (!parsedMappings.containsKey(key)) {
+                parsedMappings.put(key, value);
+            } else {
+                logger.warning("In OpenIdConnectConfig.parseLocalToJwkMappings, the user-entered attribute mappings " +
+                        "contain duplicate entries. The first entry will be preserved:  " + configuredMappings);
+            }
         }
         if (parsedMappings.isEmpty()) {
             throw new IllegalArgumentException("The " + LOCAL_TO_JWK_ATTRIBUTE_MAPPINGS_KEY +
@@ -154,10 +152,6 @@ class OpenIdConnectConfig {
 
     public URL getCryptoContextUrlValue() {
         return cryptoContextUrlValue;
-    }
-
-    public URL getProfileServiceUrl() {
-        return profileServiceUrl;
     }
 
     public Map<String, String> getLocalToJwkAttributeMappings() {

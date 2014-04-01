@@ -20,7 +20,6 @@ import static org.forgerock.openam.authentication.modules.oidc.OpenIdConnectConf
 import com.sun.identity.authentication.spi.AMLoginModule;
 import com.sun.identity.authentication.spi.AuthLoginException;
 import com.sun.identity.authentication.util.ISAuthConstants;
-import com.sun.identity.shared.datastruct.CollectionHelper;
 import com.sun.identity.shared.debug.Debug;
 import org.forgerock.guice.core.InjectorHolder;
 import org.forgerock.jaspi.modules.openid.exceptions.FailedToLoadJWKException;
@@ -37,8 +36,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.login.LoginException;
 import javax.servlet.http.HttpServletRequest;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.security.Principal;
 import java.util.Map;
 import java.util.Set;
@@ -139,7 +136,7 @@ public class OpenIdConnect extends AMLoginModule {
         }
         try {
             resolver.validateIdentity(signedJwt);
-            mapPrincipal(jwtClaimSet, signedJwt);
+            principalName = mapPrincipal(jwtClaimSet);
             return ISAuthConstants.LOGIN_SUCCEED;
         } catch (OpenIdConnectVerificationException oice) {
             logger.warning("Verification of ID Token failed: " + oice);
@@ -147,20 +144,11 @@ public class OpenIdConnect extends AMLoginModule {
         }
     }
 
-    /*
-    This method maps the jwt to a local Principal.
-     */
-    private void mapPrincipal(JwtClaimsSet jwtClaimsSet, SignedJwt signedJwt) throws AuthLoginException {
+    private String mapPrincipal(JwtClaimsSet jwtClaimsSet) throws AuthLoginException {
         PrincipalMapper principalMapper = instantiatePrincipalMapper();
         Map<String, Set<String>> lookupAttrs =
-                principalMapper.getAttributesForPrincipalLookup(
-                        config.getLocalToJwkAttributeMappings(),
-                        signedJwt, jwtClaimsSet, config.getProfileServiceUrl());
-        principalName = principalMapper.lookupPrincipal(getAMIdentityRepository(getRequestOrg()), lookupAttrs);
-        if (principalName == null) {
-            logger.error("No principal could be mapped in oidc module.");
-            throw new AuthLoginException(RESOURCE_BUNDLE_NAME, BUNDLE_KEY_PRINCIPAL_MAPPING_FAILURE, null);
-        }
+                principalMapper.getAttributesForPrincipalLookup(config.getLocalToJwkAttributeMappings(), jwtClaimsSet);
+        return principalMapper.lookupPrincipal(getAMIdentityRepository(getRequestOrg()), lookupAttrs);
     }
 
     private PrincipalMapper instantiatePrincipalMapper() throws AuthLoginException {

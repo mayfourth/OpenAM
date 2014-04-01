@@ -27,10 +27,13 @@ import java.util.Set;
 import static org.testng.Assert.assertTrue;
 
 public class DefaultPrincipalMapperTest {
+    private static final String EMAIL = "email";
+    private static final String AM_EMAIL = "mail";
+    private static final String EMAIL_VALUE = "bobo@bobo.com";
     private static final String SUB = "sub";
-    private static final String ID = "id";
+    private static final String UID = "uid";
     private static final String ISS = "iss";
-    private static final String SUBJECT = "112403712094132422537";
+    private static final String SUBJECT_VALUE = "112403712094132422537";
     private static final String ISSUER = "accounts.google.com";
     private Map<String, Object> jwtMappings;
     private Map<String, String> attributeMappings;
@@ -38,13 +41,13 @@ public class DefaultPrincipalMapperTest {
     @BeforeTest
     public void initialize() {
         jwtMappings = new HashMap<String, Object>();
-        jwtMappings.put(SUB, SUBJECT);
+        jwtMappings.put(SUB, SUBJECT_VALUE);
         jwtMappings.put(ISS, ISSUER);
+        jwtMappings.put(EMAIL, EMAIL_VALUE);
 
         attributeMappings = new HashMap<String, String>();
-        attributeMappings.put(ID, SUB);
-
-
+        attributeMappings.put(UID, SUB);
+        attributeMappings.put(AM_EMAIL, EMAIL);
     }
 
     @Test
@@ -52,7 +55,8 @@ public class DefaultPrincipalMapperTest {
         final JwtClaimsSet claimsSet = new JwtClaimsSet(jwtMappings);
         final DefaultPrincipalMapper defaultPrincipalMapper = new DefaultPrincipalMapper();
         final Map<String, Set<String>> attrs =
-                defaultPrincipalMapper.getAttributesForPrincipalLookup(attributeMappings, null, claimsSet, null);
-        assertTrue(SUBJECT.equals(attrs.get(ID).iterator().next()));
+                defaultPrincipalMapper.getAttributesForPrincipalLookup(attributeMappings, claimsSet);
+        assertTrue(SUBJECT_VALUE.equals(attrs.get(UID).iterator().next()));
+        assertTrue(EMAIL_VALUE.equals(attrs.get(AM_EMAIL).iterator().next()));
     }
 }

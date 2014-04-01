@@ -51,4 +51,12 @@ public class OpenIdConnectConfigTest {
         OpenIdConnectConfig config = new OpenIdConnectConfig(configState);
         assertTrue("sub".equals(config.getLocalToJwkAttributeMappings().get("id")));
     }
+
+    @Test
+    public void testDuplicateMappingEntries() {
+        configState.get(OpenIdConnectConfig.LOCAL_TO_JWK_ATTRIBUTE_MAPPINGS_KEY).add("id=bobo");
+        OpenIdConnectConfig config = new OpenIdConnectConfig(configState);
+        assertTrue(config.getLocalToJwkAttributeMappings().size() == 1);
+        assertTrue("sub".equals(config.getLocalToJwkAttributeMappings().get("id")));
+    }
 }
