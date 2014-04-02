@@ -87,29 +87,22 @@ public class DefaultPrincipalMapper implements PrincipalMapper {
             return null;
         }
         try {
-            final IdSearchResults results = idrepo.searchIdentities(IdType.USER, "*", getSearchControl(searchAttributes));
-            if (IdSearchResults.SUCCESS == results.getErrorCode()) {
-                if (results.getSearchResults().size() == SINGLE_SEARCH_RESULT) {
-                    //Even if IdSearchResults does not hit a match, we enter this block. Also the size of the resultSet does not
-                    //seem accurate - it has a size of 1 even if no result is returned. Only testing iter.hasNext will determine if
-                    // there actually are results.
-                    Iterator<AMIdentity> iter = results.getSearchResults().iterator();
-                    if (iter.hasNext()) {
-                        return iter.next().getName();
-                    } else {
-                        logger.warning("In lookupPrincipal, result set has no results for searchAttributes: " + searchAttributes);
-                    }
+            final IdSearchResults searchResults = idrepo.searchIdentities(IdType.USER, "*", getSearchControl(searchAttributes));
+            if ((searchResults != null) && (IdSearchResults.SUCCESS == searchResults.getErrorCode())) {
+                Set<AMIdentity> resultSet = searchResults.getSearchResults();
+                if (resultSet.size() == SINGLE_SEARCH_RESULT) {
+                    return resultSet.iterator().next().getName();
                 } else {
-                    logger.warning("In lookupPrincipal, result set has unexpected cardinality: " + results.getSearchResults().size());
+                    logger.warning("In lookupPrincipal, result set did not return a single result: " + resultSet.size());
                 }
             } else {
-                logger.warning("In lookupPrincipal, IdSearchResults returned non-success status: " + results.getErrorCode());
+                logger.warning("In lookupPrincipal, IdSearchResults returned non-success status: " + searchResults.getErrorCode());
             }
         } catch (IdRepoException ex) {
-            logger.error("DefaultPrincpalMapper.lookupPrincipal: Problem while  "
+            logger.error("DefaultPrincipalMapper.lookupPrincipal: Problem while  "
                     + "searching  for the user: " + ex, ex);
         } catch (SSOException ex) {
-            logger.error("DefaultPrincpalMapper.lookupPrincipal: Problem while  "
+            logger.error("DefaultPrincipalMapper.lookupPrincipal: Problem while  "
                     + "searching  for the user: " + ex, ex);
         }
         logger.error("No principal could be mapped in the DefaultPrincipalMapper.");

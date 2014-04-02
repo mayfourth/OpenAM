@@ -28,6 +28,7 @@ import static org.testng.Assert.assertTrue;
 
 public class OpenIdConnectConfigTest {
     private Map<String, Set<String>> configState;
+    private static final String PRINCIPAL_MAPPER  = "org.forgerock.openam.authentication.modules.oidc.DefaultPrincipalMapper";
 
     @BeforeTest
     void initalize() {
@@ -36,7 +37,7 @@ public class OpenIdConnectConfigTest {
         configState.put(OpenIdConnectConfig.ISSUER_NAME_KEY, setOf("accounts.google.com"));
         configState.put(OpenIdConnectConfig.CRYPTO_CONTEXT_TYPE_KEY, setOf(OpenIdConnectConfig.CRYPTO_CONTEXT_TYPE_CONFIG_URL));
         configState.put(OpenIdConnectConfig.CRYPTO_CONTEXT_VALUE_KEY, setOf("https://accounts.google.com/.well-known/openid-configuration"));
-        configState.put(OpenIdConnectConfig.PRINCIPAL_MAPPER_CLASS_KEY, setOf("org.forgerock.openam.authentication.modules.oidc.DefaultPrincipalMapper"));
+        configState.put(OpenIdConnectConfig.PRINCIPAL_MAPPER_CLASS_KEY, setOf(PRINCIPAL_MAPPER));
         configState.put(OpenIdConnectConfig.LOCAL_TO_JWK_ATTRIBUTE_MAPPINGS_KEY, setOf("id=sub"));
     }
 
@@ -59,4 +60,25 @@ public class OpenIdConnectConfigTest {
         assertTrue(config.getLocalToJwkAttributeMappings().size() == 1);
         assertTrue("sub".equals(config.getLocalToJwkAttributeMappings().get("id")));
     }
+
+    @Test
+    public void testBasicAttributeLookup() {
+        OpenIdConnectConfig config = new OpenIdConnectConfig(configState);
+        assertTrue(PRINCIPAL_MAPPER.equals(config.getPrincipalMapperClass()));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testInvalidCryptoContext() {
+        configState.remove(OpenIdConnectConfig.CRYPTO_CONTEXT_TYPE_KEY);
+        configState.put(OpenIdConnectConfig.CRYPTO_CONTEXT_TYPE_KEY, setOf("bogus_type"));
+        new OpenIdConnectConfig(configState);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testInvalidUrl() {
+        configState.remove(OpenIdConnectConfig.CRYPTO_CONTEXT_VALUE_KEY);
+        configState.put(OpenIdConnectConfig.CRYPTO_CONTEXT_VALUE_KEY, setOf("bogus_url"));
+        new OpenIdConnectConfig(configState);
+    }
 }
+

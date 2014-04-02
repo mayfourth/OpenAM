@@ -146,6 +146,9 @@ public class OpenIdConnect extends AMLoginModule {
         PrincipalMapper principalMapper = instantiatePrincipalMapper();
         Map<String, Set<String>> lookupAttrs =
                 principalMapper.getAttributesForPrincipalLookup(config.getLocalToJwkAttributeMappings(), jwtClaimsSet);
+        if (lookupAttrs.isEmpty()) {
+            throw new AuthLoginException(RESOURCE_BUNDLE_NAME, BUNDLE_KEY_NO_ATTRIBUTES_MAPPED, null);
+        }
         return principalMapper.lookupPrincipal(getAMIdentityRepository(getRequestOrg()), lookupAttrs);
     }
 

@@ -25,7 +25,11 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.testng.Assert.assertTrue;
-
+/*
+Not testing the lookupPrincipal method, as the AMIdentityRespository is final, and thus requires PowerMock. Introducing
+byte-code engineering to test the simple consumption of the AMIdentityRepository in the DefaultPrincipalMapper not
+worth the downsides of PowerMock.
+ */
 public class DefaultPrincipalMapperTest {
     private static final String EMAIL = "email";
     private static final String AM_EMAIL = "mail";
@@ -37,6 +41,8 @@ public class DefaultPrincipalMapperTest {
     private static final String ISSUER = "accounts.google.com";
     private Map<String, Object> jwtMappings;
     private Map<String, String> attributeMappings;
+    private JwtClaimsSet claimsSet;
+    private DefaultPrincipalMapper defaultPrincipalMapper;
 
     @BeforeTest
     public void initialize() {
@@ -48,12 +54,13 @@ public class DefaultPrincipalMapperTest {
         attributeMappings = new HashMap<String, String>();
         attributeMappings.put(UID, SUB);
         attributeMappings.put(AM_EMAIL, EMAIL);
+
+        claimsSet = new JwtClaimsSet(jwtMappings);
+        defaultPrincipalMapper = new DefaultPrincipalMapper();
     }
 
     @Test
     public void testBasicJwtMapping() {
-        final JwtClaimsSet claimsSet = new JwtClaimsSet(jwtMappings);
-        final DefaultPrincipalMapper defaultPrincipalMapper = new DefaultPrincipalMapper();
         final Map<String, Set<String>> attrs =
                 defaultPrincipalMapper.getAttributesForPrincipalLookup(attributeMappings, claimsSet);
         assertTrue(SUBJECT_VALUE.equals(attrs.get(UID).iterator().next()));

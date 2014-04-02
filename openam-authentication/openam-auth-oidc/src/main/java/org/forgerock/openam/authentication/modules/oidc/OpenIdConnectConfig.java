@@ -54,6 +54,7 @@ class OpenIdConnectConfig {
     static final String BUNDLE_KEY_JWK_NOT_LOADED = "jwk_not_loaded";
     static final String BUNDLE_KEY_PRINCIPAL_MAPPER_INSTANTIATION_ERROR = "principal_mapper_instantiation_error";
     static final String BUNDLE_KEY_PRINCIPAL_MAPPING_FAILURE = "principal_mapping_failure";
+    static final String BUNDLE_KEY_NO_ATTRIBUTES_MAPPED = "no_attributes_mapped";
 
     private static final String EQUALS = "=";
 
