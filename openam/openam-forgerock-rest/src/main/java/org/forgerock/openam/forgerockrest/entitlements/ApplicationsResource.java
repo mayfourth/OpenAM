@@ -18,6 +18,7 @@ package org.forgerock.openam.forgerockrest.entitlements;
 import com.sun.identity.entitlement.Application;
 import com.sun.identity.entitlement.EntitlementException;
 import com.sun.identity.shared.debug.Debug;
+import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.forgerock.json.fluent.JsonValue;
@@ -149,6 +150,10 @@ public class ApplicationsResource implements CollectionResourceProvider {
 
     }
 
+    protected ApplicationWrapper createApplicationWrapper(JsonValue jsonValue) throws IOException {
+        return mapper.readValue(jsonValue.toString(), ApplicationWrapper.class);
+    }
+
     /**
      * Creates an {@link ApplicationWrapper} to hold the {@link Application} object, after having deserialized it
      * via Jackson.
@@ -162,7 +167,7 @@ public class ApplicationsResource implements CollectionResourceProvider {
     private ApplicationWrapper createApplicationWrapper(JsonValue jsonValue, Subject mySubject, String realm)
             throws IOException, EntitlementException {
 
-        final ApplicationWrapper wrapp = mapper.readValue(jsonValue.toString(), ApplicationWrapper.class);
+        final ApplicationWrapper wrapp = createApplicationWrapper(jsonValue);
 
         final JsonValue appTypeValue = jsonValue.get("applicationType");
 
