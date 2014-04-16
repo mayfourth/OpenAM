@@ -21,8 +21,7 @@ import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationManag
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationTypeManagerWrapper;
 import org.testng.annotations.BeforeMethod;
 
-import static org.mockito.Mockito.*;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * @since 12.0.0
@@ -45,4 +44,15 @@ public class ApplicationsResourceTest {
         applicationsResource = new ApplicationsResource(debug, applicationManagerWrapper,
                 applicationTypeManagerWrapper);
     }
+
+
+
+    // Davids Tests
+
+
+    // Roberts Tests
+
+
+    // Phills Tests
+
 }
