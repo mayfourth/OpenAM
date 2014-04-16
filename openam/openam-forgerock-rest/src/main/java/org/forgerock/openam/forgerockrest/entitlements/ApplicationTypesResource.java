@@ -139,7 +139,7 @@ public class ApplicationTypesResource implements CollectionResourceProvider {
 
         if (mySubject == null) {
             debug.error("Error retrieving Subject identification from request.");
-            handler.handleError(ResourceException.getException(ResourceException.INTERNAL_ERROR));
+            handler.handleError(ResourceException.getException(ResourceException.FORBIDDEN));
             return;
         }
 
@@ -228,11 +228,11 @@ public class ApplicationTypesResource implements CollectionResourceProvider {
 
         if (mySubject == null) {
             debug.error("Error retrieving Subject identification from request.");
-            handler.handleError(ResourceException.getException(ResourceException.INTERNAL_ERROR));
+            handler.handleError(ResourceException.getException(ResourceException.FORBIDDEN));
             return;
         }
 
-        final ApplicationType applType = ApplicationTypeManager.getAppplicationType(mySubject, resourceId);
+        final ApplicationType applType = typeManager.getApplicationType(mySubject, resourceId);
         final ApplicationTypeWrapper wrap = new ApplicationTypeWrapper(applType);
 
         if (applType == null) {
