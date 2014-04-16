@@ -17,6 +17,8 @@
 package org.forgerock.openam.forgerockrest.entitlements;
 
 import com.sun.identity.shared.debug.Debug;
+import org.forgerock.json.resource.Resource;
+import org.forgerock.json.resource.ResultHandler;
 import org.forgerock.json.resource.ServerContext;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationManagerWrapper;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationTypeManagerWrapper;
@@ -24,11 +26,8 @@ import org.forgerock.openam.rest.resource.SubjectContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import javax.security.auth.Subject;
-
 import static org.fest.assertions.Fail.fail;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -41,6 +40,7 @@ public class ApplicationsResourceTest {
     private Debug debug;
     private ApplicationManagerWrapper applicationManagerWrapper;
     private ApplicationTypeManagerWrapper applicationTypeManagerWrapper;
+    private ResultHandler<Resource> mockResultHandler;
 
     @BeforeMethod
     public void setUp() {
@@ -51,6 +51,8 @@ public class ApplicationsResourceTest {
 
         applicationsResource = new ApplicationsResource(debug, applicationManagerWrapper,
                 applicationTypeManagerWrapper);
+
+        mockResultHandler = mock(ResultHandler.class);
     }
 
 
@@ -60,18 +62,17 @@ public class ApplicationsResourceTest {
 
     // Roberts Tests
     @Test
-    public void shouldReturnNullIfSubjectNullOnRead() {
+    public void shouldThrowInternalErrorIfSubjectNotFoundOnRead() {
         // Given
         SubjectContext mockSubjectContext = mock(SubjectContext.class);
-        ServerContext mockContext = new ServerContext(mockSubjectContext);
-        Subject mockSubject = new Subject();
-        given(mockContext.asContext(any(Class.class))).willReturn(mockSubjectContext);
-        given(mockSubjectContext.getCallerSubject()).willReturn(mockSubject);
+        ServerContext context = new ServerContext(mockSubjectContext);
+        given(mockSubjectContext.getCallerSubject()).willReturn(null);
 
         // When
-        applicationsResource.readInstance(mockContext, null, null, null);
+        applicationsResource.readInstance(context, null, null, null);
 
         // Then
+
     }
 
     @Test
