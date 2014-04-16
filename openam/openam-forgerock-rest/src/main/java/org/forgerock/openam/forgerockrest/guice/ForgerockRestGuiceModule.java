@@ -35,6 +35,7 @@ import org.forgerock.openam.forgerockrest.entitlements.PolicyStoreProvider;
 import org.forgerock.openam.forgerockrest.entitlements.PrivilegePolicyStoreProvider;
 import org.forgerock.openam.forgerockrest.entitlements.ResourceErrorHandler;
 import org.forgerock.openam.forgerockrest.entitlements.query.QueryAttribute;
+import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationTypeManagerWrapper;
 import org.forgerock.openam.rest.resource.RealmRouterConnectionFactory;
 import org.forgerock.openam.rest.router.RestEndpointManager;
 import org.forgerock.openam.rest.router.RestEndpointManagerProxy;
@@ -86,6 +87,7 @@ public class ForgerockRestGuiceModule extends AbstractModule {
                 .annotatedWith(Names.named(PrivilegePolicyStoreProvider.POLICY_QUERY_ATTRIBUTES))
                 .toProvider(PolicyQueryAttributesMapProvider.class)
                 .asEagerSingleton();
+        bind(ApplicationTypeManagerWrapper.class).in(Singleton.class);
 
         // vvvv Rest Endpoint Bindings vvvv
         bind(RestEndpointManager.class).to(RestEndpointManagerProxy.class);

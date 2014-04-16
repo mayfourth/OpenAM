@@ -46,6 +46,7 @@ import org.forgerock.json.resource.SecurityContext;
 import org.forgerock.json.resource.ServerContext;
 import org.forgerock.json.resource.UpdateRequest;
 import org.forgerock.openam.forgerockrest.RestUtils;
+import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationTypeManagerWrapper;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationTypeWrapper;
 import org.forgerock.openam.rest.resource.SubjectContext;
 
@@ -57,6 +58,7 @@ import org.forgerock.openam.rest.resource.SubjectContext;
  */
 public class ApplicationTypesResource implements CollectionResourceProvider {
 
+    private final ApplicationTypeManagerWrapper typeManager;
     private final Debug debug;
 
     /**
@@ -65,7 +67,8 @@ public class ApplicationTypesResource implements CollectionResourceProvider {
      * @param debug Debugger to use
      */
     @Inject
-    public ApplicationTypesResource(@Named("frRest") Debug debug) {
+    public ApplicationTypesResource(final ApplicationTypeManagerWrapper typeManager, @Named("frRest") Debug debug) {
+        this.typeManager = typeManager;
         this.debug = debug;
     }
 
@@ -141,11 +144,11 @@ public class ApplicationTypesResource implements CollectionResourceProvider {
         }
 
         //select
-        final Set<String> appTypeNames =  ApplicationTypeManager.getApplicationTypeNames(mySubject);
+        final Set<String> appTypeNames =  typeManager.getApplicationTypeNames(mySubject);
         List<ApplicationTypeWrapper> appTypes = new LinkedList<ApplicationTypeWrapper>();
 
         for (String appTypeName : appTypeNames) {
-            final ApplicationType type = ApplicationTypeManager.getAppplicationType(mySubject, appTypeName);
+            final ApplicationType type = typeManager.getApplicationType(mySubject, appTypeName);
             final ApplicationTypeWrapper wrap = new ApplicationTypeWrapper(type);
             if (type != null) {
                 appTypes.add(wrap);

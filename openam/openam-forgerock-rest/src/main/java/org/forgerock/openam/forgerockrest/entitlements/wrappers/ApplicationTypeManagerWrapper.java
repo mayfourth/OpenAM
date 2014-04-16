@@ -18,12 +18,25 @@ package org.forgerock.openam.forgerockrest.entitlements.wrappers;
 import com.sun.identity.entitlement.ApplicationType;
 import com.sun.identity.entitlement.ApplicationTypeManager;
 import javax.security.auth.Subject;
+import java.util.Set;
 
 /**
  * Simple wrapper to allow abstraction out for the static
  * calls in {@link ApplicationTypeManager}.
  */
 public class ApplicationTypeManagerWrapper {
+
+    /**
+     * Returns a list of application type names.
+     *
+     * @param adminSubject
+     *         the admin subject
+     *
+     * @return the list of application type names
+     */
+    public Set<String> getApplicationTypeNames(final Subject adminSubject) {
+        return ApplicationTypeManager.getApplicationTypeNames(adminSubject);
+    }
 
     /**
      * Returns the {@link ApplicationType} appropriate to the
