@@ -17,12 +17,18 @@
 package org.forgerock.openam.forgerockrest.entitlements;
 
 import com.sun.identity.shared.debug.Debug;
+import org.forgerock.json.resource.ServerContext;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationManagerWrapper;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationTypeManagerWrapper;
+import org.forgerock.openam.rest.resource.SubjectContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import javax.security.auth.Subject;
+
 import static org.fest.assertions.Fail.fail;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -55,7 +61,17 @@ public class ApplicationsResourceTest {
     // Roberts Tests
     @Test
     public void shouldReturnNullIfSubjectNullOnRead() {
-        fail();
+        // Given
+        SubjectContext mockSubjectContext = mock(SubjectContext.class);
+        ServerContext mockContext = new ServerContext(mockSubjectContext);
+        Subject mockSubject = new Subject();
+        given(mockContext.asContext(any(Class.class))).willReturn(mockSubjectContext);
+        given(mockSubjectContext.getCallerSubject()).willReturn(mockSubject);
+
+        // When
+        applicationsResource.readInstance(mockContext, null, null, null);
+
+        // Then
     }
 
     @Test
