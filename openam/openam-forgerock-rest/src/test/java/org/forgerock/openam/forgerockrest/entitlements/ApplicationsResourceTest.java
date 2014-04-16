@@ -39,8 +39,8 @@ import static org.forgerock.json.fluent.JsonValue.object;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.testng.Assert.assertEquals;
 
 /**
@@ -82,10 +82,13 @@ public class ApplicationsResourceTest {
         given(mockSubjectContext.getCallerSubject()).willReturn(null);
 
         // When
-        applicationsResource.readInstance(context, null, null, null);
+        applicationsResource.readInstance(context, null, null, mockResultHandler);
 
         // Then
-
+        ArgumentCaptor<ResourceException> captor = ArgumentCaptor.forClass(ResourceException.class);
+        verify(mockResultHandler).handleError(captor.capture());
+        ResourceException value = captor.getValue();
+        System.out.println(value);
     }
 
     @Test
