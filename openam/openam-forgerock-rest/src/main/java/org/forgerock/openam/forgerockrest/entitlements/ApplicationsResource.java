@@ -18,11 +18,23 @@ package org.forgerock.openam.forgerockrest.entitlements;
 import com.sun.identity.entitlement.Application;
 import com.sun.identity.entitlement.EntitlementException;
 import com.sun.identity.shared.debug.Debug;
-import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.forgerock.json.fluent.JsonValue;
-import org.forgerock.json.resource.*;
+import org.forgerock.json.resource.ActionRequest;
+import org.forgerock.json.resource.CollectionResourceProvider;
+import org.forgerock.json.resource.CreateRequest;
+import org.forgerock.json.resource.DeleteRequest;
+import org.forgerock.json.resource.PatchRequest;
+import org.forgerock.json.resource.QueryRequest;
+import org.forgerock.json.resource.QueryResult;
+import org.forgerock.json.resource.QueryResultHandler;
+import org.forgerock.json.resource.ReadRequest;
+import org.forgerock.json.resource.Resource;
+import org.forgerock.json.resource.ResourceException;
+import org.forgerock.json.resource.ResultHandler;
+import org.forgerock.json.resource.ServerContext;
+import org.forgerock.json.resource.UpdateRequest;
 import org.forgerock.openam.forgerockrest.RestUtils;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationManagerWrapper;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationTypeManagerWrapper;
@@ -150,10 +162,6 @@ public class ApplicationsResource implements CollectionResourceProvider {
 
     }
 
-    protected ApplicationWrapper createApplicationWrapper(JsonValue jsonValue) throws IOException {
-        return mapper.readValue(jsonValue.toString(), ApplicationWrapper.class);
-    }
-
     /**
      * Creates an {@link ApplicationWrapper} to hold the {@link Application} object, after having deserialized it
      * via Jackson.
@@ -164,10 +172,10 @@ public class ApplicationsResource implements CollectionResourceProvider {
      * @return An ApplicationWrapper containing an Application, null
      * @throws IOException If there were issues generating the
      */
-    private ApplicationWrapper createApplicationWrapper(JsonValue jsonValue, Subject mySubject, String realm)
+    protected ApplicationWrapper createApplicationWrapper(JsonValue jsonValue, Subject mySubject, String realm)
             throws IOException, EntitlementException {
 
-        final ApplicationWrapper wrapp = createApplicationWrapper(jsonValue);
+        final ApplicationWrapper wrapp = mapper.readValue(jsonValue.toString(), ApplicationWrapper.class);
 
         final JsonValue appTypeValue = jsonValue.get("applicationType");
 
