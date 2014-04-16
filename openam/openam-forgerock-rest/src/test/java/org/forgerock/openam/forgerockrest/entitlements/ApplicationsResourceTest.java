@@ -33,6 +33,7 @@ import org.testng.annotations.Test;
 
 import javax.security.auth.Subject;
 
+import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
 import static org.forgerock.json.fluent.JsonValue.json;
 import static org.forgerock.json.fluent.JsonValue.object;
@@ -87,8 +88,7 @@ public class ApplicationsResourceTest {
         // Then
         ArgumentCaptor<ResourceException> captor = ArgumentCaptor.forClass(ResourceException.class);
         verify(mockResultHandler).handleError(captor.capture());
-        ResourceException value = captor.getValue();
-        System.out.println(value);
+        assertThat(captor.getValue().getCode()).isEqualTo(ResourceException.INTERNAL_ERROR);
     }
 
     @Test
