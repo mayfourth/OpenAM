@@ -24,7 +24,7 @@
  *
  * $Id: Application.java,v 1.7 2010/01/08 22:20:47 veiming Exp $
  *
- * Portions copyright 2013 ForgeRock, Inc.
+ * Portions copyright 2013-2014 ForgeRock, Inc.
  */
 package com.sun.identity.entitlement;
 
@@ -105,7 +105,14 @@ public class Application implements Cloneable {
     private ISaveIndex saveIndexInstance;
     private ISearchIndex searchIndexInstance;
 
-    protected Application() {
+    public Application() {
+    }
+
+    public void setApplicationType(ApplicationType applicationType) {
+        this.applicationType = applicationType;
+    }
+    public String getRealm() {
+        return realm;
     }
 
     /**
@@ -740,8 +747,12 @@ public class Application implements Cloneable {
         }
     }
 
-    protected void setRealm(String realm) {
+    public void setRealm(String realm) {
         this.realm = realm;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public boolean canBeDeleted() {
