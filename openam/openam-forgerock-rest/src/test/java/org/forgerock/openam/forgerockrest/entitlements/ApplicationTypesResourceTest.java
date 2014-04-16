@@ -16,13 +16,16 @@
 package org.forgerock.openam.forgerockrest.entitlements;
 
 import com.sun.identity.shared.debug.Debug;
+import org.forgerock.json.resource.ReadRequest;
+import org.forgerock.json.resource.Resource;
 import org.forgerock.json.resource.ResultHandler;
 import org.forgerock.json.resource.ServerContext;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationTypeManagerWrapper;
 import org.forgerock.openam.rest.resource.SubjectContext;
-import org.junit.Before;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 public class ApplicationTypesResourceTest {
 
@@ -31,18 +34,23 @@ public class ApplicationTypesResourceTest {
     private ApplicationTypeManagerWrapper typeManager;
     private SubjectContext subjectContext;
     private ServerContext serverContext;
-    private ResultHandler resultHandler;
 
-    @Before
+    @BeforeMethod
     public void setUp() {
         subjectContext = mock(SubjectContext.class);
-        serverContext = mock(ServerContext.class);
-        resultHandler = mock(ResultHandler.class);
+        serverContext = new ServerContext(subjectContext);
         typeManager = mock(ApplicationTypeManagerWrapper.class);
-        Debug mockDebug = mock(Debug.class);
-
-        testResource = new ApplicationTypesResource(typeManager, mockDebug);
+        testResource = new ApplicationTypesResource(typeManager, mock(Debug.class));
     }
 
+    @Test
+    public void undefinedSubjectShouldFail() {
+        ReadRequest request = mock(ReadRequest.class);
+        ResultHandler<Resource> handler = mock(ResultHandler.class);
+
+        testResource.readInstance(serverContext, "test", request, handler);
+
+        verifyNoMoreInteractions(request, handler, typeManager, subjectContext, serverContext);
+    }
 
 }
