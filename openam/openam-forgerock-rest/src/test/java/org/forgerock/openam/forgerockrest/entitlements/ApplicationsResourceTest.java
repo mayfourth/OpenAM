@@ -16,13 +16,10 @@
 
 package org.forgerock.openam.forgerockrest.entitlements;
 
+import com.sun.identity.entitlement.Application;
 import com.sun.identity.entitlement.EntitlementException;
 import com.sun.identity.shared.debug.Debug;
-import org.forgerock.json.resource.DeleteRequest;
-import org.forgerock.json.resource.Resource;
-import org.forgerock.json.resource.ResourceException;
-import org.forgerock.json.resource.ResultHandler;
-import org.forgerock.json.resource.ServerContext;
+import org.forgerock.json.resource.*;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationManagerWrapper;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationTypeManagerWrapper;
 import org.forgerock.openam.rest.resource.RealmContext;
@@ -38,10 +35,7 @@ import static org.fest.assertions.Fail.fail;
 import static org.forgerock.json.fluent.JsonValue.json;
 import static org.forgerock.json.fluent.JsonValue.object;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.*;
 import static org.testng.Assert.assertEquals;
 
 /**
@@ -92,18 +86,25 @@ public class ApplicationsResourceTest {
     }
 
     @Test
-    public void shouldThrowInternalErrorIfResourceCouldNotBeRetrievedOnRead() {
-        fail();
-    }
+    public void shouldUseResourceIDForFetchingApplicationOnRead() throws EntitlementException {
+        // Given
+        String resourceID = "ferret";
 
-    @Test
-    public void shouldThrowInternalErrorIfJSONFormatFailsOnRead() {
-        fail();
-    }
+        SubjectContext mockSubjectContext = mock(SubjectContext.class);
+        RealmContext realmContext = new RealmContext(mockSubjectContext, "badger");
+        ServerContext serverContext = new ServerContext(realmContext);
 
-    @Test
-    public void shouldUseResourceIDForFetchingApplicationOnRead() {
-        fail();
+        Subject subject = new Subject();
+        given(mockSubjectContext.getCallerSubject()).willReturn(subject);
+
+        Application mockApplication = mock(Application.class);
+        given(applicationManagerWrapper.getApplication(any(Subject.class), anyString(), anyString())).willReturn(mockApplication);
+
+        // When
+        applicationsResource.readInstance(serverContext, resourceID, null, mockResultHandler);
+
+        // Then
+        verify(applicationManagerWrapper).getApplication(any(Subject.class), anyString(), eq(resourceID));
     }
 
     @Test
