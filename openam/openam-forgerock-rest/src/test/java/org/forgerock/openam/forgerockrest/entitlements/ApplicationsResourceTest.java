@@ -20,7 +20,9 @@ import com.sun.identity.shared.debug.Debug;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationManagerWrapper;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationTypeManagerWrapper;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
+import static org.fest.assertions.Fail.fail;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -51,7 +53,35 @@ public class ApplicationsResourceTest {
 
 
     // Roberts Tests
+    @Test
+    public void shouldReturnNullIfSubjectNullOnRead() {
+        fail();
+    }
 
+    @Test
+    public void shouldThrowInternalErrorIfResourceCouldNotBeRetrievedOnRead() {
+        fail();
+    }
+
+    @Test
+    public void shouldThrowInternalErrorIfJSONFormatFailsOnRead() {
+        fail();
+    }
+
+    @Test
+    public void shouldUseResourceIDForFetchingApplicationOnRead() {
+        fail();
+    }
+
+    @Test
+    public void shouldUseRealmFromContextSubjectOnRead() {
+        fail();
+    }
+
+    @Test
+    public void shouldUseSubjectFromContextOnRead() {
+        fail();
+    }
 
     // Phills Tests
 
