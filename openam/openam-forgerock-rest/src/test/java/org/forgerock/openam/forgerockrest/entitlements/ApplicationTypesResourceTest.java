@@ -15,19 +15,28 @@
 */
 package org.forgerock.openam.forgerockrest.entitlements;
 
-import com.sun.identity.entitlement.ApplicationType;
 import com.sun.identity.entitlement.ApplicationTypeManager;
 import com.sun.identity.entitlement.EntitlementException;
 import com.sun.identity.shared.debug.Debug;
-import org.forgerock.json.resource.*;
+import org.forgerock.json.resource.ActionRequest;
+import org.forgerock.json.resource.CreateRequest;
+import org.forgerock.json.resource.DeleteRequest;
+import org.forgerock.json.resource.NotSupportedException;
+import org.forgerock.json.resource.PatchRequest;
+import org.forgerock.json.resource.QueryRequest;
+import org.forgerock.json.resource.QueryResult;
+import org.forgerock.json.resource.QueryResultHandler;
+import org.forgerock.json.resource.ReadRequest;
+import org.forgerock.json.resource.Resource;
+import org.forgerock.json.resource.ResourceException;
+import org.forgerock.json.resource.ResultHandler;
+import org.forgerock.json.resource.ServerContext;
+import org.forgerock.json.resource.UpdateRequest;
+import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationTypeManagerWrapper;
 import org.forgerock.openam.rest.resource.SubjectContext;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import javax.security.auth.Subject;
 import java.util.LinkedHashSet;
@@ -39,28 +48,24 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ApplicationTypeManager.class, Subject.class, ApplicationType.class})
-@SuppressStaticInitializationFor("org.forgerock.openam.forgerockrest.RestUtils")
 public class ApplicationTypesResourceTest {
 
     private ApplicationTypesResource testResource;
 
-    //necessary to use the .asContext methods
-    private  SubjectContext mockSubjectContext;
+    private ApplicationTypeManagerWrapper typeManager;
+    private SubjectContext mockSubjectContext;
     private ServerContext mockContext;
     private ResultHandler mockHandler;
 
     @Before
     public void setUp() {
-
         mockSubjectContext = mock(SubjectContext.class);
         mockContext = new ServerContext(mockSubjectContext);
-
         mockHandler = mock(ResultHandler.class);
+        typeManager = mock(ApplicationTypeManagerWrapper.class);
         Debug mockDebug = mock(Debug.class);
 
-        testResource = new ApplicationTypesResource(mockDebug);
+        testResource = new ApplicationTypesResource(typeManager, mockDebug);
     }
 
     @Test
