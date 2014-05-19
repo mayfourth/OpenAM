@@ -16,6 +16,7 @@
 
 package org.forgerock.openam.sts.token.validator;
 
+import com.sun.identity.shared.xml.XMLUtils;
 import org.apache.cxf.sts.request.ReceivedToken;
 import org.apache.cxf.sts.token.validator.TokenValidator;
 import org.apache.cxf.sts.token.validator.TokenValidatorParameters;
