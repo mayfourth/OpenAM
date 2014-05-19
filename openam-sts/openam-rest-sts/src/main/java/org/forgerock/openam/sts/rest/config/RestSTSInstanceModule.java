@@ -165,7 +165,17 @@ public class RestSTSInstanceModule extends AbstractModule {
     STSPropertiesMBean getSTSProperties(Logger logger) {
         StaticSTSProperties stsProperties = new StaticSTSProperties();
         stsProperties.setIssuer(stsInstanceConfig.getIssuerName());
+        /*
+        The STSCallbackHandler is used to obtain the password for the signature and encryption keys for a given key alias.
+        However, because the REST-STS is not issuing SAML2 assertions via the CXF-STS framework, a signature key is not
+        required. In addition, because encryption key support is usually required in the context of enforcing wsdl-resident
+        SecurityPolicy, bindings, which are obviously not present in the REST-STS, the encryption context is not required
+        either.
+        Furthermore, because OpenAM is issuing SAML2 assertions, and performing all of the token validation, the
+        Crypto context does not need to be initialized at all. Retaining this code for the moment in case this support is required for
+        some pending token transformation.
         stsProperties.setCallbackHandler(new STSCallbackHandler(stsInstanceConfig.getKeystoreConfig(), logger));
+
         Crypto crypto = null;
         try {
             crypto = CryptoFactory.getInstance(getEncryptionProperties());
@@ -177,10 +187,10 @@ public class RestSTSInstanceModule extends AbstractModule {
         stsProperties.setSignatureCrypto(crypto);
         stsProperties.setEncryptionCrypto(crypto);
         stsProperties.setSignatureUsername(stsInstanceConfig.getKeystoreConfig().getSignatureKeyAlias());
-
+        */
         return stsProperties;
     }
-
+/*
     private Properties getEncryptionProperties() {
         Properties properties = new Properties();
         properties.put(
@@ -197,7 +207,7 @@ public class RestSTSInstanceModule extends AbstractModule {
         properties.put("org.apache.ws.security.crypto.merlin.keystore.type", "jks");
         return properties;
     }
-
+*/
     /*
     Provides the WSSUsernameTokenValidator provider to the TokenOperationProviderImpl
      */
