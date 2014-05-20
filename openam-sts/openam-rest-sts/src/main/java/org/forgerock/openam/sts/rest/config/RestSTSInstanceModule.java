@@ -25,16 +25,12 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-import com.sun.identity.shared.configuration.SystemPropertiesManager;
 import org.apache.cxf.sts.STSPropertiesMBean;
 import org.apache.cxf.sts.StaticSTSProperties;
 import org.apache.cxf.sts.cache.DefaultInMemoryTokenStore;
 
 import org.apache.cxf.ws.security.tokenstore.TokenStore;
 
-import org.apache.ws.security.WSSecurityException;
-import org.apache.ws.security.components.crypto.Crypto;
-import org.apache.ws.security.components.crypto.CryptoFactory;
 import org.apache.ws.security.message.token.UsernameToken;
 
 import org.forgerock.openam.sts.AMSTSConstants;
@@ -46,7 +42,6 @@ import org.forgerock.openam.sts.XmlMarshaller;
 import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
 import org.forgerock.openam.sts.rest.RestSTS;
 import org.forgerock.openam.sts.rest.RestSTSImpl;
-import org.forgerock.openam.sts.STSCallbackHandler;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.forgerock.openam.sts.rest.config.user.TokenTransformConfig;
 import org.forgerock.openam.sts.rest.marshal.*;
@@ -76,8 +71,6 @@ import org.forgerock.openam.sts.token.validator.wss.UsernameTokenValidator;
 import org.forgerock.openam.sts.token.validator.wss.uri.AuthenticationUriProviderImpl;
 import org.forgerock.openam.sts.token.validator.wss.uri.AuthenticationUriProvider;
 
-import java.io.UnsupportedEncodingException;
-import java.util.Properties;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -307,7 +300,7 @@ public class RestSTSInstanceModule extends AbstractModule {
     @Provides
     @Inject
     AuthnContextMapper getAuthnContextMapper(Logger logger) {
-        String customMapperClassName = SystemPropertiesManager.get(AMSTSConstants.CUSTOM_STS_AUTHN_CONTEXT_MAPPER_PROPERTY);
+        String customMapperClassName = stsInstanceConfig.getSaml2Config().getCustomAuthNContextMapperClassName();
         if (customMapperClassName == null) {
             return new AuthnContextMapperImpl(logger);
         } else {

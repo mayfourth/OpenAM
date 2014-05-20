@@ -57,6 +57,7 @@ public class SAML2Config {
         private String customAttributeStatementsProviderClassName;
         private String customAuthzDecisionStatementsProviderClassName;
         private String customAttributeMapperClassName;
+        private String customAuthNContextMapperClassName;
         private String canonicalizationAlgorithm = Canonicalizer.ALGO_ID_C14N_EXCL_OMIT_COMMENTS;
         private String signatureAlgorithm;
         private boolean signAssertion = true;
@@ -112,6 +113,11 @@ public class SAML2Config {
             return this;
         }
 
+        public SAML2ConfigBuilder customAuthNContextMapperClassName(String customAuthNContextMapperClassName) {
+            this.customAuthNContextMapperClassName = customAuthNContextMapperClassName;
+            return this;
+        }
+
         public SAML2ConfigBuilder canonicalizationAlgorithm(String canonicalizationAlgorithm) {
             this.canonicalizationAlgorithm = canonicalizationAlgorithm;
             return this;
@@ -122,7 +128,9 @@ public class SAML2Config {
         One issue with maintaining a static map of valid values is that the xmlsec package allows for the dynamic registration
         of handlers for new signature specification types. It could make sense to new up an instance of the
         org.apache.xml.security.algorithms.SignatureAlgorithm class with the specified algorithm, but this is a bit hacky,
-        and requires a Document parameter as well. The allows set of algorithms is probably best handled in documentation.
+        and requires a Document parameter as well. The allowed set of algorithms is probably best handled in documentation.
+        If no algorithm is set, either http://www.w3.org/2000/09/xmldsig#dsa-sha1 or http://www.w3.org/2000/09/xmldsig#rsa-sha1
+        is used, depending upon the type of the private key.
          */
         public SAML2ConfigBuilder signatureAlgorithm(String signatureAlgorithm) {
             this.signatureAlgorithm = signatureAlgorithm;
@@ -152,6 +160,7 @@ public class SAML2Config {
     private static final String CUSTOM_AUTHENTICATION_STATEMENTS_PROVIDER_CLASS = "customAuthenticationStatementsProviderClass";
     private static final String CUSTOM_AUTHZ_DECISION_STATEMENTS_PROVIDER_CLASS = "customAuthzDecisionStatementsProviderClass";
     private static final String CUSTOM_ATTRIBUTE_MAPPER_CLASS = "customAttributeMapperClass";
+    private static final String CUSTOM_AUTHN_CONTEXT_MAPPER_CLASS = "customAuthNContextMapperClass";
     private static final String SIGNATURE_ALGORITHM = "signatureAlgorithm";
     private static final String CANONICALIZATION_ALGORITHM = "canonicalizationAlgorithm";
     private static final String SIGN_ASSERTION = "signAssertion";
@@ -166,6 +175,7 @@ public class SAML2Config {
     private final String customAttributeStatementsProviderClassName;
     private final String customAuthzDecisionStatementsProviderClassName;
     private final String customAttributeMapperClassName;
+    private final String customAuthNContextMapperClassName;
     private final String signatureAlgorithm;
     private final String canonicalizationAlgorithm;
     private final boolean signAssertion;
@@ -189,6 +199,7 @@ public class SAML2Config {
         customAuthzDecisionStatementsProviderClassName = builder.customAuthzDecisionStatementsProviderClassName;
         customAttributeStatementsProviderClassName = builder.customAttributeStatementsProviderClassName;
         customAttributeMapperClassName = builder.customAttributeMapperClassName;
+        customAuthNContextMapperClassName = builder.customAuthNContextMapperClassName;
         signatureAlgorithm = builder.signatureAlgorithm;
         canonicalizationAlgorithm = builder.canonicalizationAlgorithm;
         this.signAssertion = builder.signAssertion;
@@ -237,6 +248,10 @@ public class SAML2Config {
         return customAttributeMapperClassName;
     }
 
+    public String getCustomAuthNContextMapperClassName() {
+        return customAuthNContextMapperClassName;
+    }
+
     public String getCustomAttributeStatementsProviderClassName() {
         return customAttributeStatementsProviderClassName;
     }
@@ -269,6 +284,7 @@ public class SAML2Config {
         sb.append('\t').append("customSubjectProviderClassName: ").append(customSubjectProviderClassName).append('\n');
         sb.append('\t').append("customAttributeStatementsProviderClassName: ").append(customAttributeStatementsProviderClassName).append('\n');
         sb.append('\t').append("customAttributeMapperClassName: ").append(customAttributeMapperClassName).append('\n');
+        sb.append('\t').append("customAuthNContextMapperClassName: ").append(customAuthNContextMapperClassName).append('\n');
         sb.append('\t').append("customAuthenticationStatementsProviderClassName: ").append(customAuthenticationStatementsProviderClassName).append('\n');
         sb.append('\t').append("customAuthzDecisionStatementsProviderClassName: ").append(customAuthzDecisionStatementsProviderClassName).append('\n');
         sb.append('\t').append("signatureAlgorithm: ").append(signatureAlgorithm).append('\n');
@@ -301,6 +317,9 @@ public class SAML2Config {
                     (customAttributeMapperClassName != null
                             ? customAttributeMapperClassName.equals(otherConfig.getCustomAttributeMapperClassName())
                             : otherConfig.getCustomAttributeMapperClassName() == null) &&
+                    (customAuthNContextMapperClassName != null
+                            ? customAuthNContextMapperClassName.equals(otherConfig.getCustomAuthNContextMapperClassName())
+                            : otherConfig.getCustomAuthNContextMapperClassName() == null) &&
                     (customAuthenticationStatementsProviderClassName != null
                         ? customAuthenticationStatementsProviderClassName.equals(otherConfig.getCustomAuthenticationStatementsProviderClassName())
                         : otherConfig.getCustomAuthenticationStatementsProviderClassName() == null) &&
@@ -327,6 +346,7 @@ public class SAML2Config {
                 field(CUSTOM_SUBJECT_PROVIDER_CLASS, customSubjectProviderClassName),
                 field(CUSTOM_ATTRIBUTE_STATEMENTS_PROVIDER_CLASS, customAttributeStatementsProviderClassName),
                 field(CUSTOM_ATTRIBUTE_MAPPER_CLASS, customAttributeMapperClassName),
+                field(CUSTOM_AUTHN_CONTEXT_MAPPER_CLASS, customAuthNContextMapperClassName),
                 field(CUSTOM_AUTHENTICATION_STATEMENTS_PROVIDER_CLASS, customAuthenticationStatementsProviderClassName),
                 field(CUSTOM_AUTHZ_DECISION_STATEMENTS_PROVIDER_CLASS, customAuthzDecisionStatementsProviderClassName),
                 field(SIGNATURE_ALGORITHM, signatureAlgorithm),
@@ -353,6 +373,7 @@ public class SAML2Config {
                 .customSubjectProviderClassName(json.get(CUSTOM_SUBJECT_PROVIDER_CLASS).asString())
                 .customAttributeStatementsProviderClassName(json.get(CUSTOM_ATTRIBUTE_STATEMENTS_PROVIDER_CLASS).asString())
                 .customAttributeMapperClassName(json.get(CUSTOM_ATTRIBUTE_MAPPER_CLASS).asString())
+                .customAuthNContextMapperClassName(json.get(CUSTOM_AUTHN_CONTEXT_MAPPER_CLASS).asString())
                 .customAuthenticationStatementsProviderClassName(json.get(CUSTOM_AUTHENTICATION_STATEMENTS_PROVIDER_CLASS).asString())
                 .customAuthzDecisionStatementsProviderClassName(json.get(CUSTOM_AUTHZ_DECISION_STATEMENTS_PROVIDER_CLASS).asString())
                 .signatureAlgorithm(json.get(SIGNATURE_ALGORITHM).asString())
