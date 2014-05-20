@@ -131,13 +131,13 @@ public class TokenGenerationServiceConsumerImpl implements TokenGenerationServic
                     new org.codehaus.jackson.map.ObjectMapper().getJsonFactory().createJsonParser(response);
             responseContent = parser.readValueAs(Object.class);
         } catch (IOException e) {
-            throw new AMSTSRuntimeException(org.forgerock.json.resource.ResourceException.INTERNAL_ERROR,
+            throw new TokenCreationException(org.forgerock.json.resource.ResourceException.INTERNAL_ERROR,
                     "Could not map the response from the TokenGenerationService to a json object. The response: "
                             + response + "; The exception: " + e);
         }
         JsonValue assertionJson = new JsonValue(responseContent).get(AMSTSConstants.ISSUED_TOKEN);
         if (assertionJson.isNull() || !assertionJson.isString()) {
-            throw new AMSTSRuntimeException(org.forgerock.json.resource.ResourceException.INTERNAL_ERROR,
+            throw new TokenCreationException(org.forgerock.json.resource.ResourceException.INTERNAL_ERROR,
                     "The json response returned from the TokenGenerationService did not have " +
                             "a non-null string element for the " + AMSTSConstants.ISSUED_TOKEN + " key. The json: "
                             + responseContent.toString());
