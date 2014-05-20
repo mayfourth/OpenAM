@@ -83,21 +83,66 @@
                                  type="single" syntax="password" i18nKey="keystore_password"
                                  validator="RequiredValueValidator">
                 </AttributeSchema>
-                <AttributeSchema name="signature_key_alias"
+                <AttributeSchema name="signature-key-alias"
                                  type="single" syntax="string" i18nKey="signature_key_alias"
                                  validator="RequiredValueValidator">
                 </AttributeSchema>
-                <AttributeSchema name="signature_key_password"
+                <AttributeSchema name="signature-key-password"
                                  type="single" syntax="password" i18nKey="signature_key_password"
                                  validator="RequiredValueValidator">
                 </AttributeSchema>
-                <AttributeSchema name="encryption_key_alias"
-                                 type="single" syntax="string" i18nKey="encryption_key_alias"
+
+                <AttributeSchema name="saml2-name-id-format"
+                                 type="single" syntax="string" i18nKey="saml2_name_id_format"
                                  validator="RequiredValueValidator">
                 </AttributeSchema>
-                <AttributeSchema name="encryption_key_password"
-                                 type="single" syntax="string" i18nKey="encryption_key_password"
+                <AttributeSchema name="saml2-token-lifetime-seconds"
+                                 type="single" syntax="number" i18nKey="saml2_token_lifetime_seconds"
                                  validator="RequiredValueValidator">
+                </AttributeSchema>
+                <AttributeSchema name="saml2-custom-conditions-provider-class-name"
+                                 type="single" syntax="string" i18nKey="saml2_custom_conditions_provider_class_name">
+                </AttributeSchema>
+                <AttributeSchema name="saml2-custom-subject-provider-class-name"
+                                 type="single" syntax="string" i18nKey="saml2_custom_subject_provider_class_name">
+                </AttributeSchema>
+                <AttributeSchema name="saml2-custom-authentication-statements-provider-class-name"
+                                 type="single" syntax="string" i18nKey="saml2_custom_authentication_statements_provider_class_name">
+                </AttributeSchema>
+                <AttributeSchema name="saml2-custom-attribute-statements-provider-class-name"
+                                 type="single" syntax="string" i18nKey="saml2_custom_attribute_statements_provider_class_name">
+                </AttributeSchema>
+                <AttributeSchema name="saml2-custom-authz-decision-statements-provider-class-name"
+                                 type="single" syntax="string" i18nKey="saml2_custom_authz_decision_statements_provider_class_name">
+                </AttributeSchema>
+                <AttributeSchema name="saml2-custom-attribute-mapper-class-name"
+                                 type="single" syntax="string" i18nKey="saml2_custom_attribute_mapper_class_name">
+                </AttributeSchema>
+                <AttributeSchema name="saml2-custom-authn-context-mapper-class-name"
+                                 type="single" syntax="string" i18nKey="saml2_custom_authn_context_mapper_class_name">
+                </AttributeSchema>
+                <AttributeSchema name="saml2-canonicalization-algorithm"
+                                 type="single" syntax="string" i18nKey="saml2_canonicalization_algorithm"
+                                 validator="RequiredValueValidator">
+                    <DefaultValues>
+                        <Value>http://www.w3.org/2001/10/xml-exc-c14n#</Value>
+                    </DefaultValues>
+                </AttributeSchema>
+                <AttributeSchema name="saml2-signature-algorithm"
+                                 type="single" syntax="string" i18nKey="saml2_signature_algorithm">
+                </AttributeSchema>
+                <AttributeSchema name="saml2-sign-assertion"
+                                 type="single" syntax="boolean" i18nKey="saml2_sign_assertion">
+                </AttributeSchema>
+                <AttributeSchema name="saml2-audiences"
+                                 type="list"
+                                 syntax="string"
+                                 i18nKey="saml2_audiences">
+                </AttributeSchema>
+                <AttributeSchema name="saml2-attribute-map"
+                                 type="list"
+                                 syntax="string"
+                                 i18nKey="saml2_attribute_map">
                 </AttributeSchema>
             </Organization>
         </Schema>
