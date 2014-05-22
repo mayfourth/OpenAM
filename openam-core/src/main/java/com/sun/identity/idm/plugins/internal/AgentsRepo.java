@@ -56,6 +56,7 @@ import com.sun.identity.authentication.spi.AuthLoginException;
 import com.sun.identity.authentication.spi.InvalidPasswordException;
 import com.sun.identity.common.CaseInsensitiveHashMap;
 import com.sun.identity.common.CaseInsensitiveHashSet;
+import com.sun.identity.common.configuration.AgentConfiguration;
 import com.sun.identity.idm.IdConstants;
 import com.sun.identity.idm.IdOperation;
 import com.sun.identity.idm.IdRepo;
@@ -240,7 +241,7 @@ public class AgentsRepo extends IdRepo implements ServiceListener {
         }
         try {
             Set vals = (Set) attrMap.get("userpassword");
-            if (vals != null) {
+            if ((vals != null) && !AgentConfiguration.AGENT_TYPE_OAUTH2.equals(agentType)) {
                 Set hashedVals = new HashSet();
                 Iterator it = vals.iterator();
                 while (it.hasNext()) {
