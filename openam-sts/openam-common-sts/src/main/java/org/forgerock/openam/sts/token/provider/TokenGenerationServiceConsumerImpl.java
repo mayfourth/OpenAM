@@ -124,6 +124,7 @@ public class TokenGenerationServiceConsumerImpl implements TokenGenerationServic
             This is how the Crest HttpServletAdapter ultimately constitutes a JsonValue from a json string. See the
             org.forgerock.json.resource.servlet.HttpUtils.parseJsonBody (called from HttpServletAdapter.getJsonContent)
             for details.
+            TODO: think about using the JsonValueBuilder to avoid new ObjectMapper creation with every invocation.
         */
         Object responseContent;
         try {
