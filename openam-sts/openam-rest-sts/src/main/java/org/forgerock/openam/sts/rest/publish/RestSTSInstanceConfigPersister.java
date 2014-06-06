@@ -16,6 +16,7 @@
 
 package org.forgerock.openam.sts.rest.publish;
 
+import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.slf4j.Logger;
@@ -55,7 +56,7 @@ public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersiste
         this.logger = logger;
     }
 
-    public void persistSTSInstance(String key, RestSTSInstanceConfig instance) {
+    public void persistSTSInstance(String key, RestSTSInstanceConfig instance)  throws STSInitializationException {
         /*
         Not worried about threading issues - this implementation is temporary.
          */

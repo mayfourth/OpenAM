@@ -123,7 +123,7 @@ public class RestSTSInstanceConfigTest {
 
     private RestSTSInstanceConfig createInstanceConfig(String uriElement, String amDeploymentUrl) throws UnsupportedEncodingException {
         AuthTargetMapping mapping = AuthTargetMapping.builder()
-                .addMapping(UsernameToken.class, "service", "ldapService")
+                .addMapping(TokenType.USERNAME, "service", "ldapService")
                 .build();
 
         RestDeploymentConfig deploymentConfig =
@@ -222,7 +222,7 @@ public class RestSTSInstanceConfigTest {
      */
     private RestSTSInstanceConfig createInstanceConfigWithoutSaml2Config(String uriElement, String amDeploymentUrl) throws UnsupportedEncodingException {
         AuthTargetMapping mapping = AuthTargetMapping.builder()
-                .addMapping(UsernameToken.class, "service", "ldapService")
+                .addMapping(TokenType.USERNAME, "service", "ldapService")
                 .build();
 
         RestDeploymentConfig deploymentConfig =

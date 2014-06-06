@@ -19,7 +19,6 @@ package org.forgerock.openam.sts.tokengeneration.saml2;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.TypeLiteral;
-import org.apache.ws.security.message.token.UsernameToken;
 import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.AuthTargetMapping;
 import org.forgerock.openam.sts.TokenCreationException;
@@ -30,7 +29,6 @@ import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
 import org.forgerock.openam.sts.rest.config.user.RestDeploymentConfig;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.forgerock.openam.sts.rest.publish.RestSTSInstanceConfigPersister;
-import org.forgerock.openam.sts.token.model.OpenIdConnectIdToken;
 import org.forgerock.openam.sts.tokengeneration.saml2.xmlsig.STSKeyProviderFactory;
 import org.forgerock.openam.sts.tokengeneration.saml2.xmlsig.STSKeyProviderFactoryImpl;
 import org.slf4j.Logger;
@@ -90,8 +88,8 @@ public class RestSTSInstanceStateProviderTest {
         Map<String, Object> context = new HashMap<String, Object>();
         context.put(AMSTSConstants.OPEN_ID_CONNECT_ID_TOKEN_AUTH_TARGET_HEADER_KEY, "oidc_id_token");
         AuthTargetMapping mapping = AuthTargetMapping.builder()
-                .addMapping(UsernameToken.class, "service", "ldapService")
-                .addMapping(OpenIdConnectIdToken.class, "module", "oidc", context)
+                .addMapping(TokenType.USERNAME, "service", "ldapService")
+                .addMapping(TokenType.OPENIDCONNECT, "module", "oidc", context)
                 .build();
         RestDeploymentConfig deploymentConfig =
                 RestDeploymentConfig.builder()

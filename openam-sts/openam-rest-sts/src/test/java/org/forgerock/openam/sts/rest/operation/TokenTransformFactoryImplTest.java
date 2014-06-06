@@ -124,7 +124,7 @@ public class TokenTransformFactoryImplTest {
 
         @Provides
         AuthTargetMapping authTargetMapping() {
-            return AuthTargetMapping.builder().addMapping(String.class, "index_type", "index_value").build();
+            return AuthTargetMapping.builder().addMapping(TokenType.USERNAME, "index_type", "index_value").build();
         }
 
         @Provides

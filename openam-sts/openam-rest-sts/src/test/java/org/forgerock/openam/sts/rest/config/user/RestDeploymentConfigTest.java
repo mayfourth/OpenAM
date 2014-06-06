@@ -16,21 +16,19 @@
 
 package org.forgerock.openam.sts.rest.config.user;
 
+import org.forgerock.openam.sts.TokenType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.AssertJUnit.assertEquals;
 
-import org.apache.ws.security.message.token.UsernameToken;
 import org.forgerock.openam.sts.AuthTargetMapping;
-
-import java.security.cert.X509Certificate;
 
 public class RestDeploymentConfigTest {
     @Test
     public void testEquals() {
         AuthTargetMapping atm = AuthTargetMapping.builder()
-                .addMapping(UsernameToken.class, "module", "untmodule")
+                .addMapping(TokenType.USERNAME, "module", "untmodule")
                 .build();
         RestDeploymentConfig dc1 = RestDeploymentConfig.builder()
                 .realm("a")
@@ -50,7 +48,7 @@ public class RestDeploymentConfigTest {
     @Test
     public void testNotEquals() {
         AuthTargetMapping atm = AuthTargetMapping.builder()
-                .addMapping(UsernameToken.class, "module", "untmodule")
+                .addMapping(TokenType.USERNAME, "module", "untmodule")
                 .build();
         RestDeploymentConfig dc1 = RestDeploymentConfig.builder()
                 .realm("a")
@@ -70,7 +68,7 @@ public class RestDeploymentConfigTest {
     @Test(expectedExceptions = NullPointerException.class)
     public void testRejectIfNull() {
         AuthTargetMapping atm = AuthTargetMapping.builder()
-                .addMapping(UsernameToken.class, "module", "untmodule")
+                .addMapping(TokenType.USERNAME, "module", "untmodule")
                 .build();
 
         RestDeploymentConfig dc4 = RestDeploymentConfig.builder()
@@ -82,7 +80,7 @@ public class RestDeploymentConfigTest {
     @Test
     public void testJsonRoundTrip() {
         AuthTargetMapping atm = AuthTargetMapping.builder()
-                .addMapping(UsernameToken.class, "module", "untmodule")
+                .addMapping(TokenType.USERNAME, "module", "untmodule")
                 .build();
         RestDeploymentConfig rdc = RestDeploymentConfig.builder()
                 .realm("a")
@@ -95,7 +93,7 @@ public class RestDeploymentConfigTest {
     @Test
     public void testMapMarshalRoundTrip() {
         AuthTargetMapping atm = AuthTargetMapping.builder()
-                .addMapping(UsernameToken.class, "module", "untmodule")
+                .addMapping(TokenType.USERNAME, "module", "untmodule")
                 .build();
         RestDeploymentConfig rdc = RestDeploymentConfig.builder()
                 .realm("a")
@@ -106,8 +104,8 @@ public class RestDeploymentConfigTest {
         assertEquals(rdc, RestDeploymentConfig.marshalFromAttributeMap(rdc.marshalToAttributeMap()));
 
         atm = AuthTargetMapping.builder()
-                .addMapping(UsernameToken.class, "module", "untmodule")
-                .addMapping(X509Certificate[].class, "module", "x509module")
+                .addMapping(TokenType.USERNAME, "module", "untmodule")
+                .addMapping(TokenType.X509CERT, "module", "x509module")
                 .build();
         rdc = RestDeploymentConfig.builder()
                 .realm("a")

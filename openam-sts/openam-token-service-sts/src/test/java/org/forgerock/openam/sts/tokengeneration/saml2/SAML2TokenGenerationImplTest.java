@@ -201,8 +201,8 @@ public class SAML2TokenGenerationImplTest {
         Map<String, Object> context = new HashMap<String, Object>();
         context.put(AMSTSConstants.OPEN_ID_CONNECT_ID_TOKEN_AUTH_TARGET_HEADER_KEY, "oidc_id_token");
         AuthTargetMapping mapping = AuthTargetMapping.builder()
-                .addMapping(UsernameToken.class, "service", "ldapService")
-                .addMapping(OpenIdConnectIdToken.class, "module", "oidc", context)
+                .addMapping(TokenType.USERNAME, "service", "ldapService")
+                .addMapping(TokenType.OPENIDCONNECT, "module", "oidc", context)
                 .build();
         RestDeploymentConfig deploymentConfig =
                 RestDeploymentConfig.builder()

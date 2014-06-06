@@ -105,7 +105,7 @@ public class TokenOperationFactoryImplTest {
         @Provides
         AuthTargetMapping authTargetMapping() {
             return AuthTargetMapping.builder()
-                    .addMapping(UsernameToken.class, "index_type", "index_value")
+                    .addMapping(TokenType.USERNAME, "index_type", "index_value")
                     .build();
         }
 

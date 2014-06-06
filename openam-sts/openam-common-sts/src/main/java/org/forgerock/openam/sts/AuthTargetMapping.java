@@ -17,8 +17,11 @@
 package org.forgerock.openam.sts;
 
 
+import org.apache.ws.security.message.token.UsernameToken;
 import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.openam.sts.token.model.OpenIdConnectIdToken;
 
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,6 +59,7 @@ public class AuthTargetMapping {
     public static final String SEMICOLON = ";";
     public static final String BAR = "|";
     public static final String SMS_KEY_AUTH_TARGET_MAPPINGS = "authTargetMapping";
+    private static final Map<String, Object> NULL_MAP = null;
 
     public static class AuthTargetMappingBuilder {
         private final Map<Class<?>, AuthTarget> mappings = new HashMap<Class<?>, AuthTarget>();
@@ -64,21 +68,69 @@ public class AuthTargetMapping {
          * Associates a particular token class with authIndexType and authIndexValue values. For the associated STS
          * instance, the particular token type will be authenticated against the Rest authN context specified by the
          * authIndexType and authIndexValue.
+         *
+         * The context will provide state to the dispatcher of the authN request necessary
+         * by the associated authN module (e.g. the name of the header referencing the OpenID Connect ID Token).
+
          */
-        public AuthTargetMappingBuilder addMapping(Class<?> tokenClass, String authIndexType, String authIndexValue)  {
-            mappings.put(tokenClass, new AuthTarget(authIndexType, authIndexValue));
+        private AuthTargetMappingBuilder addMapping(Class<?> tokenClass, String authIndexType, String authIndexValue, Map<String, Object> context)  {
+            mappings.put(tokenClass, new AuthTarget(authIndexType, authIndexValue, context));
             return this;
         }
 
         /**
          * Associates a particular token class with authIndexType and authIndexValue values. For the associated STS
          * instance, the particular token type will be authenticated against the Rest authN context specified by the
-         * authIndexType and authIndexValue. The context will provide state to the dispatcher of the authN request necessary
-         * by the associated authN module (e.g. the name of the header referencing the OpenID Connect ID Token).
+         * authIndexType and authIndexValue.
+         *
+         * This builder method was added to facilitate the creation of the AuthTargetMapping context from UI elements, where
+         * the specification of a class is more problematic. The bottom line is that there must be correlation between
+         * the classes bound to the AuthenticationHandler<T> and the TokenAuthenticationRequestDispatcher<T> types and those
+         * referenced here. <T> is always represented as a class, so I can't define these mappings using the TokenType enum
+         * instances, but I'd really like to be able to get to this mapping using TokenType values, as they can be easily
+         * marshaled from the String context present in UI elements.
+         *
+         * And note that ultimately, some of the bound types will be dictated by the web-services-security context, as
+         * the token validators that will be plugged-into the SOAP context will have to be defined in terms of the
+         * web-service-security types. At the moment, this is only the org.apache.ws.security.message.token.UsernameToken class,
+         * and the X509Certificate[] class.
+         * In other words, I could not simply define a UsernameToken class in the model package, as I've done for the
+         * OpenIdConnectIdToken class, but rather must re-use the type defined in wss4j, as this is ultimately the type
+         * will will be passed to the token validation context plugged in the the soap-sts security-policy-enforcement
+         * context.
+         *
+         * And note that the TokenType instance parameters will only correspond to types of tokens validated by the
+         * STS as part of token transformations, AND those which may consume specific elements of the REST authN context.
+         * This means that the OPENAM type will not be specified, as there is no customizable REST authN to be consumed
+         * to validate a OpenAM session token, as this token can be validated globally - i.e. there are no realm-specific, or
+         * custom, authN modules available to validate an OpenAM session token.
          */
-        public AuthTargetMappingBuilder addMapping(Class<?> tokenClass, String authIndexType, String authIndexValue, Map<String, Object> context)  {
-            mappings.put(tokenClass, new AuthTarget(authIndexType, authIndexValue, context));
-            return this;
+        public AuthTargetMappingBuilder addMapping(TokenType tokenType, String authIndexType, String authIndexValue)  {
+            switch (tokenType) {
+                case OPENIDCONNECT:
+                    return addMapping(OpenIdConnectIdToken.class, authIndexType, authIndexValue, NULL_MAP);
+                case USERNAME:
+                    return addMapping(UsernameToken.class, authIndexType, authIndexValue, NULL_MAP);
+                case X509CERT:
+                    return addMapping(X509Certificate[].class, authIndexType, authIndexValue, NULL_MAP);
+                default:
+                    throw new IllegalArgumentException("Illegal TokenType provided to AuthTargetMappingBuilder.addMapping: "
+                            + tokenType);
+            }
+        }
+
+        public AuthTargetMappingBuilder addMapping(TokenType tokenType, String authIndexType, String authIndexValue, Map<String, Object> context)  {
+            switch (tokenType) {
+                case OPENIDCONNECT:
+                    return addMapping(OpenIdConnectIdToken.class, authIndexType, authIndexValue, context);
+                case USERNAME:
+                    return addMapping(UsernameToken.class, authIndexType, authIndexValue, context);
+                case X509CERT:
+                    return addMapping(X509Certificate[].class, authIndexType, authIndexValue, context);
+                default:
+                    throw new IllegalArgumentException("Illegal TokenType provided to AuthTargetMappingBuilder.addMapping: "
+                            + tokenType);
+            }
         }
 
         public AuthTargetMapping build() {
@@ -266,17 +318,34 @@ public class AuthTargetMapping {
                 try {
                     Class<?> clazz = Class.forName(tokenizer.nextToken());
                     AuthTarget authTarget = AuthTarget.fromString(tokenizer.nextToken());
-                    builder.addMapping(clazz, authTarget.getAuthIndexType(), authTarget.getAuthIndexValue());
+                    builder.addMapping(mapClassToTokenType(clazz), authTarget.getAuthIndexType(), authTarget.getAuthIndexValue());
                 } catch (ClassNotFoundException e) {
                     throw new IllegalStateException("Exception marshalling AuthTargetMapping from attributeMap: "
                             + attributes + "\n Exception: " + e);
-                }
-            }
+                }            }
             return builder.build();
 
         } else {
             throw new IllegalStateException("Value in attribute map corresponding to key " +
                     SMS_KEY_AUTH_TARGET_MAPPINGS + " not Set, but " + (object != null ? object.getClass().getName() : null));
+        }
+    }
+
+    /*
+    Externally, AuthTargetMapping instances are added by specifying the TokenType subject to the mapping. However, these
+    mappings are represented internally as a class, as the validation context is parameterized by class. When I re-create
+    these mapping instances from the attribute map, I need to go back from the class representation to the TokenType
+    representation.
+     */
+    private static TokenType mapClassToTokenType(Class<?> clazz) {
+        if (UsernameToken.class.equals(clazz)) {
+            return TokenType.USERNAME;
+        } else if (OpenIdConnectIdToken.class.equals(clazz)) {
+            return TokenType.OPENIDCONNECT;
+        } else if (X509Certificate[].class.equals(clazz)) {
+            return TokenType.X509CERT;
+        } else {
+            throw new IllegalArgumentException("The class to be mapped to a TokenType, " + clazz + " is unexpected.");
         }
     }
 }

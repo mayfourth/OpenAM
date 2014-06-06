@@ -18,9 +18,8 @@ package org.forgerock.openam.sts;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.cxf.common.security.UsernameToken;
+import org.apache.ws.security.message.token.UsernameToken;
 import org.forgerock.json.fluent.JsonValue;
-import org.forgerock.openam.sts.AuthTargetMapping;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -29,10 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
 
 public class AuthTargetMappingTest {
     private static final String USERNAME = "username";
@@ -41,11 +38,11 @@ public class AuthTargetMappingTest {
     public void testEquals() {
         AuthTargetMapping mapping1 = AuthTargetMapping
                 .builder()
-                .addMapping(UsernameToken.class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
                 .build();
         AuthTargetMapping mapping2 = AuthTargetMapping
                 .builder()
-                .addMapping(UsernameToken.class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
                 .build();
         assertEquals(mapping1, mapping2);
         assertEquals(USERNAME, mapping1.getAuthTargetMapping(UsernameToken.class).getAuthIndexValue());
@@ -54,13 +51,13 @@ public class AuthTargetMappingTest {
 
         AuthTargetMapping mapping3 = AuthTargetMapping
                 .builder()
-                .addMapping(X509Certificate[].class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
-                .addMapping(UsernameToken.class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME, buildContext())
+                .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME, buildContext())
                 .build();
         AuthTargetMapping mapping4 = AuthTargetMapping
                 .builder()
-                .addMapping(X509Certificate[].class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
-                .addMapping(UsernameToken.class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME, buildContext())
+                .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME, buildContext())
                 .build();
         assertEquals(mapping3, mapping4);
         assertEquals(X509, mapping3.getAuthTargetMapping(X509Certificate[].class).getAuthIndexValue());
@@ -79,12 +76,12 @@ public class AuthTargetMappingTest {
     public void testEqualsNot() {
         AuthTargetMapping mapping1 = AuthTargetMapping
                 .builder()
-                .addMapping(UsernameToken.class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
                 .build();
         AuthTargetMapping mapping2 = AuthTargetMapping
                 .builder()
-                .addMapping(X509Certificate[].class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
-                .addMapping(UsernameToken.class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
+                .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
                 .build();
         assertNotEquals(mapping1, mapping2);
 
@@ -93,8 +90,8 @@ public class AuthTargetMappingTest {
                 .build();
         AuthTargetMapping mapping4 = AuthTargetMapping
                 .builder()
-                .addMapping(X509Certificate[].class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
-                .addMapping(UsernameToken.class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
+                .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
                 .build();
         assertNotEquals(mapping3, mapping4);
     }
@@ -103,7 +100,7 @@ public class AuthTargetMappingTest {
     public void testLookup() {
         AuthTargetMapping mapping1 = AuthTargetMapping
                 .builder()
-                .addMapping(X509Certificate[].class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
+                .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
                 .build();
         AuthTargetMapping.AuthTarget at1 = new AuthTargetMapping.AuthTarget(AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509);
         assertEquals(mapping1.getAuthTargetMapping(X509Certificate[].class), at1);
@@ -112,7 +109,7 @@ public class AuthTargetMappingTest {
 
         AuthTargetMapping mapping2 = AuthTargetMapping
                 .builder()
-                .addMapping(UsernameToken.class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
                 .build();
         AuthTargetMapping.AuthTarget at2 = new AuthTargetMapping.AuthTarget(AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME);
         assertEquals(mapping2.getAuthTargetMapping(UsernameToken.class), at2);
@@ -127,8 +124,8 @@ public class AuthTargetMappingTest {
     public void testJsonRoundTrip() {
         AuthTargetMapping mapping = AuthTargetMapping
                 .builder()
-                .addMapping(UsernameToken.class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME, buildContext())
-                .addMapping(X509Certificate[].class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME, buildContext())
+                .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
                 .build();
         assertEquals(mapping, AuthTargetMapping.fromJson(mapping.toJson()));
     }
@@ -137,8 +134,8 @@ public class AuthTargetMappingTest {
     public void testJsonStringRoundTrip() throws IOException {
         AuthTargetMapping mapping = AuthTargetMapping
                 .builder()
-                .addMapping(X509Certificate[].class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
-                .addMapping(UsernameToken.class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME, buildContext())
+                .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME, buildContext())
                 .build();
         /*
         This is how the Crest HttpServletAdapter ultimately constitutes a JsonValue from a json string. See the
@@ -157,8 +154,8 @@ public class AuthTargetMappingTest {
     public void testOlderJacksonJsonStringRoundTrip() throws IOException {
         AuthTargetMapping mapping = AuthTargetMapping
                 .builder()
-                .addMapping(X509Certificate[].class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
-                .addMapping(UsernameToken.class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME, buildContext())
+                .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME, buildContext())
                 .build();
         /*
         This is how the Crest HttpServletAdapter ultimately constitutes a JsonValue from a json string. See the
@@ -179,8 +176,8 @@ public class AuthTargetMappingTest {
     public void testAttributeMappingRoundTrip() {
         AuthTargetMapping mapping = AuthTargetMapping
                 .builder()
-                .addMapping(X509Certificate[].class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
-                .addMapping(UsernameToken.class, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
+                .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
                 .build();
 /*
         AuthTargetMapping.AuthTarget usernameTarget = mapping.getAuthTargetMapping(UsernameToken.class);
