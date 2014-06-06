@@ -81,8 +81,14 @@ public class RestSTSInstanceConfig extends STSInstanceConfig {
 
     private final Set<TokenTransformConfig> supportedTokenTranslations;
     private final RestDeploymentConfig deploymentConfig;
-    private static final String DEPLOYMENT_CONFIG = "deploymentConfig";
-    private static final String SUPPORTED_TOKEN_TRANSLATIONS = "supportedTokenTranslations";
+
+    /*
+    Define the names of fields to aid in json marshalling. Note that these names match the names of the AttributeSchema
+    entries in restSTS.xml, as this aids in marshalling an instance of this class into the attribute map needed for
+    SMS persistence.
+     */
+    private static final String DEPLOYMENT_CONFIG = "deployment-config";
+    private static final String SUPPORTED_TOKEN_TRANSLATIONS = "supported-token-transforms";
 
     private RestSTSInstanceConfig(RestSTSInstanceConfigBuilderBase<?> builder) {
         super(builder);

@@ -39,18 +39,20 @@ import static org.forgerock.json.fluent.JsonValue.object;
  */
 public class STSInstanceConfig {
     /*
-    Define the names of fields to aid in json marshalling.
+    Define the names of fields to aid in json marshalling. Note that these names match the names of the AttributeSchema
+    entries in restSTS.xml, as this aids in marshalling an instance of this class into the attribute map needed for
+    SMS persistence.
      */
-    protected static final String AM_JSON_REST_BASE = "amJsonRestBase";
-    protected static final String AM_DEPLOYMENT_URL = "amDeploymentUrl";
-    protected static final String AM_REST_AUTHN_URI_ELEMENT = "amRestAuthNUriElement";
-    protected static final String AM_REST_LOGOUT_URI_ELEMENT = "amRestLogoutUriElement";
-    protected static final String AM_REST_ID_FROM_SESSION_URI_ELEMENT = "amRestIdFromSessionUriElement";
-    protected static final String AM_REST_TOKEN_GENERATION_SERVICE_URI_ELEMENT = "amRestTokenGenerationServiceUriElement";
-    protected static final String AM_SESSION_COOKIE_NAME = "amSessionCookieName";
-    protected static final String KEYSTORE_CONFIG =  "keystoreConfig";
-    protected static final String ISSUER_NAME = "issuerName";
-    protected static final String SAML2_CONFIG = "saml2config";
+    protected static final String AM_JSON_REST_BASE = "am-json-rest-base";
+    protected static final String AM_DEPLOYMENT_URL = "am-deployment-url";
+    protected static final String AM_REST_AUTHN_URI_ELEMENT = "am-rest-authn-uri-element";
+    protected static final String AM_REST_LOGOUT_URI_ELEMENT = "am-rest-logout-uri-element";
+    protected static final String AM_REST_ID_FROM_SESSION_URI_ELEMENT = "am-rest-id-from-session-uri-element";
+    protected static final String AM_REST_TOKEN_GENERATION_SERVICE_URI_ELEMENT = "am-rest-token-generation-service-uri-element";
+    protected static final String AM_SESSION_COOKIE_NAME = "am-session-cookie-name";
+    protected static final String KEYSTORE_CONFIG =  "keystore-config";
+    protected static final String ISSUER_NAME = "issuer-name";
+    protected static final String SAML2_CONFIG = "saml2-config";
 
     protected final String amJsonRestBase;
     protected final String amDeploymentUrl;

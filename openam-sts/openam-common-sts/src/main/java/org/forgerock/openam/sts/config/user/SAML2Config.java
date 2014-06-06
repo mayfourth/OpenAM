@@ -151,23 +151,26 @@ public class SAML2Config {
             return new SAML2Config(this);
         }
     }
+
     /*
-    Define the names of fields to aid in json marshalling.
+    Define the names of fields to aid in json marshalling. Note that these names match the names of the AttributeSchema
+    entries in restSTS.xml, as this aids in marshalling an instance of this class into the attribute map needed for
+    SMS persistence.
      */
-    private static final String NAME_ID_FORMAT = "nameIdFormat";
-    private static final String ATTRIBUTE_MAP = "attributeMap";
-    private static final String TOKEN_LIFETIME = "tokenLifetime";
-    private static final String AUDIENCES = "audiences";
-    private static final String CUSTOM_CONDITIONS_PROVIDER_CLASS = "customConditionsProviderClass";
-    private static final String CUSTOM_SUBJECT_PROVIDER_CLASS = "customSubjectProviderClass";
-    private static final String CUSTOM_ATTRIBUTE_STATEMENTS_PROVIDER_CLASS = "customAttributeStatementsProviderClass";
-    private static final String CUSTOM_AUTHENTICATION_STATEMENTS_PROVIDER_CLASS = "customAuthenticationStatementsProviderClass";
-    private static final String CUSTOM_AUTHZ_DECISION_STATEMENTS_PROVIDER_CLASS = "customAuthzDecisionStatementsProviderClass";
-    private static final String CUSTOM_ATTRIBUTE_MAPPER_CLASS = "customAttributeMapperClass";
-    private static final String CUSTOM_AUTHN_CONTEXT_MAPPER_CLASS = "customAuthNContextMapperClass";
-    private static final String SIGNATURE_ALGORITHM = "signatureAlgorithm";
-    private static final String CANONICALIZATION_ALGORITHM = "canonicalizationAlgorithm";
-    private static final String SIGN_ASSERTION = "signAssertion";
+    private static final String NAME_ID_FORMAT = "saml2-name-id-format";
+    private static final String ATTRIBUTE_MAP = "saml2-attribute-map";
+    private static final String TOKEN_LIFETIME = "saml2-token-lifetime-seconds";
+    private static final String AUDIENCES = "saml2-audiences";
+    private static final String CUSTOM_CONDITIONS_PROVIDER_CLASS = "saml2-custom-conditions-provider-class-name";
+    private static final String CUSTOM_SUBJECT_PROVIDER_CLASS = "saml2-custom-subject-provider-class-name";
+    private static final String CUSTOM_ATTRIBUTE_STATEMENTS_PROVIDER_CLASS = "saml2-custom-attribute-statements-provider-class-name";
+    private static final String CUSTOM_AUTHENTICATION_STATEMENTS_PROVIDER_CLASS = "saml2-custom-authentication-statements-provider-class-name";
+    private static final String CUSTOM_AUTHZ_DECISION_STATEMENTS_PROVIDER_CLASS = "saml2-custom-authz-decision-statements-provider-class-name";
+    private static final String CUSTOM_ATTRIBUTE_MAPPER_CLASS = "saml2-custom-attribute-mapper-class-name";
+    private static final String CUSTOM_AUTHN_CONTEXT_MAPPER_CLASS = "saml2-custom-authn-context-mapper-class-name";
+    private static final String SIGNATURE_ALGORITHM = "saml2-signature-algorithm";
+    private static final String CANONICALIZATION_ALGORITHM = "saml2-canonicalization-algorithm";
+    private static final String SIGN_ASSERTION = "saml2-sign-assertion";
 
     private final String nameIdFormat;
     private final Map<String, String> attributeMap;

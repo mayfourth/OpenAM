@@ -52,13 +52,13 @@ import static org.forgerock.json.fluent.JsonValue.object;
  * URI dispatcher - TODO
  */
 public class AuthTargetMapping {
-    public static final String AUTH_INDEX_TYPE = "authIndexType";
-    public static final String AUTH_INDEX_VALUE = "authIndexValue";
-    public static final String CONTEXT = "context";
+    public static final String AUTH_INDEX_TYPE = "mapping-auth-index-type";
+    public static final String AUTH_INDEX_VALUE = "mapping-auth-index-value";
+    public static final String CONTEXT = "mapping-context";
     public static final String COLON = ":";
     public static final String SEMICOLON = ";";
     public static final String BAR = "|";
-    public static final String SMS_KEY_AUTH_TARGET_MAPPINGS = "authTargetMapping";
+    public static final String AUTH_TARGET_MAPPINGS = "deployment-auth-target-mappings";
     private static final Map<String, Object> NULL_MAP = null;
 
     public static class AuthTargetMappingBuilder {
@@ -302,7 +302,7 @@ public class AuthTargetMapping {
     public Map<String, Object> marshalToAttributeMap() {
         HashSet<String> values = new HashSet<String>();
         HashMap<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(SMS_KEY_AUTH_TARGET_MAPPINGS, values);
+        attributes.put(AUTH_TARGET_MAPPINGS, values);
         for (Map.Entry<Class<?>, AuthTarget> entry : mappings.entrySet()) {
             values.add(entry.getKey().getName() + BAR + entry.getValue().toString());
         }
@@ -310,7 +310,7 @@ public class AuthTargetMapping {
     }
 
     public static AuthTargetMapping marshalFromAttributeMap(Map<String, Object> attributes) {
-        Object object = attributes.get(SMS_KEY_AUTH_TARGET_MAPPINGS);
+        Object object = attributes.get(AUTH_TARGET_MAPPINGS);
         if (object instanceof Set) {
             AuthTargetMappingBuilder builder = AuthTargetMapping.builder();
             for (Object obj : ((Set)object)) {
@@ -324,10 +324,9 @@ public class AuthTargetMapping {
                             + attributes + "\n Exception: " + e);
                 }            }
             return builder.build();
-
         } else {
             throw new IllegalStateException("Value in attribute map corresponding to key " +
-                    SMS_KEY_AUTH_TARGET_MAPPINGS + " not Set, but " + (object != null ? object.getClass().getName() : null));
+                    AUTH_TARGET_MAPPINGS + " not Set, but " + (object != null ? object.getClass().getName() : null));
         }
     }
 

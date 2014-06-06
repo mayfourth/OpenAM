@@ -16,6 +16,7 @@
 
 package org.forgerock.openam.sts.publish;
 
+import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.config.user.STSInstanceConfig;
 
 import java.util.List;
@@ -36,7 +37,7 @@ public interface STSInstanceConfigPersister<T> {
      * @param key The key to the instance - probably return value from getDeploymentConfig().getUriElement();
      * @param instance The to-be-persisted state.
      */
-    void persistSTSInstance(String key, T instance);
+    void persistSTSInstance(String key, T instance) throws STSInitializationException;
 
     /**
      *
