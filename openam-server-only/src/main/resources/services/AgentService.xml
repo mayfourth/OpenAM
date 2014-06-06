@@ -43,7 +43,7 @@
                    <AttributeSchema
                             name="userpassword"
                             type="single"
-                            syntax="string"
+                            syntax="password"
                             validator="RequiredValueValidator"
                             i18nKey="a700">
                        <DefaultValues>
