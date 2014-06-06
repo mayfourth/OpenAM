@@ -21,6 +21,7 @@ import org.testng.annotations.Test;
 
 import java.io.UnsupportedEncodingException;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertFalse;
 
@@ -81,6 +82,16 @@ public class STSInstanceConfigTest {
         STSInstanceConfig instance2 = buildConfigWithSaml2Config();
         assertFalse(instance2.equals(instance1));
         assertFalse(instance1.equals(instance2));
+    }
+
+    @Test
+    public void testMapMarshalRoundTrip() throws UnsupportedEncodingException {
+        STSInstanceConfig instance1 = buildConfig();
+        assertEquals(instance1, STSInstanceConfig.marshalFromAttributeMap(instance1.marshalToAttributeMap()));
+
+        instance1 = buildConfigWithSaml2Config();
+        assertEquals(instance1, STSInstanceConfig.marshalFromAttributeMap(instance1.marshalToAttributeMap()));
+
     }
 
     private STSInstanceConfig buildConfig() throws UnsupportedEncodingException {

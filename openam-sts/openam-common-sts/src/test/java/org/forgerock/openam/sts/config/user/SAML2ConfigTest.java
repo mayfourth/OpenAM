@@ -128,6 +128,21 @@ public class SAML2ConfigTest {
         assertEquals(CUSTOM_AUTHN_CONTEXT_MAPPER, reconsitutedConfig.getCustomAuthNContextMapperClassName());
     }
 
+    @Test
+    public void testMapMarshalRoundTrip() {
+        SAML2Config saml2Config = buildConfig(WITH_ATTR_MAP, WITH_AUDIENCES, !WITH_CUSTOM_PROVIDERS, SIGN_ASSERTION);
+        assertEquals(saml2Config, SAML2Config.marshalFromAttributeMap(saml2Config.marshalToAttributeMap()));
+
+        saml2Config = buildConfig(!WITH_ATTR_MAP, !WITH_AUDIENCES, !WITH_CUSTOM_PROVIDERS, SIGN_ASSERTION);
+        assertEquals(saml2Config, SAML2Config.marshalFromAttributeMap(saml2Config.marshalToAttributeMap()));
+
+        saml2Config = buildConfig(WITH_ATTR_MAP, WITH_AUDIENCES, WITH_CUSTOM_PROVIDERS, SIGN_ASSERTION);
+        assertEquals(saml2Config, SAML2Config.marshalFromAttributeMap(saml2Config.marshalToAttributeMap()));
+
+        saml2Config = buildConfig(!WITH_ATTR_MAP, !WITH_AUDIENCES, !WITH_CUSTOM_PROVIDERS, !SIGN_ASSERTION);
+        assertEquals(saml2Config, SAML2Config.marshalFromAttributeMap(saml2Config.marshalToAttributeMap()));
+    }
+
     private SAML2Config buildConfig(boolean withAttributeMap, boolean withAudiences, boolean withCustomProviders, boolean signAssertion) {
         SAML2Config.SAML2ConfigBuilder builder = SAML2Config.builder()
                 .tokenLifetimeInSeconds(TOKEN_LIFETIME)

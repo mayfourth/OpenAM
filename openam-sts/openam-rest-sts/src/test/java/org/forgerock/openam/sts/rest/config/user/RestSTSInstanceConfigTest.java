@@ -30,7 +30,9 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Map;
 
+import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
 import static org.testng.AssertJUnit.assertTrue;
 
@@ -107,6 +109,16 @@ public class RestSTSInstanceConfigTest {
         final Object content = parser.readValueAs(Object.class);
 
         Assert.assertTrue(origConfig.equals(RestSTSInstanceConfig.fromJson(new JsonValue(content))));
+    }
+
+    @Test
+    public void testMapMarshalRoundTrip() throws IOException {
+        RestSTSInstanceConfig config = createInstanceConfig("/bob", "http://localhost:8080/openam");
+        Map<String, Object> attrMap = config.marshalToAttributeMap();
+        RestSTSInstanceConfig reconstitutedInstance = RestSTSInstanceConfig.marshalFromAttributeMap(attrMap);
+        assertEquals(config, reconstitutedInstance);
+
+        //assertEquals(config, RestSTSInstanceConfig.marshalFromAttributeMap(config.marshalToAttributeMap()));
     }
 
     private RestSTSInstanceConfig createInstanceConfig(String uriElement, String amDeploymentUrl) throws UnsupportedEncodingException {

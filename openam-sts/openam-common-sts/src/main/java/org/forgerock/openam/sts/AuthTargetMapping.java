@@ -21,7 +21,10 @@ import org.forgerock.json.fluent.JsonValue;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
@@ -41,13 +44,18 @@ import static org.forgerock.json.fluent.JsonValue.object;
  * authentication request for token-type T to the OpenAM Rest authN context. For example the dispatcher for
  * OpenIdConnectIdTokens must know what header name should reference the Id Token, a value dependant upon the value
  * configured for the OpenAM OIDC authN module.
+ *
+ * And the key for the mappings should not be the class, but the TokenType, as long as this is possible with the
+ * URI dispatcher - TODO
  */
 public class AuthTargetMapping {
     public static final String AUTH_INDEX_TYPE = "authIndexType";
     public static final String AUTH_INDEX_VALUE = "authIndexValue";
     public static final String CONTEXT = "context";
-    public static final String COLON = " : ";
-    public static final String SEMICOLON = " ; ";
+    public static final String COLON = ":";
+    public static final String SEMICOLON = ";";
+    public static final String BAR = "|";
+    public static final String SMS_KEY_AUTH_TARGET_MAPPINGS = "authTargetMapping";
 
     public static class AuthTargetMappingBuilder {
         private final Map<Class<?>, AuthTarget> mappings = new HashMap<Class<?>, AuthTarget>();
@@ -110,10 +118,27 @@ public class AuthTargetMapping {
 
         public Map<String, Object> getContext() { return context; }
 
+        /*
+        Method also called in the context of marshalling to a Map<String,Object>, necessary for SMS persistence.
+         */
         @Override
         public String toString() {
             return AUTH_INDEX_TYPE + COLON + authIndexType + SEMICOLON + AUTH_INDEX_VALUE + COLON + authIndexValue +
-                    SEMICOLON + CONTEXT + COLON +(context != null ? context.toString() : null);
+                    SEMICOLON + CONTEXT + COLON + (context != null ? context.toString() : null);
+        }
+
+        /*
+        Called in the context of marshalling from the Map<String, Object> representation, back to the AuthTarget representation.
+        TODO: not doing the context at the moment - return to this when type is resolved
+        authIndexType : module_instance ; authIndexValue : username ; context : null
+         */
+        static AuthTarget fromString(String stringAuthTarget) {
+            StringTokenizer topLevelTokenizer = new StringTokenizer(stringAuthTarget, SEMICOLON);
+            String authIndexTypeToken = topLevelTokenizer.nextToken();
+            String authIndexValueToken = topLevelTokenizer.nextToken();
+            String authIndexType =  authIndexTypeToken.substring(authIndexTypeToken.indexOf(COLON) + 1);
+            String authIndexValue = authIndexValueToken.substring(authIndexValueToken.indexOf(COLON) + 1);
+            return new AuthTarget(authIndexType, authIndexValue);
         }
 
         @Override
@@ -177,8 +202,10 @@ public class AuthTargetMapping {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("AuthTargetMapping instance with mappings:\n");
-        builder.append(mappings);
+        StringBuilder builder = new StringBuilder();
+        for (Map.Entry<Class<?>, AuthTarget> entry : mappings.entrySet()) {
+            builder.append(entry.getKey().getName() + BAR + entry.getValue().toString()).append('\n');
+        }
         return builder.toString();
     }
 
@@ -203,7 +230,8 @@ public class AuthTargetMapping {
     public static AuthTargetMapping fromJson(JsonValue json) throws IllegalStateException {
         AuthTargetMappingBuilder builder = AuthTargetMapping.builder();
         if (!json.isMap()) {
-            throw new IllegalArgumentException("JsonValue passed to AuthTargetMapping.fromJson not map!");
+            throw new IllegalArgumentException("JsonValue passed to AuthTargetMapping.fromJson not map. The json: "
+                    + json.toString());
         }
         Map<String, Object> map = json.asMap();
         for (Map.Entry<String, Object> entry : map.entrySet()) {
@@ -217,5 +245,38 @@ public class AuthTargetMapping {
             }
         }
         return builder.build();
+    }
+
+    public Map<String, Object> marshalToAttributeMap() {
+        HashSet<String> values = new HashSet<String>();
+        HashMap<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(SMS_KEY_AUTH_TARGET_MAPPINGS, values);
+        for (Map.Entry<Class<?>, AuthTarget> entry : mappings.entrySet()) {
+            values.add(entry.getKey().getName() + BAR + entry.getValue().toString());
+        }
+        return attributes;
+    }
+
+    public static AuthTargetMapping marshalFromAttributeMap(Map<String, Object> attributes) {
+        Object object = attributes.get(SMS_KEY_AUTH_TARGET_MAPPINGS);
+        if (object instanceof Set) {
+            AuthTargetMappingBuilder builder = AuthTargetMapping.builder();
+            for (Object obj : ((Set)object)) {
+                StringTokenizer tokenizer = new StringTokenizer(obj.toString(), BAR);
+                try {
+                    Class<?> clazz = Class.forName(tokenizer.nextToken());
+                    AuthTarget authTarget = AuthTarget.fromString(tokenizer.nextToken());
+                    builder.addMapping(clazz, authTarget.getAuthIndexType(), authTarget.getAuthIndexValue());
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalStateException("Exception marshalling AuthTargetMapping from attributeMap: "
+                            + attributes + "\n Exception: " + e);
+                }
+            }
+            return builder.build();
+
+        } else {
+            throw new IllegalStateException("Value in attribute map corresponding to key " +
+                    SMS_KEY_AUTH_TARGET_MAPPINGS + " not Set, but " + (object != null ? object.getClass().getName() : null));
+        }
     }
 }

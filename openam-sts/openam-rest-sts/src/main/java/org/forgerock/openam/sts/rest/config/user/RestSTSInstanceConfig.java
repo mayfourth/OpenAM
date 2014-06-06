@@ -192,4 +192,23 @@ public class RestSTSInstanceConfig extends STSInstanceConfig {
         builder.setSupportedTokenTranslations(transformConfigList);
         return builder.build();
     }
+
+    public Map<String, Object> marshalToAttributeMap() {
+        Map<String, Object> interimMap = toJson().asMap();
+        interimMap.remove(DEPLOYMENT_CONFIG);
+        interimMap.putAll(deploymentConfig.marshalToAttributeMap());
+/*
+        interimMap.remove(SUPPORTED_TOKEN_TRANSLATIONS);
+        for (TokenTransformConfig ttc : supportedTokenTranslations) {
+            interimMap.putAll(ttc.marshalToAttributeMap());
+        }
+*/
+        return interimMap;
+    }
+
+    public static RestSTSInstanceConfig marshalFromAttributeMap(Map<String, Object> attributeMap) {
+        RestDeploymentConfig restDeploymentConfig = RestDeploymentConfig.marshalFromAttributeMap(attributeMap);
+        attributeMap.put(DEPLOYMENT_CONFIG, restDeploymentConfig.toJson());
+        return fromJson(new JsonValue(attributeMap));
+    }
 }

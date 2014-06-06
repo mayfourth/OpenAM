@@ -22,6 +22,7 @@ import org.forgerock.util.Reject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.Map;
 
 import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
@@ -199,5 +200,13 @@ public class KeystoreConfig {
         } catch (UnsupportedEncodingException e) {
             throw new IllegalStateException("Unsupported encoding when marshalling from String to to byte[]: " + e, e);
         }
+    }
+
+    public Map<String, Object> marshalToAttributeMap() {
+        return toJson().asMap();
+    }
+
+    public static KeystoreConfig marshalFromAttributeMap(Map<String, Object> attributeMap) {
+        return fromJson(new JsonValue(attributeMap));
     }
 }

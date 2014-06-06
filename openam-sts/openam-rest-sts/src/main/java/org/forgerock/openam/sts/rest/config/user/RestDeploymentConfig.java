@@ -21,6 +21,9 @@ import org.forgerock.openam.sts.AuthTargetMapping;
 
 import org.forgerock.util.Reject;
 
+import java.net.URI;
+import java.util.Map;
+
 import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
 import static org.forgerock.json.fluent.JsonValue.object;
@@ -32,8 +35,13 @@ import static org.forgerock.json.fluent.JsonValue.object;
  * 2. The uri element (e.g. /realm1/accounting/bobo) at which the STS instance will be deployed
  * 3. The realm within which the STS is deployed.
  *
+ *
  */
 public class RestDeploymentConfig {
+    private static final String REALM = "realm";
+    private static final String URI_ELEMENT = "uriElement";
+    //TODO: reference from AuthTargetMapping
+    public static final String AUTH_TARGET_MAPPING = "authTargetMapping";
     public static class RestDeploymentConfigBuilder {
         private String uriElement;
         private String realm = "/"; //default value
@@ -116,15 +124,30 @@ public class RestDeploymentConfig {
     }
 
     public JsonValue toJson() {
-        return json(object(field("uriElement", uriElement), field("realm", realm),
-                field("authTargetMapping", authTargetMapping.toJson())));
+        return json(object(field(URI_ELEMENT, uriElement), field(REALM, realm),
+                field(AuthTargetMapping.SMS_KEY_AUTH_TARGET_MAPPINGS, authTargetMapping.toJson())));
     }
 
     public static RestDeploymentConfig fromJson(JsonValue json) {
+System.out.println("In RestDeploymentConfig.fromJson, the JsonValue: " + json.toString());
         return RestDeploymentConfig.builder()
-                .authTargetMapping(AuthTargetMapping.fromJson(json.get("authTargetMapping")))
-                .uriElement(json.get("uriElement").asString())
-                .realm(json.get("realm").asString())
+                .authTargetMapping(AuthTargetMapping.fromJson(json.get(AUTH_TARGET_MAPPING)))
+                .uriElement(json.get(URI_ELEMENT).asString())
+                .realm(json.get(REALM).asString())
                 .build();
     }
+
+    public Map<String, Object> marshalToAttributeMap() {
+        Map<String, Object> interimMap = toJson().asMap();
+        interimMap.remove(AUTH_TARGET_MAPPING);
+        interimMap.putAll(authTargetMapping.marshalToAttributeMap());
+        return interimMap;
+    }
+
+    public static RestDeploymentConfig marshalFromAttributeMap(Map<String, Object> attributeMap) {
+        AuthTargetMapping targetMapping = AuthTargetMapping.marshalFromAttributeMap(attributeMap);
+        attributeMap.put(AuthTargetMapping.SMS_KEY_AUTH_TARGET_MAPPINGS, targetMapping.toJson());
+        return fromJson(new JsonValue(attributeMap));
+    }
+
 }

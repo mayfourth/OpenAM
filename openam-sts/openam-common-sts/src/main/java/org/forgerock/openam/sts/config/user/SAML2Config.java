@@ -24,9 +24,12 @@ import org.forgerock.util.Reject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
@@ -41,6 +44,7 @@ import static org.forgerock.json.fluent.JsonValue.object;
  * TODO: do I want a name-qualifier in addition to a nameIdFormat?
  */
 public class SAML2Config {
+    private static final String BAR = "|";
     public static class SAML2ConfigBuilder {
         private String nameIdFormat = SAML2Constants.UNSPECIFIED;
         private Map<String, String> attributeMap;
@@ -405,5 +409,62 @@ public class SAML2Config {
         builder.audiences(toBeSetAudiences);
 
         return builder.build();
+    }
+
+    /*
+    We need to marshal the SAML2Config instance to a Map<String, Object>. The JsonValue of toJson gets us there,
+    except for the complex types for the audiences and attribute map. These need to be marshalled into a Set<String>,
+    as the Object in the Map<String,Object> handled by the SMS is either a String or a Set<String>.
+     */
+    public Map<String, Object> marshalToAttributeMap() {
+        Map<String, Object> preMap = toJson().asMap();
+        Object attributesObject = preMap.get(ATTRIBUTE_MAP);
+        if (attributesObject instanceof Map) {
+            preMap.remove(ATTRIBUTE_MAP);
+            Set<String> attributeValues = new HashSet<String>();
+            preMap.put(ATTRIBUTE_MAP, attributeValues);
+            for (Map.Entry<String, String> entry : ((Map<String, String>)attributesObject).entrySet()) {
+                attributeValues.add(entry.getKey() + BAR + entry.getValue());
+            }
+        } else {
+            throw new IllegalStateException("Type corresponding to " + ATTRIBUTE_MAP + " key unexpected. Type: "
+                    + (attributesObject != null ? attributesObject.getClass().getName() :" null"));
+        }
+ /*
+        Object audiencesObject = preMap.get(AUDIENCES);
+        if (audiencesObject instanceof List) {
+            preMap.remove(AUDIENCES);
+            Set<String> audienceValues = new HashSet<String>();
+            preMap.put(AUDIENCES, audienceValues);
+            audienceValues.addAll((List)audiencesObject);
+        } else {
+            throw new IllegalStateException("Type corresponding to " + AUDIENCES + " key unexpected. Type: "
+                    + (audiencesObject != null ? audiencesObject.getClass().getName() :" null"));
+        }
+*/
+        return preMap;
+    }
+
+    /*
+    Here we have to modify the ATTRIBUTE_MAP and AUDIENCES entries to match the JsonValue format expected by
+    fromJson, and then call the static fromJson. This method must marshal between the Json representation of a complex
+    object, and the representation expected by the SMS
+     */
+    public static SAML2Config marshalFromAttributeMap(Map<String, Object> smsAttributeMap) {
+        Object attributesObject = smsAttributeMap.get(ATTRIBUTE_MAP);
+        if (attributesObject instanceof Set) {
+            smsAttributeMap.remove(ATTRIBUTE_MAP);
+            HashMap<String, Object> jsonAttributeMap = new HashMap<String, Object>();
+            for (String entry : ((Set<String>)attributesObject)) {
+                StringTokenizer st = new StringTokenizer(entry, BAR);
+                jsonAttributeMap.put(st.nextToken(), st.nextToken());
+            }
+            smsAttributeMap.put(ATTRIBUTE_MAP, new JsonValue(jsonAttributeMap));
+        } else {
+            throw new IllegalStateException("Type corresponding to " + ATTRIBUTE_MAP + " key unexpected. Type: "
+                    + (attributesObject != null ? attributesObject.getClass().getName() :" null"));
+        }
+
+        return fromJson(new JsonValue(smsAttributeMap));
     }
 }

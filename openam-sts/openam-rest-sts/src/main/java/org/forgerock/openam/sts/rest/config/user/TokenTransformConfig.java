@@ -20,6 +20,8 @@ import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.util.Reject;
 
+import java.util.Map;
+
 import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
 import static org.forgerock.json.fluent.JsonValue.object;
@@ -93,5 +95,13 @@ public class TokenTransformConfig {
                 Enum.valueOf(TokenType.class, json.get("inputTokenType").asString()),
                 Enum.valueOf(TokenType.class, json.get("outputTokenType").asString()),
                 json.get("invalidateInterimOpenAMSession").asBoolean());
+    }
+
+    public Map<String, Object> marshalToAttributeMap() {
+        return toJson().asMap();
+    }
+
+    public static TokenTransformConfig marshalFromAttributeMap(Map<String, Object> attributeMap) {
+        return fromJson(new JsonValue(attributeMap));
     }
 }
