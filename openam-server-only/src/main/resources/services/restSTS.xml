@@ -44,7 +44,17 @@
                                  type="single" syntax="string" i18nKey="issuer_name"
                                  validator="RequiredValueValidator">
                 </AttributeSchema>
-     <!--           <SubSchema name="DeploymentConfig" inheritance="multiple"> -->
+                <AttributeSchema name="supported-token-transforms"
+                                 type="list"
+                                 syntax="string"
+                                 validator="RequiredValueValidator"
+                                 i18nKey="supported_token_transforms">
+                    <DefaultValues>
+                        <Value>USERNAME;SAML2;true</Value>
+                        <Value>OPENIDCONNECT;SAML2;true</Value>
+                        <Value>OPENAM;SAML2;false</Value>
+                    </DefaultValues>
+                </AttributeSchema>
                 <AttributeSchema name="deployment-realm"
                                  type="single" syntax="string" i18nKey="deployment_realm"
                                  validator="RequiredValueValidator">
@@ -63,18 +73,6 @@
                         <Value>OpenIdConnectIdToken;module;oidc;oidc_id_token_auth_target_header_key=oidc_id_token</Value>
                     </DefaultValues>
                 </AttributeSchema>
-             <!--   </SubSchema> -->
-                <AttributeSchema name="supported-token-transforms"
-                                 type="list"
-                                 syntax="string"
-                                 validator="RequiredValueValidator"
-                                 i18nKey="supported_token_transforms">
-                    <DefaultValues>
-                        <Value>USERNAME;SAML2;true</Value>
-                        <Value>OPENIDCONNECT;SAML2;true</Value>
-                        <Value>OPENAM;SAML2;false</Value>
-                    </DefaultValues>
-                </AttributeSchema>
                 <AttributeSchema name="keystore-filename"
                                  type="single" syntax="string" i18nKey="keystore_filename"
                                  validator="RequiredValueValidator">
@@ -83,13 +81,12 @@
                                  type="single" syntax="password" i18nKey="keystore_password"
                                  validator="RequiredValueValidator">
                 </AttributeSchema>
-                <AttributeSchema name="signature-key-alias"
-                                 type="single" syntax="string" i18nKey="signature_key_alias"
+                <AttributeSchema name="keystore-signature-key-alias"
+                                 type="single" syntax="string" i18nKey="keystore_signature_key_alias"
                                  validator="RequiredValueValidator">
                 </AttributeSchema>
-                <AttributeSchema name="signature-key-password"
-                                 type="single" syntax="password" i18nKey="signature_key_password"
-                                 validator="RequiredValueValidator">
+                <AttributeSchema name="keystore-signature-key-password"
+                                 type="single" syntax="password" i18nKey="keystore_signature_key_password">
                 </AttributeSchema>
 
                 <AttributeSchema name="saml2-name-id-format"
@@ -97,8 +94,7 @@
                                  validator="RequiredValueValidator">
                 </AttributeSchema>
                 <AttributeSchema name="saml2-token-lifetime-seconds"
-                                 type="single" syntax="number" i18nKey="saml2_token_lifetime_seconds"
-                                 validator="RequiredValueValidator">
+                                 type="single" syntax="number" i18nKey="saml2_token_lifetime_seconds">
                 </AttributeSchema>
                 <AttributeSchema name="saml2-custom-conditions-provider-class-name"
                                  type="single" syntax="string" i18nKey="saml2_custom_conditions_provider_class_name">
