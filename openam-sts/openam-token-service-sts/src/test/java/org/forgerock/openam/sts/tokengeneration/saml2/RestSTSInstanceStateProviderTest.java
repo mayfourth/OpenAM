@@ -21,6 +21,7 @@ import com.google.inject.Guice;
 import com.google.inject.TypeLiteral;
 import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.AuthTargetMapping;
+import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.TokenCreationException;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.config.user.KeystoreConfig;
@@ -50,6 +51,7 @@ import static org.mockito.Mockito.when;
 
 public class RestSTSInstanceStateProviderTest {
     private static final String DEPLOYMENT_URL_ELEMENT = "bobo/inst1";
+    private static final String REALM = "/";
     private RestSTSInstanceStateProvider provider;
     private RestSTSInstanceConfigPersister mockConfigPersister;
     private RestSTSInstanceStateFactory mockRestSTSInstanceStateFactory;
@@ -75,12 +77,12 @@ public class RestSTSInstanceStateProviderTest {
     }
 
     @Test
-    public void verifyCaching() throws TokenCreationException {
+    public void verifyCaching() throws TokenCreationException, STSInitializationException {
         RestSTSInstanceConfig instanceConfig = createSAMLRestInstanceConfig(DEPLOYMENT_URL_ELEMENT);
-        when(mockConfigPersister.getSTSInstanceConfig(DEPLOYMENT_URL_ELEMENT)).thenReturn(instanceConfig);
+        when(mockConfigPersister.getSTSInstanceConfig(DEPLOYMENT_URL_ELEMENT, REALM)).thenReturn(instanceConfig);
         when(mockRestSTSInstanceStateFactory.createRestSTSInstanceState(any(RestSTSInstanceConfig.class))).thenReturn(mockRestSTSInstanceState);
-        provider.getSTSInstanceState(DEPLOYMENT_URL_ELEMENT);
-        provider.getSTSInstanceState(DEPLOYMENT_URL_ELEMENT);
+        provider.getSTSInstanceState(DEPLOYMENT_URL_ELEMENT, REALM);
+        provider.getSTSInstanceState(DEPLOYMENT_URL_ELEMENT, REALM);
         verify(mockRestSTSInstanceStateFactory, times(1)).createRestSTSInstanceState(instanceConfig);
     }
 

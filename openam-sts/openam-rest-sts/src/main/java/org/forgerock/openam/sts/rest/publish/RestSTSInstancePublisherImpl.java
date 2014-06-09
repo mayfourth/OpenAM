@@ -100,15 +100,16 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
     /**
      * Removes the published rest-sts instance at the specified subPath.
      * @param subPath the path, relative to the base rest-sts service, to the to-be-removed service.
+     * @param realm The realm of the STS instance
      * @throws IllegalArgumentException if no rest-sts instance has been published at this relative path.
      */
     @Override
-    public synchronized void removeInstance(String subPath) throws IllegalArgumentException {
+    public synchronized void removeInstance(String subPath, String realm) throws IllegalArgumentException {
         Route route = publishedRoutes.remove(subPath);
         if (route == null) {
             throw new IllegalArgumentException("No published Rest STS instance at path " + subPath);
         }
-        persistentStore.removeSTSInstance(subPath);
+        persistentStore.removeSTSInstance(subPath, realm);
         router.removeRoute(route);
     }
 

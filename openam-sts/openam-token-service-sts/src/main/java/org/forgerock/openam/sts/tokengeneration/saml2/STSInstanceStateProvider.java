@@ -17,6 +17,7 @@
 package org.forgerock.openam.sts.tokengeneration.saml2;
 
 
+import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.TokenCreationException;
 
 /**
@@ -26,5 +27,5 @@ import org.forgerock.openam.sts.TokenCreationException;
  * The generic type corresponds to either RestSTSInstanceState or SoapSTSInstanceState (latter class still pending).
  */
 public interface STSInstanceStateProvider<T> {
-    T getSTSInstanceState(String instanceId) throws TokenCreationException;
+    T getSTSInstanceState(String instanceId, String realm) throws TokenCreationException, STSInitializationException;
 }

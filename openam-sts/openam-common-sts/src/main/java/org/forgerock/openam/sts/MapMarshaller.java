@@ -14,14 +14,12 @@
  * Copyright 2014 ForgeRock AS. All rights reserved.
  */
 
-package org.forgerock.openam.sts.rest.publish;
-
-import org.forgerock.openam.sts.STSInitializationException;
+package org.forgerock.openam.sts;
 
 import java.util.Map;
 
 /**
- * Marshals config state to a Map (and back) for SMS persistence. TODO: proper package? perhaps in commons?
+ * Marshals config state to a Map (and back) for SMS persistence.
  */
 public interface MapMarshaller<T> {
     Map<String, Object> marshallAttributesToMap(T instance) throws STSInitializationException;

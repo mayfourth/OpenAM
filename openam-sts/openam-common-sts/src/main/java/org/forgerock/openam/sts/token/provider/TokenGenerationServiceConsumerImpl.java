@@ -18,7 +18,6 @@ package org.forgerock.openam.sts.token.provider;
 
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.openam.sts.AMSTSConstants;
-import org.forgerock.openam.sts.AMSTSRuntimeException;
 import org.forgerock.openam.sts.TokenCreationException;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.service.invocation.ProofTokenState;
@@ -54,6 +53,7 @@ public class TokenGenerationServiceConsumerImpl implements TokenGenerationServic
 
     public String getSAML2BearerAssertion(String ssoTokenString,
                                           String stsInstanceId,
+                                          String realm,
                                           String serviceProviderAssertionConsumerServiceUrl,
                                           String authnContextClassRef) throws TokenCreationException {
         final TokenGenerationServiceInvocationStateBuilder invocationStateBuilder =
@@ -61,6 +61,7 @@ public class TokenGenerationServiceConsumerImpl implements TokenGenerationServic
                         SAML2SubjectConfirmation.BEARER,
                         authnContextClassRef,
                         stsInstanceId,
+                        realm,
                         ssoTokenString);
         invocationStateBuilder.serviceProviderAssertionConsumerServiceUrl(serviceProviderAssertionConsumerServiceUrl);
         return makeInvocation(invocationStateBuilder.build().toJson().toString());
@@ -68,18 +69,21 @@ public class TokenGenerationServiceConsumerImpl implements TokenGenerationServic
 
     public String getSAML2SenderVouchesAssertion(String ssoTokenString,
                                                  String stsInstanceId,
+                                                 String realm,
                                                  String authnContextClassRef) throws TokenCreationException {
         final TokenGenerationServiceInvocationStateBuilder invocationStateBuilder =
                 buildCommonSaml2Elements(
                         SAML2SubjectConfirmation.SENDER_VOUCHES,
                         authnContextClassRef,
                         stsInstanceId,
+                        realm,
                         ssoTokenString);
         return makeInvocation(invocationStateBuilder.build().toJson().toString());
     }
 
     public String getSAML2HolderOfKeyAssertion(String ssoTokenString,
                                                String stsInstanceId,
+                                               String realm,
                                                String authnContextClassRef,
                                                ProofTokenState proofTokenState) throws TokenCreationException {
         final TokenGenerationServiceInvocationStateBuilder invocationStateBuilder =
@@ -87,6 +91,7 @@ public class TokenGenerationServiceConsumerImpl implements TokenGenerationServic
                         SAML2SubjectConfirmation.HOLDER_OF_KEY,
                         authnContextClassRef,
                         stsInstanceId,
+                        realm,
                         ssoTokenString);
         invocationStateBuilder.proofTokenState(proofTokenState);
         return makeInvocation(invocationStateBuilder.build().toJson().toString());
@@ -95,6 +100,7 @@ public class TokenGenerationServiceConsumerImpl implements TokenGenerationServic
     private TokenGenerationServiceInvocationStateBuilder buildCommonSaml2Elements(SAML2SubjectConfirmation subjectConfirmation,
                                                                                   String authnContextClassRef,
                                                                                   String stsInstanceId,
+                                                                                  String realm,
                                                                                   String ssoTokenString) {
         return TokenGenerationServiceInvocationState.builder()
                 .tokenType(TokenType.SAML2)
@@ -102,6 +108,7 @@ public class TokenGenerationServiceConsumerImpl implements TokenGenerationServic
                 .authNContextClassRef(authnContextClassRef)
                 .stsType(AMSTSConstants.STSType.REST)
                 .stsInstanceId(stsInstanceId)
+                .realm(realm)
                 .ssoTokenString(ssoTokenString);
     }
 

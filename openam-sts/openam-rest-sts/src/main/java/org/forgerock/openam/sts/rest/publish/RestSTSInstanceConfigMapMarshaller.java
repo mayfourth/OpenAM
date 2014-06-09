@@ -17,18 +17,21 @@
 package org.forgerock.openam.sts.rest.publish;
 
 import org.forgerock.json.resource.ResourceException;
+import org.forgerock.openam.sts.MapMarshaller;
 import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 
 import java.util.Map;
 
 /**
- * @see org.forgerock.openam.sts.rest.publish.MapMarshaller
+ * @see org.forgerock.openam.sts.MapMarshaller
  *
  * All of the functionality to marshal to and from an attribute map is ultimately encapsulated in the RestSTSInstanceConfig
  * and encapsulated classes. I don't want to call the static method RestSTSInstanceConfig.marshalFromAttribute map directly
  * from my main-line code however, and thus wrap the consumption of the map-marshalling functionality implemented in
  * RestSTSInstanceConfig in this class.
+ *
+ * TODO: should this go in the marshal package?
  */
 public class RestSTSInstanceConfigMapMarshaller implements MapMarshaller<RestSTSInstanceConfig> {
 

@@ -26,6 +26,7 @@ import org.forgerock.openam.sts.XMLUtilitiesImpl;
 import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.forgerock.openam.sts.rest.publish.RestSTSInstanceConfigPersister;
+import org.forgerock.openam.sts.rest.publish.RestSTSSMSInstanceConfigPersister;
 import org.forgerock.openam.sts.tokengeneration.saml2.RestSTSInstanceState;
 import org.forgerock.openam.sts.tokengeneration.saml2.RestSTSInstanceStateFactory;
 import org.forgerock.openam.sts.tokengeneration.saml2.RestSTSInstanceStateFactoryImpl;
@@ -61,7 +62,7 @@ public class TokenGenerationModule extends AbstractModule {
         Once the TokenGenerationService gets called by the SOAP STS, I will need to bind a
         STSInstanceConfigPersister<SoapSTSInstanceConfig> class.
          */
-        bind(new TypeLiteral<STSInstanceConfigPersister<RestSTSInstanceConfig>>(){}).to(RestSTSInstanceConfigPersister.class)
+        bind(new TypeLiteral<STSInstanceConfigPersister<RestSTSInstanceConfig>>(){}).to(RestSTSSMSInstanceConfigPersister.class)
                 .in(Scopes.SINGLETON);
         bind(RestSTSInstanceStateFactory.class).to(RestSTSInstanceStateFactoryImpl.class);
         bind(STSKeyProviderFactory.class).to(STSKeyProviderFactoryImpl.class);

@@ -53,16 +53,16 @@ public class RestSTSPublishService implements SingletonResourceProvider {
             handler.handleError(new BadRequestException("The " + REALM_PATH + " query parameter has not been specified."));
         }
         final String action = request.getAction();
+        RestSTSInstanceConfig instanceConfig;
+        try {
+            instanceConfig = RestSTSInstanceConfig.fromJson(request.getContent());
+        } catch (Exception e) {
+            logger.error("Exception caught marshalling json into RestSTSInstanceConfig instance: " + e);
+            handler.handleError(new BadRequestException(e));
+            return;
+        }
         if (ADD_INSTANCE.equals(action)) {
-            RestSTSInstanceConfig instanceConfig = null;
-            try {
-                instanceConfig = RestSTSInstanceConfig.fromJson(request.getContent());
-            } catch (Exception e) {
-                logger.error("Exception caught marshalling json into RestSTSInstanceConfig instance: " + e);
-                handler.handleError(new BadRequestException(e));
-                return;
-            }
-            Injector instanceInjector = null;
+            Injector instanceInjector;
             try {
                 instanceInjector = Guice.createInjector(new RestSTSInstanceModule(instanceConfig));
             } catch (Exception e) {
@@ -81,10 +81,10 @@ public class RestSTSPublishService implements SingletonResourceProvider {
                 handler.handleError(new InternalServerErrorException(message, e));
             }
         } else if (REMOVE_INSTANCE.equals(action)) {
-            publisher.removeInstance(realmPath);
+            publisher.removeInstance(realmPath, instanceConfig.getDeploymentConfig().getRealm());
             handler.handleResult(json(object(field(RESULT, "rest sts instance successfully removed from " + realmPath))));
         } else {
-            handler.handleError(new BadRequestException("_action " + action + " is not supported."));
+            handler.handleError(new BadRequestException("The specified _action is not supported."));
         }
     }
 

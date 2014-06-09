@@ -17,7 +17,6 @@
 package org.forgerock.openam.sts.publish;
 
 import org.forgerock.openam.sts.STSInitializationException;
-import org.forgerock.openam.sts.config.user.STSInstanceConfig;
 
 import java.util.List;
 
@@ -43,7 +42,7 @@ public interface STSInstanceConfigPersister<T> {
      *
      * @param key The unique identifier for a particular STSInstanceConfig
      */
-    void removeSTSInstance(String key);
+    void removeSTSInstance(String key, String realm);
 
     /**
      * This method is called by the token generation service to obtain the STS-instance specific configurations -
@@ -58,7 +57,7 @@ public interface STSInstanceConfigPersister<T> {
      *                                and use that value as a unique identifier/indexed attribute.
      * @return The STSInstanceConfig corresponding to this deployment url element.
      */
-    public T getSTSInstanceConfig(String key);
+    public T getSTSInstanceConfig(String key, String realm) throws STSInitializationException;
 
     /**
      * This method will be called by some startup context in the {locally|remotely} deployed {REST|SOAP} STS context

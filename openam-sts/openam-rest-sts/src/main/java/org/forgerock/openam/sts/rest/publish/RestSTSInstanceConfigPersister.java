@@ -67,7 +67,7 @@ public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersiste
         logger.info("Persisted RestSTSInstanceConfig corresponding to key " + key);
     }
 
-    public void removeSTSInstance(String key) {
+    public void removeSTSInstance(String key, String realm) {
         RestSTSInstanceConfig removedEntry = configStore.remove(key);
         if (removedEntry == null) {
             logger.error("In removeSTSInstance, no existing RESTSTSInstanceConfig corresponding to key " + key);
@@ -76,7 +76,7 @@ public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersiste
         }
     }
 
-    public RestSTSInstanceConfig getSTSInstanceConfig(String key) {
+    public RestSTSInstanceConfig getSTSInstanceConfig(String key, String realm) {
         RestSTSInstanceConfig config = configStore.get(key);
         if (config ==  null) {
             throw new IllegalStateException("No RestSTSInstanceConfig corresponding to key " + key);
