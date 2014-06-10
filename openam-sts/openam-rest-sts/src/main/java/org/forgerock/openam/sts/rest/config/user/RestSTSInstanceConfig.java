@@ -17,6 +17,7 @@
 package org.forgerock.openam.sts.rest.config.user;
 
 import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.openam.sts.MapMarshallUtils;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.config.user.STSInstanceConfig;
 import org.forgerock.util.Reject;
@@ -199,22 +200,57 @@ public class RestSTSInstanceConfig extends STSInstanceConfig {
         return builder.build();
     }
 
-    public Map<String, Object> marshalToAttributeMap() {
-        Map<String, Object> interimMap = toJson().asMap();
+    /*
+    This method will marshal this state into the Map<String>, Set<String>> required for persistence in the SMS. The intent
+    is to leverage the toJson functionality, as a JsonValue is essentially a map, with the following exceptions:
+    1. the non-complex objects are not Set<String>, but rather <String>, and thus must be marshaled to a Set<String>. It seems
+    like I could go through all of the values in the map, and if any entry is simply a String, I could marshal it to a Set<String>
+    2. the complex objects (e.g. deploymentConfig, saml2Config, supportedTokenTranslations, etc) are themselves maps, and
+    thus must be 'flattened' into a single map. This is done by calling each of these encapsulated objects to provide a
+    map representation, and then insert these values into the top-level map.
+     */
+    public Map<String, Set<String>> marshalToAttributeMap() {
+        Map<String, Set<String>> interimMap = MapMarshallUtils.toSmsMap(toJson().asMap());
         interimMap.remove(DEPLOYMENT_CONFIG);
         interimMap.putAll(deploymentConfig.marshalToAttributeMap());
-/*
+
+        /*
+        Here the values are already contained in a set. I want to remove the referenced complex-object, but
+        then add each of the TokenTransformConfig instances in the supportTokenTranslationsSet to a Set<String>, obtaining
+        a string representation for each TokenTransformConfig instance, and adding it to the Set<String>
+         */
         interimMap.remove(SUPPORTED_TOKEN_TRANSLATIONS);
         for (TokenTransformConfig ttc : supportedTokenTranslations) {
             interimMap.putAll(ttc.marshalToAttributeMap());
         }
-*/
+
+        if (saml2Config != null) {
+            interimMap.remove(SAML2_CONFIG);
+            interimMap.putAll(saml2Config.marshalToAttributeMap());
+        }
+
+        interimMap.remove(KEYSTORE_CONFIG);
+        interimMap.putAll(keystoreConfig.marshalToAttributeMap());
+
         return interimMap;
     }
 
-    public static RestSTSInstanceConfig marshalFromAttributeMap(Map<String, Object> attributeMap) {
+    /*
+    When we are marshaling back from a Map<String, Set<String>>, this Map contains all of the values, also those
+    contributed by encapsulated complex objects. So the structure must be 'un-flattened', where the top-level map
+    is passed to encapsulated complex-objects, so that they may re-constitute themselves, and then the top-level json entry
+    key is set to point at these re-constituted complex objects.
+
+    The fact that primitive values are represented as Set<String> is a bit complicated - if I want to use fromJson(new JsonValue(attributeMap)),
+    I have to first transform the Set<String> back to a String. So I have to process the attributeMap, to take all entries that are Set<String>
+    and turn them into String.
+     */
+    public static RestSTSInstanceConfig marshalFromAttributeMap(Map<String, Set<String>> attributeMap) {
         RestDeploymentConfig restDeploymentConfig = RestDeploymentConfig.marshalFromAttributeMap(attributeMap);
-        attributeMap.put(DEPLOYMENT_CONFIG, restDeploymentConfig.toJson());
-        return fromJson(new JsonValue(attributeMap));
+        Map<String, Object> jsonAttributes = MapMarshallUtils.toJsonValueMap(attributeMap);
+        jsonAttributes.remove(DEPLOYMENT_CONFIG);
+        jsonAttributes.put(DEPLOYMENT_CONFIG, restDeploymentConfig.toJson());
+
+        return fromJson(new JsonValue(jsonAttributes));
     }
 }

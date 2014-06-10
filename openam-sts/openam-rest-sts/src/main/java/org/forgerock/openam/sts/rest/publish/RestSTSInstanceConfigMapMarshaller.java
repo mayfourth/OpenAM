@@ -22,6 +22,7 @@ import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @see org.forgerock.openam.sts.MapMarshaller
@@ -35,7 +36,7 @@ import java.util.Map;
  */
 public class RestSTSInstanceConfigMapMarshaller implements MapMarshaller<RestSTSInstanceConfig> {
 
-    public Map<String, Object> marshallAttributesToMap(RestSTSInstanceConfig instance) throws STSInitializationException {
+    public Map<String, Set<String>> marshallAttributesToMap(RestSTSInstanceConfig instance) throws STSInitializationException {
         try {
             return instance.marshalToAttributeMap();
         } catch (RuntimeException e) {
@@ -48,7 +49,7 @@ public class RestSTSInstanceConfigMapMarshaller implements MapMarshaller<RestSTS
         }
     }
 
-    public RestSTSInstanceConfig marshallFromMapAttributes(Map<String, Object> attributes) throws STSInitializationException {
+    public RestSTSInstanceConfig marshallFromMapAttributes(Map<String, Set<String>> attributes) throws STSInitializationException {
         try {
             return RestSTSInstanceConfig.marshalFromAttributeMap(attributes);
         } catch (RuntimeException e) {

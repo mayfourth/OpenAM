@@ -19,9 +19,11 @@ package org.forgerock.openam.sts.rest.config.user;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.openam.sts.AuthTargetMapping;
 
+import org.forgerock.openam.sts.MapMarshallUtils;
 import org.forgerock.util.Reject;
 
 import java.util.Map;
+import java.util.Set;
 
 import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
@@ -139,17 +141,17 @@ public class RestDeploymentConfig {
                 .build();
     }
 
-    public Map<String, Object> marshalToAttributeMap() {
-        Map<String, Object> interimMap = toJson().asMap();
+    public Map<String, Set<String>> marshalToAttributeMap() {
+        Map<String, Set<String>> interimMap = MapMarshallUtils.toSmsMap(toJson().asMap());
         interimMap.remove(AUTH_TARGET_MAPPINGS);
         interimMap.putAll(authTargetMapping.marshalToAttributeMap());
         return interimMap;
     }
 
-    public static RestDeploymentConfig marshalFromAttributeMap(Map<String, Object> attributeMap) {
+    public static RestDeploymentConfig marshalFromAttributeMap(Map<String, Set<String>> attributeMap) {
         AuthTargetMapping targetMapping = AuthTargetMapping.marshalFromAttributeMap(attributeMap);
-        attributeMap.put(AuthTargetMapping.AUTH_TARGET_MAPPINGS, targetMapping.toJson());
-        return fromJson(new JsonValue(attributeMap));
+        Map<String, Object> jsonMap = MapMarshallUtils.toJsonValueMap(attributeMap);
+        jsonMap.put(AuthTargetMapping.AUTH_TARGET_MAPPINGS, targetMapping.toJson());
+        return fromJson(new JsonValue(jsonMap));
     }
-
 }

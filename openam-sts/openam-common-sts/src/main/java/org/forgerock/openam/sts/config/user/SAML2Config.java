@@ -19,6 +19,7 @@ package org.forgerock.openam.sts.config.user;
 import com.sun.identity.saml2.common.SAML2Constants;
 import org.apache.xml.security.c14n.Canonicalizer;
 import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.openam.sts.MapMarshallUtils;
 import org.forgerock.util.Reject;
 
 import java.util.ArrayList;
@@ -345,10 +346,15 @@ public class SAML2Config {
         return (nameIdFormat + attributeMap + audiences + canonicalizationAlgorithm + Long.toString(tokenLifetimeInSeconds)).hashCode();
     }
 
+    /*
+    Because toJson will be used to produce the map that will also be used to marshal to the SMS attribute map format, and
+    because the SMS attribute map format represents all values as Set<String>, I need to represent all of the json values
+    as strings as well.
+     */
     public JsonValue toJson() {
         JsonValue jsonValue = json(object(
                 field(NAME_ID_FORMAT, nameIdFormat),
-                field(TOKEN_LIFETIME, tokenLifetimeInSeconds),
+                field(TOKEN_LIFETIME, String.valueOf(tokenLifetimeInSeconds)),
                 field(CUSTOM_CONDITIONS_PROVIDER_CLASS, customConditionsProviderClassName),
                 field(CUSTOM_SUBJECT_PROVIDER_CLASS, customSubjectProviderClassName),
                 field(CUSTOM_ATTRIBUTE_STATEMENTS_PROVIDER_CLASS, customAttributeStatementsProviderClassName),
@@ -357,7 +363,7 @@ public class SAML2Config {
                 field(CUSTOM_AUTHENTICATION_STATEMENTS_PROVIDER_CLASS, customAuthenticationStatementsProviderClassName),
                 field(CUSTOM_AUTHZ_DECISION_STATEMENTS_PROVIDER_CLASS, customAuthzDecisionStatementsProviderClassName),
                 field(SIGNATURE_ALGORITHM, signatureAlgorithm),
-                field(SIGN_ASSERTION, signAssertion),
+                field(SIGN_ASSERTION, String.valueOf(signAssertion)),
                 field(CANONICALIZATION_ALGORITHM, canonicalizationAlgorithm)));
 
         JsonValue jsonValueAttributeMap = new JsonValue(new HashMap<String, Object>());
@@ -375,7 +381,9 @@ public class SAML2Config {
     public static SAML2Config fromJson(JsonValue json) throws IllegalStateException {
         SAML2ConfigBuilder builder = SAML2Config.builder()
                 .nameIdFormat(json.get(NAME_ID_FORMAT).asString())
-                .tokenLifetimeInSeconds(json.get(TOKEN_LIFETIME).asLong())
+                //because we have to go to the SMS Map representation, where all values are Set<String>, I need to
+                // pull the value from Json as a string, and then parse out a Long.
+                .tokenLifetimeInSeconds(Long.valueOf(json.get(TOKEN_LIFETIME).asString()))
                 .customConditionsProviderClassName(json.get(CUSTOM_CONDITIONS_PROVIDER_CLASS).asString())
                 .customSubjectProviderClassName(json.get(CUSTOM_SUBJECT_PROVIDER_CLASS).asString())
                 .customAttributeStatementsProviderClassName(json.get(CUSTOM_ATTRIBUTE_STATEMENTS_PROVIDER_CLASS).asString())
@@ -384,7 +392,7 @@ public class SAML2Config {
                 .customAuthenticationStatementsProviderClassName(json.get(CUSTOM_AUTHENTICATION_STATEMENTS_PROVIDER_CLASS).asString())
                 .customAuthzDecisionStatementsProviderClassName(json.get(CUSTOM_AUTHZ_DECISION_STATEMENTS_PROVIDER_CLASS).asString())
                 .signatureAlgorithm(json.get(SIGNATURE_ALGORITHM).asString())
-                .signAssertion(json.get(SIGN_ASSERTION).asBoolean())
+                .signAssertion(Boolean.valueOf(json.get(SIGN_ASSERTION).asString()))
                 .canonicalizationAlgorithm(json.get(CANONICALIZATION_ALGORITHM).asString());
 
         JsonValue jsonAttributes = json.get(ATTRIBUTE_MAP);
@@ -416,16 +424,16 @@ public class SAML2Config {
 
     /*
     We need to marshal the SAML2Config instance to a Map<String, Object>. The JsonValue of toJson gets us there,
-    except for the complex types for the audiences and attribute map. These need to be marshalled into a Set<String>,
-    as the Object in the Map<String,Object> handled by the SMS is either a String or a Set<String>.
+    except for the complex types for the audiences and attribute map. These need to be marshaled into a Set<String>.
      */
-    public Map<String, Object> marshalToAttributeMap() {
+    public Map<String, Set<String>> marshalToAttributeMap() {
         Map<String, Object> preMap = toJson().asMap();
+        Map<String, Set<String>> finalMap = MapMarshallUtils.toSmsMap(preMap);
         Object attributesObject = preMap.get(ATTRIBUTE_MAP);
         if (attributesObject instanceof Map) {
-            preMap.remove(ATTRIBUTE_MAP);
+            finalMap.remove(ATTRIBUTE_MAP);
             Set<String> attributeValues = new HashSet<String>();
-            preMap.put(ATTRIBUTE_MAP, attributeValues);
+            finalMap.put(ATTRIBUTE_MAP, attributeValues);
             for (Map.Entry<String, String> entry : ((Map<String, String>)attributesObject).entrySet()) {
                 attributeValues.add(entry.getKey() + BAR + entry.getValue());
             }
@@ -433,19 +441,20 @@ public class SAML2Config {
             throw new IllegalStateException("Type corresponding to " + ATTRIBUTE_MAP + " key unexpected. Type: "
                     + (attributesObject != null ? attributesObject.getClass().getName() :" null"));
         }
- /*
+
         Object audiencesObject = preMap.get(AUDIENCES);
-        if (audiencesObject instanceof List) {
-            preMap.remove(AUDIENCES);
+        if ((audiencesObject instanceof JsonValue) && ((JsonValue) audiencesObject).isList()) {
+            finalMap.remove(AUDIENCES);
             Set<String> audienceValues = new HashSet<String>();
-            preMap.put(AUDIENCES, audienceValues);
-            audienceValues.addAll((List)audiencesObject);
+            finalMap.put(AUDIENCES, audienceValues);
+            for (Object obj : ((JsonValue)audiencesObject).asList()) {
+                audienceValues.add(obj.toString());
+            }
         } else {
             throw new IllegalStateException("Type corresponding to " + AUDIENCES + " key unexpected. Type: "
                     + (audiencesObject != null ? audiencesObject.getClass().getName() :" null"));
         }
-*/
-        return preMap;
+        return finalMap;
     }
 
     /*
@@ -453,21 +462,35 @@ public class SAML2Config {
     fromJson, and then call the static fromJson. This method must marshal between the Json representation of a complex
     object, and the representation expected by the SMS
      */
-    public static SAML2Config marshalFromAttributeMap(Map<String, Object> smsAttributeMap) {
-        Object attributesObject = smsAttributeMap.get(ATTRIBUTE_MAP);
-        if (attributesObject instanceof Set) {
-            smsAttributeMap.remove(ATTRIBUTE_MAP);
-            HashMap<String, Object> jsonAttributeMap = new HashMap<String, Object>();
-            for (String entry : ((Set<String>)attributesObject)) {
-                StringTokenizer st = new StringTokenizer(entry, BAR);
-                jsonAttributeMap.put(st.nextToken(), st.nextToken());
-            }
-            smsAttributeMap.put(ATTRIBUTE_MAP, new JsonValue(jsonAttributeMap));
-        } else {
-            throw new IllegalStateException("Type corresponding to " + ATTRIBUTE_MAP + " key unexpected. Type: "
-                    + (attributesObject != null ? attributesObject.getClass().getName() :" null"));
+    public static SAML2Config marshalFromAttributeMap(Map<String, Set<String>> smsAttributeMap) {
+        Set<String> attributes = smsAttributeMap.get(ATTRIBUTE_MAP);
+        /*
+        The STSInstanceConfig may not have SAML2Config, if there are no defined token transformations that result
+        in a SAML2 assertion. So if we have null attributes, this means that STSInstanceConfig.marshalFromAttributeMap
+        was called. Note that we cannot check for isEmpty, as this will be the case if SAML2Config has been defined, but
+        simply without any attributes.
+         */
+        if (attributes == null) {
+            return null;
         }
+        Map<String, Object> jsonAttributes = MapMarshallUtils.toJsonValueMap(smsAttributeMap);
+        jsonAttributes.remove(ATTRIBUTE_MAP);
+        HashMap<String, Object> jsonAttributeMap = new HashMap<String, Object>();
+        for (String entry : attributes) {
+            StringTokenizer st = new StringTokenizer(entry, BAR);
+            jsonAttributeMap.put(st.nextToken(), st.nextToken());
+        }
+        jsonAttributes.put(ATTRIBUTE_MAP, new JsonValue(jsonAttributeMap));
 
-        return fromJson(new JsonValue(smsAttributeMap));
+        /*
+        AUDIENCES is a Set<String> in the smsAttributeMap, but fromJson expects a List.
+         */
+        jsonAttributes.remove(AUDIENCES);
+        JsonValue jsonAudiences = new JsonValue(new ArrayList<Object>());
+        List<Object> audienceList = jsonAudiences.asList();
+        audienceList.addAll(smsAttributeMap.get(AUDIENCES));
+        jsonAttributes.put(AUDIENCES, jsonAudiences);
+
+        return fromJson(new JsonValue(jsonAttributes));
     }
 }

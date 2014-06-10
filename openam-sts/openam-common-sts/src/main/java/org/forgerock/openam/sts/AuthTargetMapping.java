@@ -256,7 +256,7 @@ public class AuthTargetMapping {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         for (Map.Entry<Class<?>, AuthTarget> entry : mappings.entrySet()) {
-            builder.append(entry.getKey().getName() + BAR + entry.getValue().toString()).append('\n');
+            builder.append(entry.getKey().getName()).append(BAR).append(entry.getValue().toString()).append('\n');
         }
         return builder.toString();
     }
@@ -299,9 +299,9 @@ public class AuthTargetMapping {
         return builder.build();
     }
 
-    public Map<String, Object> marshalToAttributeMap() {
+    public Map<String, Set<String>> marshalToAttributeMap() {
         HashSet<String> values = new HashSet<String>();
-        HashMap<String, Object> attributes = new HashMap<String, Object>();
+        HashMap<String, Set<String>> attributes = new HashMap<String, Set<String>>();
         attributes.put(AUTH_TARGET_MAPPINGS, values);
         for (Map.Entry<Class<?>, AuthTarget> entry : mappings.entrySet()) {
             values.add(entry.getKey().getName() + BAR + entry.getValue().toString());
@@ -309,9 +309,9 @@ public class AuthTargetMapping {
         return attributes;
     }
 
-    public static AuthTargetMapping marshalFromAttributeMap(Map<String, Object> attributes) {
+    public static AuthTargetMapping marshalFromAttributeMap(Map<String, Set<String>> attributes) {
         Object object = attributes.get(AUTH_TARGET_MAPPINGS);
-        if (object instanceof Set) {
+        if (object != null) {
             AuthTargetMappingBuilder builder = AuthTargetMapping.builder();
             for (Object obj : ((Set)object)) {
                 StringTokenizer tokenizer = new StringTokenizer(obj.toString(), BAR);
@@ -325,8 +325,8 @@ public class AuthTargetMapping {
                 }            }
             return builder.build();
         } else {
-            throw new IllegalStateException("Value in attribute map corresponding to key " +
-                    AUTH_TARGET_MAPPINGS + " not Set, but " + (object != null ? object.getClass().getName() : null));
+            throw new IllegalStateException("No value in attribute map corresponding to key " +
+                    AUTH_TARGET_MAPPINGS);
         }
     }
 

@@ -17,9 +17,11 @@
 package org.forgerock.openam.sts.config.user;
 
 import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.openam.sts.MapMarshallUtils;
 import org.forgerock.util.Reject;
 
 import java.util.Map;
+import java.util.Set;
 
 import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
@@ -311,8 +313,8 @@ public class STSInstanceConfig {
         }
     }
 
-    public Map<String, Object> marshalToAttributeMap() {
-        Map<String, Object> attributes = toJson().asMap();
+    public Map<String, Set<String>> marshalToAttributeMap() {
+        Map<String, Set<String>> attributes = MapMarshallUtils.toSmsMap(toJson().asMap());
         /*
         the Map<String, Object> expected by the SMS is a flat structure - so I need to flatten all
         nested elements.
@@ -326,22 +328,21 @@ public class STSInstanceConfig {
         return attributes;
     }
 
-    public static STSInstanceConfig marshalFromAttributeMap(Map<String, Object> attributeMap) {
+    public static STSInstanceConfig marshalFromAttributeMap(Map<String, Set<String>> attributeMap) {
+        Map<String, Object> jsonAttributes = MapMarshallUtils.toJsonValueMap(attributeMap);
         /*
         Here I need to un-flatten the SAML2Config and keystoreConfig state.
          */
         KeystoreConfig keystoreConfig = KeystoreConfig.marshalFromAttributeMap(attributeMap);
-        attributeMap.put(KEYSTORE_CONFIG, keystoreConfig.toJson());
+        jsonAttributes.put(KEYSTORE_CONFIG, keystoreConfig.toJson());
         /*
-        If SAML2Config state is not present, an exception will be thrown. That will tell me that no SAML2Config
+        If SAML2Config state is not present, null will be returned. That will tell me that no SAML2Config
         had been present initially.
          */
-        try {
-            SAML2Config saml2Config = SAML2Config.marshalFromAttributeMap(attributeMap);
-            attributeMap.put(SAML2_CONFIG, saml2Config.toJson());
-        } catch (IllegalStateException e) {
-            //nothing to do here - this tells me no SAML2 config state was present initially
+        SAML2Config saml2Config = SAML2Config.marshalFromAttributeMap(attributeMap);
+        if (saml2Config != null) {
+            jsonAttributes.put(SAML2_CONFIG, saml2Config.toJson());
         }
-        return fromJson(new JsonValue(attributeMap));
+        return fromJson(new JsonValue(jsonAttributes));
     }
 }

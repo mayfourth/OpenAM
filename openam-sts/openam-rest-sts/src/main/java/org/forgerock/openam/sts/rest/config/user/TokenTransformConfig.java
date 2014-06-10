@@ -17,10 +17,12 @@
 package org.forgerock.openam.sts.rest.config.user;
 
 import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.openam.sts.MapMarshallUtils;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.util.Reject;
 
 import java.util.Map;
+import java.util.Set;
 
 import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
@@ -97,11 +99,11 @@ public class TokenTransformConfig {
                 json.get("invalidateInterimOpenAMSession").asBoolean());
     }
 
-    public Map<String, Object> marshalToAttributeMap() {
-        return toJson().asMap();
+    public Map<String, Set<String>> marshalToAttributeMap() {
+        return MapMarshallUtils.toSmsMap(toJson().asMap());
     }
 
-    public static TokenTransformConfig marshalFromAttributeMap(Map<String, Object> attributeMap) {
-        return fromJson(new JsonValue(attributeMap));
+    public static TokenTransformConfig marshalFromAttributeMap(Map<String, Set<String>> attributeMap) {
+        return fromJson(new JsonValue(MapMarshallUtils.toJsonValueMap(attributeMap)));
     }
 }

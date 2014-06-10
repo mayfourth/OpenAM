@@ -17,11 +17,12 @@
 package org.forgerock.openam.sts;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Marshals config state to a Map (and back) for SMS persistence.
  */
 public interface MapMarshaller<T> {
-    Map<String, Object> marshallAttributesToMap(T instance) throws STSInitializationException;
-    T marshallFromMapAttributes(Map<String, Object> attributes) throws STSInitializationException;
+    Map<String, Set<String>> marshallAttributesToMap(T instance) throws STSInitializationException;
+    T marshallFromMapAttributes(Map<String, Set<String>> attributes) throws STSInitializationException;
 }
