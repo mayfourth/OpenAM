@@ -21,7 +21,7 @@ import com.google.inject.Injector;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.json.resource.*;
 import org.forgerock.json.resource.servlet.HttpContext;
-import org.forgerock.openam.sts.STSInitializationException;
+import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.rest.RestSTS;
 import org.forgerock.openam.sts.rest.config.RestSTSInstanceModule;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
@@ -35,7 +35,8 @@ import static org.forgerock.json.fluent.JsonValue.object;
 public class RestSTSPublishService implements SingletonResourceProvider {
     private static final String ADD_INSTANCE = "add_instance";
     private static final String REMOVE_INSTANCE = "remove_instance";
-    private static final String REALM_PATH = "realm_path";
+    private static final String REALM = "realm";
+    private static final String STS_ID = "sts_id";
     private static final String RESULT = "result";
 
     private final RestSTSInstancePublisher publisher;
@@ -48,20 +49,16 @@ public class RestSTSPublishService implements SingletonResourceProvider {
 
     public void actionInstance(ServerContext context, ActionRequest request, ResultHandler<JsonValue> handler) {
         HttpContext httpContext = context.asContext(HttpContext.class);
-        String realmPath = httpContext.getParameterAsString(REALM_PATH);
-        if (realmPath == null) {
-            handler.handleError(new BadRequestException("The " + REALM_PATH + " query parameter has not been specified."));
-        }
         final String action = request.getAction();
-        RestSTSInstanceConfig instanceConfig;
-        try {
-            instanceConfig = RestSTSInstanceConfig.fromJson(request.getContent());
-        } catch (Exception e) {
-            logger.error("Exception caught marshalling json into RestSTSInstanceConfig instance: " + e);
-            handler.handleError(new BadRequestException(e));
-            return;
-        }
         if (ADD_INSTANCE.equals(action)) {
+            RestSTSInstanceConfig instanceConfig;
+            try {
+                instanceConfig = RestSTSInstanceConfig.fromJson(request.getContent());
+            } catch (Exception e) {
+                logger.error("Exception caught marshalling json into RestSTSInstanceConfig instance: " + e);
+                handler.handleError(new BadRequestException(e));
+                return;
+            }
             Injector instanceInjector;
             try {
                 instanceInjector = Guice.createInjector(new RestSTSInstanceModule(instanceConfig));
@@ -75,18 +72,36 @@ public class RestSTSPublishService implements SingletonResourceProvider {
                 String urlElement = instanceConfig.getDeploymentConfig().getUriElement();
                 publisher.publishInstance(instanceConfig, instanceInjector.getInstance(RestSTS.class), urlElement);
                 handler.handleResult(json(object(field(RESULT, "rest sts instance successfully published at " + urlElement))));
-            } catch (STSInitializationException e) {
+            } catch (STSPublishException e) {
                 String message = "Exception caught publishing instance: " + e;
                 logger.error(message, e);
-                handler.handleError(new InternalServerErrorException(message, e));
+                handler.handleError(e);
             } catch (Exception e) {
                 String message = "Exception caught publishing instance: " + e;
                 logger.error(message, e);
                 handler.handleError(new InternalServerErrorException(message, e));
             }
         } else if (REMOVE_INSTANCE.equals(action)) {
-            publisher.removeInstance(realmPath, instanceConfig.getDeploymentConfig().getRealm());
-            handler.handleResult(json(object(field(RESULT, "rest sts instance successfully removed from " + realmPath))));
+            String realm = httpContext.getParameterAsString(REALM);
+            if (realm == null) {
+                handler.handleError(new BadRequestException("The " + REALM + " query parameter has not been specified."));
+            }
+            String stsId = httpContext.getParameterAsString(STS_ID);
+            if (stsId == null) {
+                handler.handleError(new BadRequestException("The " + STS_ID + " query parameter has not been specified."));
+            }
+            try {
+                publisher.removeInstance(stsId, realm);
+                handler.handleResult(json(object(field(RESULT, "rest sts instance " + stsId + " successfully removed from realm " + realm))));
+            } catch (STSPublishException e) {
+                String message = "Exception caught removing instance: " + e;
+                logger.error(message, e);
+                handler.handleError(e);
+            } catch (Exception e) {
+                String message = "Exception caught removing instance: " + e;
+                logger.error(message, e);
+                handler.handleError(new InternalServerErrorException(message, e));
+            }
         } else {
             handler.handleError(new BadRequestException("The specified _action is not supported."));
         }

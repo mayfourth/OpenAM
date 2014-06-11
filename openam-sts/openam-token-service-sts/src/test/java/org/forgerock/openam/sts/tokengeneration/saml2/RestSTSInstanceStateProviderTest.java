@@ -20,8 +20,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.TypeLiteral;
 import org.forgerock.openam.sts.AMSTSConstants;
+import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.config.user.AuthTargetMapping;
-import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.TokenCreationException;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.config.user.KeystoreConfig;
@@ -77,7 +77,7 @@ public class RestSTSInstanceStateProviderTest {
     }
 
     @Test
-    public void verifyCaching() throws TokenCreationException, STSInitializationException {
+    public void verifyCaching() throws TokenCreationException, STSPublishException {
         RestSTSInstanceConfig instanceConfig = createSAMLRestInstanceConfig(DEPLOYMENT_URL_ELEMENT);
         when(mockConfigPersister.getSTSInstanceConfig(DEPLOYMENT_URL_ELEMENT, REALM)).thenReturn(instanceConfig);
         when(mockRestSTSInstanceStateFactory.createRestSTSInstanceState(any(RestSTSInstanceConfig.class))).thenReturn(mockRestSTSInstanceState);

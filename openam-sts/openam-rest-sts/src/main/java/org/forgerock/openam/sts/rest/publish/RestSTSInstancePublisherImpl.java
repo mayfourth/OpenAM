@@ -20,6 +20,7 @@ import org.forgerock.json.resource.ResourceException;
 import org.forgerock.json.resource.Route;
 import org.forgerock.json.resource.Router;
 import org.forgerock.openam.sts.STSInitializationException;
+import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
 import org.forgerock.openam.sts.rest.RestSTS;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
@@ -66,7 +67,8 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
      * subPath.
      */
     @Override
-    public synchronized void publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS restSTSInstance, String subPath) throws STSInitializationException {
+    public synchronized void publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS restSTSInstance, String subPath)
+            throws STSPublishException {
         /*
         Exclude the possibility that a rest-sts instance has already been added at the sub-path.
 
@@ -82,7 +84,7 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         published Routes in order to be able to remove them.
          */
         if (publishedRoutes.containsKey(subPath)) {
-            throw new STSInitializationException(ResourceException.BAD_REQUEST, "A rest-sts instance at sub-path " + subPath + " has already been published.");
+            throw new STSPublishException(ResourceException.BAD_REQUEST, "A rest-sts instance at sub-path " + subPath + " has already been published.");
         }
         Route route = router.addRoute(subPath, new RestSTSService(restSTSInstance, logger));
         /*
@@ -104,7 +106,7 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
      * @throws IllegalArgumentException if no rest-sts instance has been published at this relative path.
      */
     @Override
-    public synchronized void removeInstance(String subPath, String realm) throws IllegalArgumentException {
+    public synchronized void removeInstance(String subPath, String realm) throws STSPublishException {
         Route route = publishedRoutes.remove(subPath);
         if (route == null) {
             throw new IllegalArgumentException("No published Rest STS instance at path " + subPath);
@@ -113,7 +115,7 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         router.removeRoute(route);
     }
 
-    public List<RestSTSInstanceConfig> getPublishedInstances() {
+    public List<RestSTSInstanceConfig> getPublishedInstances() throws STSPublishException{
         return persistentStore.getAllPublishedInstances();
     }
 }

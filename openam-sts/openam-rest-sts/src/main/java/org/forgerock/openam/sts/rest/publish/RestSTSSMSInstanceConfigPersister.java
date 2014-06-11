@@ -26,7 +26,7 @@ import com.sun.identity.sm.ServiceConfig;
 import com.sun.identity.sm.ServiceConfigManager;
 import org.forgerock.json.resource.ResourceException;
 import org.forgerock.openam.sts.MapMarshaller;
-import org.forgerock.openam.sts.STSInitializationException;
+import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.slf4j.Logger;
@@ -52,7 +52,7 @@ public class RestSTSSMSInstanceConfigPersister implements STSInstanceConfigPersi
         this.logger = logger;
     }
 
-    public synchronized void persistSTSInstance(String stsInstanceId, RestSTSInstanceConfig instance) throws STSInitializationException {
+    public synchronized void persistSTSInstance(String stsInstanceId, RestSTSInstanceConfig instance) throws STSPublishException {
         try {
             /*
             Model for code below taken from AMAuthenticationManager.createAuthenticationInstance, as the 'multiple authN module per realm'
@@ -76,19 +76,44 @@ public class RestSTSSMSInstanceConfigPersister implements STSInstanceConfigPersi
             }
 
         } catch (SMSException e) {
-            throw new STSInitializationException(ResourceException.INTERNAL_ERROR,
+            throw new STSPublishException(ResourceException.INTERNAL_ERROR,
                     "Exception caught persisting RestSTSInstanceConfig instance: " + e, e);
         } catch (SSOException e) {
-            throw new STSInitializationException(ResourceException.INTERNAL_ERROR,
+            throw new STSPublishException(ResourceException.INTERNAL_ERROR,
                     "Exception caught persisting RestSTSInstanceConfig instance: " + e, e);
         }
     }
 
-    public void removeSTSInstance(String key, String realm) {
-
+    public void removeSTSInstance(String stsInstanceId, String realm) throws STSPublishException {
+        /*
+        Model for code below taken from AMAuthenticationManager.deleteAuthenticationInstance, as the 'multiple authN module per realm'
+        model applies to the STS, and the AMAuthenticationManager seems to implement the SMS persistence concern of these semantics.
+         */
+        ServiceConfig baseService;
+        try {
+            baseService = new ServiceConfigManager(SERVICE_NAME, adminToken).getOrganizationConfig(realm, null);
+            if (baseService != null) {
+                baseService.removeSubConfig(stsInstanceId);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("REST STS instance " + stsInstanceId + " in realm " + realm + " removed from persistent store.");
+                }
+            } else {
+                throw new STSPublishException(ResourceException.INTERNAL_ERROR,
+                        "Could not create ServiceConfigManager for realm " + realm +
+                                " in order to remove Rest STS instance with id " + stsInstanceId);
+            }
+        } catch (SMSException e) {
+            throw new STSPublishException(ResourceException.INTERNAL_ERROR,
+                    "Exception caught removing Rest STS instance with id " + stsInstanceId + " from realm "
+                            + realm +". Exception: " + e, e);
+        } catch (SSOException e) {
+            throw new STSPublishException(ResourceException.INTERNAL_ERROR,
+                    "Exception caught removing Rest STS instance with id " + stsInstanceId + " from realm "
+                            + realm +". Exception: " + e, e);
+        }
     }
 
-    public RestSTSInstanceConfig getSTSInstanceConfig(String stsInstanceId, String realm) throws STSInitializationException {
+    public RestSTSInstanceConfig getSTSInstanceConfig(String stsInstanceId, String realm) throws STSPublishException {
         try {
             /*
             Model for code below taken from AMAuthenticationManager.getAuthenticationInstance, as the 'multiple authN module per realm'
@@ -101,22 +126,22 @@ public class RestSTSSMSInstanceConfigPersister implements STSInstanceConfigPersi
                     Map<String, Set<String>> instanceAttrs = instanceService.getAttributes();
                     return RestSTSInstanceConfig.marshalFromAttributeMap(instanceAttrs);
                 } else {
-                    throw new STSInitializationException(ResourceException.INTERNAL_ERROR,
+                    throw new STSPublishException(ResourceException.INTERNAL_ERROR,
                             "Error reading RestSTSInstanceConfig instance from SMS: no instance state in realm " + realm
                                     + " corresponding to instance id " + stsInstanceId);
                 }
             } else {
-                throw new STSInitializationException(ResourceException.INTERNAL_ERROR,
+                throw new STSPublishException(ResourceException.INTERNAL_ERROR,
                         "Error reading RestSTSInstanceConfig instance from SMS: no base instance state in realm " + realm);
             }
         } catch (SSOException e) {
-            throw new STSInitializationException(ResourceException.INTERNAL_ERROR,
+            throw new STSPublishException(ResourceException.INTERNAL_ERROR,
                     "Exception caught reading RestSTSInstanceConfig instance from SMS: " + e, e);
         } catch (SMSException e) {
-            throw new STSInitializationException(ResourceException.INTERNAL_ERROR,
+            throw new STSPublishException(ResourceException.INTERNAL_ERROR,
                     "Exception caught reading RestSTSInstanceConfig instance from SMS: " + e, e);
         } catch (IllegalStateException e) {
-            throw new STSInitializationException(ResourceException.INTERNAL_ERROR,
+            throw new STSPublishException(ResourceException.INTERNAL_ERROR,
                     "Exception caught reading RestSTSInstanceConfig instance from SMS: " + e, e);
         }
     }

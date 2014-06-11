@@ -23,6 +23,6 @@ import java.util.Set;
  * Marshals config state to a Map (and back) for SMS persistence.
  */
 public interface MapMarshaller<T> {
-    Map<String, Set<String>> marshallAttributesToMap(T instance) throws STSInitializationException;
-    T marshallFromMapAttributes(Map<String, Set<String>> attributes) throws STSInitializationException;
+    Map<String, Set<String>> marshallAttributesToMap(T instance) throws STSPublishException;
+    T marshallFromMapAttributes(Map<String, Set<String>> attributes) throws STSPublishException;
 }

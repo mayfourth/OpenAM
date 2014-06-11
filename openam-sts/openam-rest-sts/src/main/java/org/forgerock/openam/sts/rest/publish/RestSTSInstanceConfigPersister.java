@@ -16,7 +16,7 @@
 
 package org.forgerock.openam.sts.rest.publish;
 
-import org.forgerock.openam.sts.STSInitializationException;
+import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.slf4j.Logger;
@@ -56,7 +56,7 @@ public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersiste
         this.logger = logger;
     }
 
-    public void persistSTSInstance(String key, RestSTSInstanceConfig instance)  throws STSInitializationException {
+    public void persistSTSInstance(String key, RestSTSInstanceConfig instance)  throws STSPublishException {
         /*
         Not worried about threading issues - this implementation is temporary.
          */
@@ -76,7 +76,7 @@ public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersiste
         }
     }
 
-    public RestSTSInstanceConfig getSTSInstanceConfig(String key, String realm) {
+    public RestSTSInstanceConfig getSTSInstanceConfig(String key, String realm) throws STSPublishException {
         RestSTSInstanceConfig config = configStore.get(key);
         if (config ==  null) {
             throw new IllegalStateException("No RestSTSInstanceConfig corresponding to key " + key);

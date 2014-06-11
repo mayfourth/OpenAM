@@ -18,7 +18,7 @@ package org.forgerock.openam.sts.rest.publish;
 
 import org.forgerock.json.resource.ResourceException;
 import org.forgerock.openam.sts.MapMarshaller;
-import org.forgerock.openam.sts.STSInitializationException;
+import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 
 import java.util.Map;
@@ -36,7 +36,7 @@ import java.util.Set;
  */
 public class RestSTSInstanceConfigMapMarshaller implements MapMarshaller<RestSTSInstanceConfig> {
 
-    public Map<String, Set<String>> marshallAttributesToMap(RestSTSInstanceConfig instance) throws STSInitializationException {
+    public Map<String, Set<String>> marshallAttributesToMap(RestSTSInstanceConfig instance) throws STSPublishException {
         try {
             return instance.marshalToAttributeMap();
         } catch (RuntimeException e) {
@@ -44,12 +44,12 @@ public class RestSTSInstanceConfigMapMarshaller implements MapMarshaller<RestSTS
             The marshalToAttributeMap method may throw a IllegalStateException or IllegalArgument exception if marshalling
             functionality fails.
              */
-            throw new STSInitializationException(ResourceException.INTERNAL_ERROR,
+            throw new STSPublishException(ResourceException.INTERNAL_ERROR,
                     "Exception caught marshalling RestSTSInstanceConfig to map: " + e, e);
         }
     }
 
-    public RestSTSInstanceConfig marshallFromMapAttributes(Map<String, Set<String>> attributes) throws STSInitializationException {
+    public RestSTSInstanceConfig marshallFromMapAttributes(Map<String, Set<String>> attributes) throws STSPublishException {
         try {
             return RestSTSInstanceConfig.marshalFromAttributeMap(attributes);
         } catch (RuntimeException e) {
@@ -57,7 +57,7 @@ public class RestSTSInstanceConfigMapMarshaller implements MapMarshaller<RestSTS
             The marshalToAttributeMap method may throw a IllegalStateException or IllegalArgument exception if marshalling
             functionality fails.
              */
-            throw new STSInitializationException(ResourceException.INTERNAL_ERROR,
+            throw new STSPublishException(ResourceException.INTERNAL_ERROR,
                     "Exception caught marshalling RestSTSInstanceConfig from map: " + e, e);
         }
     }

@@ -16,7 +16,7 @@
 
 package org.forgerock.openam.sts.publish;
 
-import org.forgerock.openam.sts.STSInitializationException;
+import org.forgerock.openam.sts.STSPublishException;
 
 import java.util.List;
 
@@ -36,13 +36,13 @@ public interface STSInstanceConfigPersister<T> {
      * @param key The key to the instance - probably return value from getDeploymentConfig().getUriElement();
      * @param instance The to-be-persisted state.
      */
-    void persistSTSInstance(String key, T instance) throws STSInitializationException;
+    void persistSTSInstance(String key, T instance) throws STSPublishException;
 
     /**
      *
      * @param key The unique identifier for a particular STSInstanceConfig
      */
-    void removeSTSInstance(String key, String realm);
+    void removeSTSInstance(String key, String realm) throws STSPublishException;
 
     /**
      * This method is called by the token generation service to obtain the STS-instance specific configurations -
@@ -57,7 +57,7 @@ public interface STSInstanceConfigPersister<T> {
      *                                and use that value as a unique identifier/indexed attribute.
      * @return The STSInstanceConfig corresponding to this deployment url element.
      */
-    public T getSTSInstanceConfig(String key, String realm) throws STSInitializationException;
+    public T getSTSInstanceConfig(String key, String realm) throws STSPublishException;
 
     /**
      * This method will be called by some startup context in the {locally|remotely} deployed {REST|SOAP} STS context
@@ -67,5 +67,5 @@ public interface STSInstanceConfigPersister<T> {
      * @return The List of STSInstanceConfig instances (possibly empty) corresponding to the set of previously-published
      * instances.
      */
-    public List<T> getAllPublishedInstances();
+    public List<T> getAllPublishedInstances() throws STSPublishException;
 }

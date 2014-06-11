@@ -16,7 +16,7 @@
 
 package org.forgerock.openam.sts.rest.publish;
 
-import org.forgerock.openam.sts.STSInitializationException;
+import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.rest.RestSTS;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 
@@ -33,13 +33,13 @@ import java.util.List;
  * locally (in the OpenAM .war) or remotely (in their own .war).
  */
 public interface RestSTSInstancePublisher {
-    void publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS instance, String subPath) throws STSInitializationException;
-    void removeInstance(String subPath, String realm) throws IllegalArgumentException;
+    void publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS instance, String subPath) throws STSPublishException;
+    void removeInstance(String subPath, String realm) throws STSPublishException;
 
     /**
      * Called to obtain the configuration elements corresponding to previously-published STS instances.
-     * @return The STSInstanceConfig super-class (RestSTSInstanceConfig or SoapSTSInstanceConfig) instances corresponding
+     * @return The STSInstanceConfig sub-class (RestSTSInstanceConfig or SoapSTSInstanceConfig) instances corresponding
      * to published STS instances.
      */
-    List<RestSTSInstanceConfig> getPublishedInstances();
+    List<RestSTSInstanceConfig> getPublishedInstances() throws STSPublishException;
 }

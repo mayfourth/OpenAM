@@ -85,6 +85,22 @@ provided for required attributes upon service registration.
                                  type="single" syntax="password" i18nKey="keystore_password"
                                  validator="RequiredValueValidator">
                 </AttributeSchema>
+                <!--
+                 The REST STS does not currently use an encryption key for anything. This value has been added because
+                 the KeystoreConfig emits a Map with keys corresponding to keystore-encryption-key-alias and
+                 keystore-encryption-key-password. I may have to break the KeystoreConfig into two classes - one for
+                 REST, and one for SOAP (the SOAP incarnation will likely need the encryption keys for some SecurityPolicy
+                 bindings), and it may be that the REST incarnation will need it as well. For now, the AttributeSchema
+                 will remain, pending further input on whether they are really needed.
+                -->
+                <AttributeSchema name="keystore-encryption-key-alias"
+                                 type="single" syntax="string" i18nKey="keystore_encryption_key_alias"
+                                 validator="RequiredValueValidator">
+                </AttributeSchema>
+                <AttributeSchema name="keystore-encryption-key-password"
+                                 type="single" syntax="password" i18nKey="keystore_encryption_key_password">
+                </AttributeSchema>
+
                 <AttributeSchema name="keystore-signature-key-alias"
                                  type="single" syntax="string" i18nKey="keystore_signature_key_alias"
                                  validator="RequiredValueValidator">
@@ -196,6 +212,21 @@ provided for required attributes upon service registration.
                     <AttributeSchema name="keystore-password"
                                      type="single" syntax="password" i18nKey="keystore_password"
                                      validator="RequiredValueValidator">
+                    </AttributeSchema>
+                    <!--
+                    The REST STS does not currently use an encryption key for anything. This value has been added because
+                    the KeystoreConfig emits a Map with keys corresponding to keystore-encryption-key-alias and
+                    keystore-encryption-key-password. I may have to break the KeystoreConfig into two classes - one for
+                    REST, and one for SOAP (the SOAP incarnation will likely need the encryption keys for some SecurityPolicy
+                    bindings), and it may be that the REST incarnation will need it as well. For now, the AttributeSchema
+                    will remain, pending further input on whether they are really needed.
+                   -->
+                    <AttributeSchema name="keystore-encryption-key-alias"
+                                     type="single" syntax="string" i18nKey="keystore_encryption_key_alias"
+                                     validator="RequiredValueValidator">
+                    </AttributeSchema>
+                    <AttributeSchema name="keystore-encryption-key-password"
+                                     type="single" syntax="password" i18nKey="keystore_encryption_key_password">
                     </AttributeSchema>
                     <AttributeSchema name="keystore-signature-key-alias"
                                      type="single" syntax="string" i18nKey="keystore_signature_key_alias"
