@@ -34,7 +34,7 @@ import org.apache.cxf.ws.security.tokenstore.TokenStore;
 import org.apache.ws.security.message.token.UsernameToken;
 
 import org.forgerock.openam.sts.AMSTSConstants;
-import org.forgerock.openam.sts.AuthTargetMapping;
+import org.forgerock.openam.sts.config.user.AuthTargetMapping;
 import org.forgerock.openam.sts.JsonMarshaller;
 import org.forgerock.openam.sts.XMLUtilities;
 import org.forgerock.openam.sts.XMLUtilitiesImpl;

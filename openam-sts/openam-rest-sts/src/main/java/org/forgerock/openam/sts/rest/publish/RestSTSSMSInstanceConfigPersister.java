@@ -35,6 +35,7 @@ import javax.inject.Inject;
 import java.security.AccessController;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class RestSTSSMSInstanceConfigPersister implements STSInstanceConfigPersister<RestSTSInstanceConfig> {
     private static final String SERVICE_NAME = "RestSecurityTokenService";//taken from restSTS.xml - define in AMSTSConstants. TODO
@@ -59,7 +60,7 @@ public class RestSTSSMSInstanceConfigPersister implements STSInstanceConfigPersi
              */
             OrganizationConfigManager organizationConfigManager =
                     new OrganizationConfigManager(adminToken, instance.getDeploymentConfig().getRealm());  //TODO: get from factory to avoid new
-            Map<String, Object> instanceConfigAttributes = instanceConfigMapMarshaller.marshallAttributesToMap(instance);
+            Map<String, Set<String>> instanceConfigAttributes = instanceConfigMapMarshaller.marshallAttributesToMap(instance);
 
             if (!organizationConfigManager.getAssignedServices().contains(SERVICE_NAME)) {
                 organizationConfigManager.assignService(SERVICE_NAME, null);
@@ -97,7 +98,7 @@ public class RestSTSSMSInstanceConfigPersister implements STSInstanceConfigPersi
             if (baseService != null) {
                 ServiceConfig instanceService = baseService.getSubConfig(stsInstanceId);
                 if (instanceService != null) {
-                    Map<String, Object> instanceAttrs = instanceService.getAttributes();
+                    Map<String, Set<String>> instanceAttrs = instanceService.getAttributes();
                     return RestSTSInstanceConfig.marshalFromAttributeMap(instanceAttrs);
                 } else {
                     throw new STSInitializationException(ResourceException.INTERNAL_ERROR,

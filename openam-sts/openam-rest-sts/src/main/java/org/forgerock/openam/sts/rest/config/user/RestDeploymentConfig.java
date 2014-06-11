@@ -17,7 +17,7 @@
 package org.forgerock.openam.sts.rest.config.user;
 
 import org.forgerock.json.fluent.JsonValue;
-import org.forgerock.openam.sts.AuthTargetMapping;
+import org.forgerock.openam.sts.config.user.AuthTargetMapping;
 
 import org.forgerock.openam.sts.MapMarshallUtils;
 import org.forgerock.util.Reject;

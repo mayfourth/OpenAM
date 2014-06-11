@@ -19,6 +19,8 @@ package org.forgerock.openam.sts.rest.config.user;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.openam.sts.MapMarshallUtils;
 import org.forgerock.openam.sts.TokenType;
+import org.forgerock.openam.sts.config.user.KeystoreConfig;
+import org.forgerock.openam.sts.config.user.SAML2Config;
 import org.forgerock.openam.sts.config.user.STSInstanceConfig;
 import org.forgerock.util.Reject;
 
@@ -220,8 +222,10 @@ public class RestSTSInstanceConfig extends STSInstanceConfig {
         a string representation for each TokenTransformConfig instance, and adding it to the Set<String>
          */
         interimMap.remove(SUPPORTED_TOKEN_TRANSLATIONS);
+        Set<String> supportedTransforms = new HashSet<String>();
+        interimMap.put(SUPPORTED_TOKEN_TRANSLATIONS, supportedTransforms);
         for (TokenTransformConfig ttc : supportedTokenTranslations) {
-            interimMap.putAll(ttc.marshalToAttributeMap());
+            supportedTransforms.add(ttc.toSMSString());
         }
 
         if (saml2Config != null) {
@@ -241,15 +245,39 @@ public class RestSTSInstanceConfig extends STSInstanceConfig {
     is passed to encapsulated complex-objects, so that they may re-constitute themselves, and then the top-level json entry
     key is set to point at these re-constituted complex objects.
 
-    The fact that primitive values are represented as Set<String> is a bit complicated - if I want to use fromJson(new JsonValue(attributeMap)),
-    I have to first transform the Set<String> back to a String. So I have to process the attributeMap, to take all entries that are Set<String>
-    and turn them into String.
+    Not that the marshalToAttributeMap first calls toJson to obtain the map representation, albeit with hierarchical
+    elements, which must be subsequently flattened. The 'flattening' performed by the marshalToAttributeMap must then
+     be 'inverted' by this method, where all complex objects are re-constituted, using the state in the flattened map.
+
      */
     public static RestSTSInstanceConfig marshalFromAttributeMap(Map<String, Set<String>> attributeMap) {
         RestDeploymentConfig restDeploymentConfig = RestDeploymentConfig.marshalFromAttributeMap(attributeMap);
         Map<String, Object> jsonAttributes = MapMarshallUtils.toJsonValueMap(attributeMap);
         jsonAttributes.remove(DEPLOYMENT_CONFIG);
         jsonAttributes.put(DEPLOYMENT_CONFIG, restDeploymentConfig.toJson());
+
+        SAML2Config saml2Config = SAML2Config.marshalFromAttributeMap(attributeMap);
+        if (saml2Config != null) {
+            jsonAttributes.remove(SAML2_CONFIG);
+            jsonAttributes.put(SAML2_CONFIG, saml2Config.toJson());
+        }
+
+        /*
+         The SUPPORTED_TOKEN_TRANSLATIONS are currently each in a String representation in the Set<String> map entry corresponding
+         to the SUPPORTED_TOKEN_TRANSLATIONS key. I need to marshal each back into a TokenTransformConfig instance, and then
+         call toJson on each, and put them in a JsonValue wrapping a list.
+         */
+        ArrayList<JsonValue> jsonTranslationsList = new ArrayList<JsonValue>();
+        JsonValue jsonTranslations = new JsonValue(jsonTranslationsList);
+        jsonAttributes.remove(SUPPORTED_TOKEN_TRANSLATIONS);
+        jsonAttributes.put(SUPPORTED_TOKEN_TRANSLATIONS, jsonTranslations);
+        Set<String> stringTokenTranslations = attributeMap.get(SUPPORTED_TOKEN_TRANSLATIONS);
+        for (String translation : stringTokenTranslations) {
+            jsonTranslationsList.add(TokenTransformConfig.fromSMSString(translation).toJson());
+        }
+
+        jsonAttributes.remove(KEYSTORE_CONFIG);
+        jsonAttributes.put(KEYSTORE_CONFIG, KeystoreConfig.marshalFromAttributeMap(attributeMap).toJson());
 
         return fromJson(new JsonValue(jsonAttributes));
     }

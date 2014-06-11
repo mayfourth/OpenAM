@@ -66,7 +66,7 @@ import org.forgerock.openam.sts.token.validator.wss.disp.TokenAuthenticationRequ
 import org.forgerock.openam.sts.token.validator.wss.disp.UsernameTokenAuthenticationRequestDispatcher;
 import org.forgerock.openam.sts.AMSTSConstants;
 
-import org.forgerock.openam.sts.AuthTargetMapping;
+import org.forgerock.openam.sts.config.user.AuthTargetMapping;
 import org.forgerock.openam.sts.soap.config.user.SoapSTSInstanceConfig;
 import org.forgerock.openam.sts.token.validator.wss.AuthenticationHandlerImpl;
 import org.forgerock.openam.sts.token.validator.wss.UsernameTokenValidator;

@@ -14,11 +14,12 @@
  * Copyright 2013-2014 ForgeRock AS. All rights reserved.
  */
 
-package org.forgerock.openam.sts;
+package org.forgerock.openam.sts.config.user;
 
 
 import org.apache.ws.security.message.token.UsernameToken;
 import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.token.model.OpenIdConnectIdToken;
 
 import java.security.cert.X509Certificate;

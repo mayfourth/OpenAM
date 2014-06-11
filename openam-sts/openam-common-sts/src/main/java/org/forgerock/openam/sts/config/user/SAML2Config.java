@@ -424,7 +424,8 @@ public class SAML2Config {
 
     /*
     We need to marshal the SAML2Config instance to a Map<String, Object>. The JsonValue of toJson gets us there,
-    except for the complex types for the audiences and attribute map. These need to be marshaled into a Set<String>.
+    except for the complex types for the audiences and attribute map. These need to be marshaled into a Set<String>, and
+    these entries included in the top-level map, replacing the existing complex entries.
      */
     public Map<String, Set<String>> marshalToAttributeMap() {
         Map<String, Object> preMap = toJson().asMap();

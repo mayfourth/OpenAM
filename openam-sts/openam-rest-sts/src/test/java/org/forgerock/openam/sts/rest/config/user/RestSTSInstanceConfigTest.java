@@ -18,10 +18,9 @@ package org.forgerock.openam.sts.rest.config.user;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.ws.security.message.token.UsernameToken;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.openam.sts.AMSTSConstants;
-import org.forgerock.openam.sts.AuthTargetMapping;
+import org.forgerock.openam.sts.config.user.AuthTargetMapping;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.config.user.KeystoreConfig;
 import org.forgerock.openam.sts.config.user.SAML2Config;
@@ -31,6 +30,7 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
+import java.util.Set;
 
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
@@ -114,7 +114,7 @@ public class RestSTSInstanceConfigTest {
     @Test
     public void testMapMarshalRoundTrip() throws IOException {
         RestSTSInstanceConfig config = createInstanceConfig("/bob", "http://localhost:8080/openam");
-        Map<String, Object> attrMap = config.marshalToAttributeMap();
+        Map<String, Set<String>> attrMap = config.marshalToAttributeMap();
         RestSTSInstanceConfig reconstitutedInstance = RestSTSInstanceConfig.marshalFromAttributeMap(attrMap);
         assertEquals(config, reconstitutedInstance);
 

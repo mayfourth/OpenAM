@@ -57,9 +57,9 @@ public class TokenTransformConfigTest {
     }
 
     @Test
-    public void testMapMarshalRoundTrip() {
+    public void testStringRepresentationRoundTrip() {
         TokenTransformConfig ttc1 = new TokenTransformConfig(TokenType.OPENAM, TokenType.SAML2, AMSTSConstants.INVALIDATE_INTERIM_OPENAM_SESSION);
-        assertEquals(ttc1, TokenTransformConfig.marshalFromAttributeMap(ttc1.marshalToAttributeMap()));
+        assertEquals(ttc1, TokenTransformConfig.fromSMSString(ttc1.toSMSString()));
 
     }
 }

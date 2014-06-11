@@ -23,7 +23,7 @@ import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.soap.publish.STSInstancePublisher;
 import org.forgerock.openam.sts.AMSTSConstants;
-import org.forgerock.openam.sts.AuthTargetMapping;
+import org.forgerock.openam.sts.config.user.AuthTargetMapping;
 import org.forgerock.openam.sts.soap.config.SoapSTSInstanceModule;
 import org.forgerock.openam.sts.soap.config.user.DeploymentConfig;
 import org.forgerock.openam.sts.config.user.KeystoreConfig;

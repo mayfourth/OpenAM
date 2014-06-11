@@ -22,7 +22,7 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.AssertJUnit.assertEquals;
 
-import org.forgerock.openam.sts.AuthTargetMapping;
+import org.forgerock.openam.sts.config.user.AuthTargetMapping;
 
 public class RestDeploymentConfigTest {
     @Test
@@ -67,11 +67,7 @@ public class RestDeploymentConfigTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void testRejectIfNull() {
-        AuthTargetMapping atm = AuthTargetMapping.builder()
-                .addMapping(TokenType.USERNAME, "module", "untmodule")
-                .build();
-
-        RestDeploymentConfig dc4 = RestDeploymentConfig.builder()
+        RestDeploymentConfig.builder()
                 .realm("a")
                 .uriElement("b")
                 .build();

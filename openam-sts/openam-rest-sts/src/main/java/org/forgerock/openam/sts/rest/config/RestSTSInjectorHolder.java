@@ -3,17 +3,6 @@ package org.forgerock.openam.sts.rest.config;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import org.forgerock.openam.sts.AMSTSConstants;
-import org.forgerock.openam.sts.AuthTargetMapping;
-import org.forgerock.openam.sts.STSInitializationException;
-import org.forgerock.openam.sts.TokenType;
-import org.forgerock.openam.sts.config.user.KeystoreConfig;
-import org.forgerock.openam.sts.rest.RestSTS;
-import org.forgerock.openam.sts.rest.config.user.RestDeploymentConfig;
-import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
-import org.forgerock.openam.sts.rest.publish.RestSTSInstancePublisher;
-
-import java.io.UnsupportedEncodingException;
 
 /**
  * Holds the Injector instance common to all Rest STS instances. Should only be called from contexts
