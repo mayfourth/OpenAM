@@ -17,6 +17,7 @@
 package org.forgerock.openam.sts.rest.config;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
@@ -25,6 +26,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+import com.google.inject.name.Names;
 import org.apache.cxf.sts.STSPropertiesMBean;
 import org.apache.cxf.sts.StaticSTSProperties;
 import org.apache.cxf.sts.cache.DefaultInMemoryTokenStore;
@@ -236,35 +238,84 @@ public class RestSTSInstanceModule extends AbstractModule {
         return stsInstanceConfig.getAMDeploymentUrl();
     }
 
+    /*
+    Reference the RestSTSInjectorHolder, and the bindings made in the RestSTSModule, to obtain the
+    OpenAM uri information which is global to all STS instances.
+    Singleton so it is only called once.
+     */
     @Provides
+    @Singleton
     @Named (AMSTSConstants.REST_AUTHN_URI_ELEMENT)
     String restAuthnUriElement() {
-        return stsInstanceConfig.getAMRestAuthNUriElement();
+        return RestSTSInjectorHolder.getInstance(Key.get(String.class,
+                Names.named(AMSTSConstants.REST_AUTHN_URI_ELEMENT)));
     }
 
+    /*
+    Reference the RestSTSInjectorHolder, and the bindings made in the RestSTSModule, to obtain the
+    OpenAM uri information which is global to all STS instances.
+    Singleton so it is only called once.
+     */
     @Provides
+    @Singleton
     @Named (AMSTSConstants.REST_LOGOUT_URI_ELEMENT)
     String restLogoutUriElement() {
-        return stsInstanceConfig.getAMRestLogoutUriElement();
+        return RestSTSInjectorHolder.getInstance(Key.get(String.class,
+                Names.named(AMSTSConstants.REST_LOGOUT_URI_ELEMENT)));
     }
 
+    /*
+    Reference the RestSTSInjectorHolder, and the bindings made in the RestSTSModule, to obtain the
+    OpenAM uri information which is global to all STS instances.
+    Singleton so it is only called once.
+     */
     @Provides
+    @Singleton
     @Named (AMSTSConstants.REST_ID_FROM_SESSION_URI_ELEMENT)
     String restAMTokenValidationUriElement() {
-        return stsInstanceConfig.getAMRestIdFromSessionUriElement();
+        return RestSTSInjectorHolder.getInstance(Key.get(String.class,
+                Names.named(AMSTSConstants.REST_ID_FROM_SESSION_URI_ELEMENT)));
     }
 
+    /*
+    Reference the RestSTSInjectorHolder, and the bindings made in the RestSTSModule, to obtain the
+    OpenAM uri information which is global to all STS instances.
+    Singleton so it is only called once.
+     */
     @Provides
+    @Singleton
     @Named(AMSTSConstants.REST_TOKEN_GENERATION_SERVICE_URI_ELEMENT)
     String tokenGenerationServiceUriElement() {
-        return stsInstanceConfig.getAmRestTokenGenerationServiceUriElement();
+        return RestSTSInjectorHolder.getInstance(Key.get(String.class,
+                Names.named(AMSTSConstants.REST_TOKEN_GENERATION_SERVICE_URI_ELEMENT)));
     }
 
+    /*
+    Reference the RestSTSInjectorHolder, and the bindings made in the RestSTSModule, to obtain the
+    OpenAM uri information which is global to all STS instances.
+    Singleton so it is only called once.
+     */
     @Provides
+    @Singleton
     @Named(AMSTSConstants.AM_SESSION_COOKIE_NAME)
     String getAMSessionCookieName() {
-        return stsInstanceConfig.getAMSessionCookieName();
+        return RestSTSInjectorHolder.getInstance(Key.get(String.class,
+                Names.named(AMSTSConstants.AM_SESSION_COOKIE_NAME)));
     }
+
+    /*
+    Reference the RestSTSInjectorHolder, and the bindings made in the RestSTSModule, to obtain the
+    OpenAM uri information which is global to all STS instances.
+    Singleton so it is only called once.
+     */
+    @Provides
+    @Singleton
+    @Named(AMSTSConstants.AM_REST_AUTHN_JSON_ROOT)
+    String getJsonRoot() {
+        return RestSTSInjectorHolder.getInstance(Key.get(String.class,
+                Names.named(AMSTSConstants.AM_REST_AUTHN_JSON_ROOT)));
+    }
+
 
     @Provides
     AuthTargetMapping authTargetMapping() {
@@ -275,12 +326,6 @@ public class RestSTSInstanceModule extends AbstractModule {
     @Named(AMSTSConstants.REST_SUPPORTED_TOKEN_TRANSLATIONS)
     Set<TokenTransformConfig> getSupportedTokenTranslations() {
         return stsInstanceConfig.getSupportedTokenTranslations();
-    }
-
-    @Provides
-    @Named(AMSTSConstants.AM_REST_AUTHN_JSON_ROOT)
-    String getJsonRoot() {
-        return stsInstanceConfig.getJsonRestBase();
     }
 
     @Provides

@@ -20,6 +20,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
+import com.sun.identity.shared.Constants;
+import com.sun.identity.shared.configuration.SystemPropertiesManager;
 import org.forgerock.json.resource.ConnectionFactory;
 import org.forgerock.json.resource.Resources;
 import org.forgerock.json.resource.Router;
@@ -83,4 +85,53 @@ public class RestSTSModule extends AbstractModule {
         return LoggerFactory.getLogger(AMSTSConstants.REST_STS_DEBUG_ID);
     }
 
+
+    /*
+        The following methods provide the String constants corresponding to relatively static values relating to
+        consumption of the OpenAM rest context. This information is necessary for the STS instances to consume this
+        context, and is the single point where these values need to be changed.
+     */
+
+
+    @Provides
+    @Singleton
+    @Named (AMSTSConstants.REST_AUTHN_URI_ELEMENT)
+    String restAuthnUriElement() {
+        return "/authenticate";
+    }
+
+    @Provides
+    @Singleton
+    @Named (AMSTSConstants.REST_LOGOUT_URI_ELEMENT)
+    String restLogoutUriElement() {
+        return "/sessions/?_action=logout";
+    }
+
+    @Provides
+    @Singleton
+    @Named (AMSTSConstants.REST_ID_FROM_SESSION_URI_ELEMENT)
+    String restAMTokenValidationUriElement() {
+        return "/users/?_action=idFromSession";
+    }
+
+    @Provides
+    @Singleton
+    @Named(AMSTSConstants.REST_TOKEN_GENERATION_SERVICE_URI_ELEMENT)
+    String tokenGenerationServiceUriElement() {
+        return "/sts_tokengen/issue?_action=issue";
+    }
+
+    @Provides
+    @Singleton
+    @Named(AMSTSConstants.AM_SESSION_COOKIE_NAME)
+    String getAMSessionCookieName() {
+        return SystemPropertiesManager.get(Constants.AM_COOKIE_NAME);
+    }
+
+    @Provides
+    @Singleton
+    @Named(AMSTSConstants.AM_REST_AUTHN_JSON_ROOT)
+    String getJsonRoot() {
+        return "/json";
+    }
 }

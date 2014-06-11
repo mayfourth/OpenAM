@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.inject.Provider;
 
+import com.sun.identity.shared.Constants;
 import com.sun.identity.shared.configuration.SystemPropertiesManager;
 import org.apache.cxf.sts.STSPropertiesMBean;
 import org.apache.cxf.sts.StaticSTSProperties;
@@ -312,10 +313,11 @@ public class SoapSTSInstanceModule extends AbstractModule {
         return stsInstanceConfig.getAMDeploymentUrl();
     }
 
+
     @Provides
     @Named (AMSTSConstants.REST_AUTHN_URI_ELEMENT)
     String restAuthnUriElement() {
-        return stsInstanceConfig.getAMRestAuthNUriElement();
+        return "/authenticate";
     }
 
     @Provides
@@ -326,31 +328,31 @@ public class SoapSTSInstanceModule extends AbstractModule {
     @Provides
     @Named(AMSTSConstants.REST_LOGOUT_URI_ELEMENT)
     String restLogoutUriElement() {
-        return stsInstanceConfig.getAMRestLogoutUriElement();
+        return "/sessions/?_action=logout";
     }
 
     @Provides
     @Named(AMSTSConstants.REST_ID_FROM_SESSION_URI_ELEMENT)
     String restAMTokenValidationUriElement() {
-        return stsInstanceConfig.getAMRestIdFromSessionUriElement();
+        return "/users/?_action=idFromSession";
     }
 
     @Provides
     @Named(AMSTSConstants.REST_TOKEN_GENERATION_SERVICE_URI_ELEMENT)
     String tokenGenerationServiceUriElement() {
-        return stsInstanceConfig.getAmRestTokenGenerationServiceUriElement();
+        return "/sts_tokengen/issue?_action=issue";
     }
 
     @Provides
     @Named(AMSTSConstants.AM_SESSION_COOKIE_NAME)
     String getAMSessionCookieName() {
-        return stsInstanceConfig.getAMSessionCookieName();
+        return SystemPropertiesManager.get(Constants.AM_COOKIE_NAME);
     }
 
     @Provides
     @Named(AMSTSConstants.AM_REST_AUTHN_JSON_ROOT)
     String getJsonRoot() {
-        return stsInstanceConfig.getJsonRestBase();
+        return "/json";
     }
 
     @Provides

@@ -79,6 +79,10 @@ public class RestSTSPublishService implements SingletonResourceProvider {
                 String message = "Exception caught publishing instance: " + e;
                 logger.error(message, e);
                 handler.handleError(new InternalServerErrorException(message, e));
+            } catch (Exception e) {
+                String message = "Exception caught publishing instance: " + e;
+                logger.error(message, e);
+                handler.handleError(new InternalServerErrorException(message, e));
             }
         } else if (REMOVE_INSTANCE.equals(action)) {
             publisher.removeInstance(realmPath, instanceConfig.getDeploymentConfig().getRealm());

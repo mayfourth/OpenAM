@@ -117,8 +117,6 @@ public class RestSTSInstanceConfigTest {
         Map<String, Set<String>> attrMap = config.marshalToAttributeMap();
         RestSTSInstanceConfig reconstitutedInstance = RestSTSInstanceConfig.marshalFromAttributeMap(attrMap);
         assertEquals(config, reconstitutedInstance);
-
-        //assertEquals(config, RestSTSInstanceConfig.marshalFromAttributeMap(config.marshalToAttributeMap()));
     }
 
     private RestSTSInstanceConfig createInstanceConfig(String uriElement, String amDeploymentUrl) throws UnsupportedEncodingException {
@@ -151,12 +149,6 @@ public class RestSTSInstanceConfigTest {
         return RestSTSInstanceConfig.builder()
                 .deploymentConfig(deploymentConfig)
                 .amDeploymentUrl(amDeploymentUrl)
-                .amJsonRestBase("/json")
-                .amRestAuthNUriElement("/authenticate")
-                .amRestLogoutUriElement("/sessions/?_action=logout")
-                .amRestIdFromSessionUriElement("/users/?_action=idFromSession")
-                .amRestTokenGenerationServiceUriElement("/sts_tokengen/issue?_action=issue")
-                .amSessionCookieName("iPlanetDirectoryPro")
                 .keystoreConfig(keystoreConfig)
                 .issuerName("Cornholio")
                 .saml2Config(saml2Config)
@@ -195,11 +187,6 @@ public class RestSTSInstanceConfigTest {
 
         return RestSTSInstanceConfig.builder()
                 .amDeploymentUrl("whatever")
-                .amRestAuthNUriElement("/json/authenticate")
-                .amRestLogoutUriElement("/json/sessions/?_action=logout")
-                .amRestIdFromSessionUriElement("/json/users/?_action=idFromSession")
-                .amRestTokenGenerationServiceUriElement("/sts_tokengen/issue?_action=issue")
-                .amSessionCookieName("iPlanetDirectoryPro")
                 .keystoreConfig(keystoreConfig)
                 .issuerName("Cornholio")
                 .addSupportedTokenTranslation(
@@ -244,12 +231,6 @@ public class RestSTSInstanceConfigTest {
         return RestSTSInstanceConfig.builder()
                 .deploymentConfig(deploymentConfig)
                 .amDeploymentUrl(amDeploymentUrl)
-                .amJsonRestBase("/json")
-                .amRestAuthNUriElement("/authenticate")
-                .amRestLogoutUriElement("/sessions/?_action=logout")
-                .amRestIdFromSessionUriElement("/users/?_action=idFromSession")
-                .amRestTokenGenerationServiceUriElement("/sts_tokengen/issue?_action=issue")
-                .amSessionCookieName("iPlanetDirectoryPro")
                 .keystoreConfig(keystoreConfig)
                 .issuerName("Cornholio")
                 .addSupportedTokenTranslation(

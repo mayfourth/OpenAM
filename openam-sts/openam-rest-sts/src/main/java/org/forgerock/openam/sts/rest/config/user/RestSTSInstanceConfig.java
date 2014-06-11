@@ -177,13 +177,7 @@ public class RestSTSInstanceConfig extends STSInstanceConfig {
         }
         STSInstanceConfig baseConfig = STSInstanceConfig.fromJson(json);
         RestSTSInstanceConfigBuilderBase<?> builder = RestSTSInstanceConfig.builder()
-                .amJsonRestBase(baseConfig.getJsonRestBase())
                 .amDeploymentUrl(baseConfig.getAMDeploymentUrl())
-                .amRestAuthNUriElement(baseConfig.getAMRestAuthNUriElement())
-                .amRestLogoutUriElement(baseConfig.getAMRestLogoutUriElement())
-                .amRestIdFromSessionUriElement(baseConfig.getAMRestIdFromSessionUriElement())
-                .amRestTokenGenerationServiceUriElement(baseConfig.getAmRestTokenGenerationServiceUriElement())
-                .amSessionCookieName(baseConfig.getAMSessionCookieName())
                 .keystoreConfig(baseConfig.getKeystoreConfig())
                 .issuerName(baseConfig.getIssuerName())
                 .saml2Config(baseConfig.getSaml2Config())
