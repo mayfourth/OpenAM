@@ -14,7 +14,7 @@
  * Copyright 2014 ForgeRock AS. All rights reserved.
  */
 
-package org.forgerock.openam.sts.rest.publish;
+package org.forgerock.openam.sts.rest.marshal;
 
 import org.forgerock.json.resource.ResourceException;
 import org.forgerock.openam.sts.MapMarshaller;
