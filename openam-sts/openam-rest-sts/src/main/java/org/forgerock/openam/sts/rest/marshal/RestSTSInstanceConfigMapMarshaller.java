@@ -31,8 +31,6 @@ import java.util.Set;
  * and encapsulated classes. I don't want to call the static method RestSTSInstanceConfig.marshalFromAttribute map directly
  * from my main-line code however, and thus wrap the consumption of the map-marshalling functionality implemented in
  * RestSTSInstanceConfig in this class.
- *
- * TODO: should this go in the marshal package?
  */
 public class RestSTSInstanceConfigMapMarshaller implements MapMarshaller<RestSTSInstanceConfig> {
 
