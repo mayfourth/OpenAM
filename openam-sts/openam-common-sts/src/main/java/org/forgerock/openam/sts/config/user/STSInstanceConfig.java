@@ -100,7 +100,6 @@ public class STSInstanceConfig {
         amDeploymentUrl = builder.amDeploymentUrl;
         keystoreConfig = builder.keystoreConfig;
         issuerName = builder.issuerName;
-        //can be null if STS does not issue SAML tokens - but if SAML2 tokens only output, this must be non-null. TODO:
         saml2Config = builder.saml2Config;
         Reject.ifNull(keystoreConfig, "KeystoreConfig cannot be null");
         Reject.ifNull(issuerName, "Issuer name cannot be null");

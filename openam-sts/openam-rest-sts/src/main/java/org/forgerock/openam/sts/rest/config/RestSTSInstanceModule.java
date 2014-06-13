@@ -97,6 +97,8 @@ public class RestSTSInstanceModule extends AbstractModule {
         /*
         we want only one instance of the TokenStore shared among all token operations
         Perhaps this should be a provider - i.e. to leverage the ctor that takes a bus instance? TODO:
+        Do I even want to bind a TokenStore - it seems there only to support SecurityContextTokens, and I don't
+        set it in the TokenValidatorParameters or the TokenProviderParameters. This binding is candidate for removal.
          */
         bind(TokenStore.class).to(DefaultInMemoryTokenStore.class).in(Scopes.SINGLETON);
 
