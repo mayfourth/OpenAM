@@ -30,9 +30,9 @@ import org.forgerock.openam.sts.MapMarshaller;
 import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.forgerock.openam.sts.rest.marshal.RestSTSInstanceConfigMapMarshaller;
+import org.forgerock.openam.sts.rest.publish.RestSTSInstanceConfigPersister;
 import org.forgerock.openam.sts.rest.publish.RestSTSInstancePublisher;
 import org.forgerock.openam.sts.rest.publish.RestSTSInstancePublisherImpl;
-import org.forgerock.openam.sts.rest.publish.RestSTSSMSInstanceConfigPersister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +57,7 @@ public class RestSTSModule extends AbstractModule {
         which is necessary for SMS persistence.
          */
         bind(new TypeLiteral<MapMarshaller<RestSTSInstanceConfig>>(){}).to(RestSTSInstanceConfigMapMarshaller.class);
-        bind(new TypeLiteral<STSInstanceConfigPersister<RestSTSInstanceConfig>>(){}).to(RestSTSSMSInstanceConfigPersister.class).in(Scopes.SINGLETON);
+        bind(new TypeLiteral<STSInstanceConfigPersister<RestSTSInstanceConfig>>(){}).to(RestSTSInstanceConfigPersister.class).in(Scopes.SINGLETON);
 
     }
 

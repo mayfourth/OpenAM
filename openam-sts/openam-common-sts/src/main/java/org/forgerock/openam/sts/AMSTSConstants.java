@@ -281,4 +281,10 @@ public class AMSTSConstants {
      */
     public static final String ISSUED_TOKEN = "issued_token";
 
+    /*
+    The name of the rest sts service, as defined in restSTS.xml. Referenced in the RestSTSInstanceConfigPersister, to
+    write rest sts instance config state to the SMS.
+     */
+    public static final String REST_STS_SERVICE_NAME = "RestSecurityTokenService";
+
 }
