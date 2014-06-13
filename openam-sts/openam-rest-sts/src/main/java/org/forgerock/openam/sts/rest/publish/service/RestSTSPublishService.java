@@ -68,16 +68,20 @@ public class RestSTSPublishService implements SingletonResourceProvider {
                 handler.handleError(new InternalServerErrorException(message, e));
                 return;
             }
+            String urlElement = null;
             try {
-                String urlElement = instanceConfig.getDeploymentConfig().getUriElement();
+                urlElement = instanceConfig.getDeploymentSubPath();
                 publisher.publishInstance(instanceConfig, instanceInjector.getInstance(RestSTS.class), urlElement);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("rest sts instance successfully published at " + urlElement);
+                }
                 handler.handleResult(json(object(field(RESULT, "rest sts instance successfully published at " + urlElement))));
             } catch (STSPublishException e) {
-                String message = "Exception caught publishing instance: " + e;
+                String message = "Exception caught publishing instance: at url " + urlElement + ". Exception" + e;
                 logger.error(message, e);
                 handler.handleError(e);
             } catch (Exception e) {
-                String message = "Exception caught publishing instance: " + e;
+                String message = "Exception caught publishing instance: at url " + urlElement + ". Exception" + e;
                 logger.error(message, e);
                 handler.handleError(new InternalServerErrorException(message, e));
             }
@@ -92,13 +96,16 @@ public class RestSTSPublishService implements SingletonResourceProvider {
             }
             try {
                 publisher.removeInstance(stsId, realm);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("rest sts instance " + stsId + " successfully removed from realm " + realm);
+                }
                 handler.handleResult(json(object(field(RESULT, "rest sts instance " + stsId + " successfully removed from realm " + realm))));
             } catch (STSPublishException e) {
-                String message = "Exception caught removing instance: " + e;
+                String message = "Exception caught removing instance: " + stsId + " from realm " + realm + ". Exception:" + e;
                 logger.error(message, e);
                 handler.handleError(e);
             } catch (Exception e) {
-                String message = "Exception caught removing instance: " + e;
+                String message = "Exception caught removing instance: " + stsId + " from realm " + realm + ". Exception:" + e;
                 logger.error(message, e);
                 handler.handleError(new InternalServerErrorException(message, e));
             }

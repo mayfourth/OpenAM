@@ -22,6 +22,7 @@ import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.config.user.KeystoreConfig;
 import org.forgerock.openam.sts.config.user.SAML2Config;
 import org.forgerock.openam.sts.config.user.STSInstanceConfig;
+import org.forgerock.openam.sts.token.UrlConstituentCatenatorImpl;
 import org.forgerock.util.Reject;
 
 import java.util.*;
@@ -132,6 +133,17 @@ public class RestSTSInstanceConfig extends STSInstanceConfig {
         return supportedTokenTranslations;
     }
 
+    /**
+     * @return This method will return the sub-path at which the rest STS instance will be deployed (sub-path relative to the
+     * path of the Crest service fronting the STS). This string serves to identify the rest STS instance. This identifier
+     * is passed to the TokenGenerationService so that the TGS can issue instance-specific tokens (i.e. reflecting the
+     * KeystoreConfig and SAML2Config of the associated STS instance). This path is also the most specific element of the
+     * DN identifying the config in the SMS.
+     */
+    public String getDeploymentSubPath() {
+        return new UrlConstituentCatenatorImpl().catenateUrlConstituents(
+                getDeploymentConfig().getRealm(), getDeploymentConfig().getUriElement());
+    }
 
     @Override
     public String toString() {

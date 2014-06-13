@@ -328,10 +328,25 @@ public class RestSTSInstanceModule extends AbstractModule {
         return stsInstanceConfig.getSupportedTokenTranslations();
     }
 
+    /*
+    This method is used to identify the rest sts instance. This identification is necessary when consuming
+    the TokenGenerationService, as it is used to look-up the sts-instance-specific configuration state
+    (crypto and SAML2 configurations) when issuing tokens for this sts instance. Note that this identifier
+    does not have to be unique across rest and soap sts instances, as each will be represented by a different
+    service-definition xml file and thus will be stored in a different DN by the SMS. The rest-sts will be identified
+    by a combination of the realm, and the uri element within this realm. The uriElement defines the final endpoint, and
+    it will always be deployed at a url which includes the realm.
+    The value returned from RestSTSInstanceConfig#getDeploymentSubPath() will:
+    1. determine the sub-path added to the crest router which will determine the url at which the sts instance is exposed
+    2. be the most discriminating DN element identifying the config state corresponding to the STS instance in the SMS/LDAP
+    3. Because of #2, the same deployment sub-path will be used to identify the rest sts instance when this instance consumes
+    the TokenGenerationService, thereby allowing the TGS to look-up the instance-specific state necessary to produce
+    instance-specific tokens.
+     */
     @Provides
     @Named(AMSTSConstants.STS_INSTANCE_ID)
     String getSTSInstanceId() {
-        return stsInstanceConfig.getDeploymentConfig().getUriElement();
+        return stsInstanceConfig.getDeploymentSubPath();
     }
 
     /*

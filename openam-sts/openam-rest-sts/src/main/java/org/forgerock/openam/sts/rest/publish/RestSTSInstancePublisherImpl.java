@@ -57,17 +57,18 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
     }
 
     /**
-     * Publishes the rest STS instance at the specified relative path
+     * Publishes the rest STS instance at the specified relative path. This method will be invoked when the Rest STS instance
+     * is initially published, and to re-constitute previously-published instances following a server restart.
      * @param instanceConfig The RestSTSInstanceConfig which defined the guice bindings which specify the functionality of
      *                       the RestSTS instance. This RestSTSInstanceConfig will be persisted so that persisted instances
      *                       can be reconstituted in case of a server restart.
      * @param restSTSInstance The RestSTS instance defining the functionality of the rest STS service.
-     * @param subPath the path, relative to the base rest-sts service, to the to-be-exposed rest-sts service.
+     * @param deploymentSubPath the path, relative to the base rest-sts service, to the to-be-exposed rest-sts service.
      * @throws STSInitializationException thrown in case a rest-sts instance has already been published at the specified
      * subPath.
      */
     @Override
-    public synchronized void publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS restSTSInstance, String subPath)
+    public synchronized void publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS restSTSInstance, String deploymentSubPath)
             throws STSPublishException {
         /*
         Exclude the possibility that a rest-sts instance has already been added at the sub-path.
@@ -83,33 +84,35 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         complexities by checking my HashMap if an entry is present, as I need to maintain a reference to all
         published Routes in order to be able to remove them.
          */
-        if (publishedRoutes.containsKey(subPath)) {
-            throw new STSPublishException(ResourceException.BAD_REQUEST, "A rest-sts instance at sub-path " + subPath + " has already been published.");
+        if (publishedRoutes.containsKey(deploymentSubPath)) {
+            throw new STSPublishException(ResourceException.BAD_REQUEST, "A rest-sts instance at sub-path " +
+                    deploymentSubPath + " has already been published.");
         }
-        Route route = router.addRoute(subPath, new RestSTSService(restSTSInstance, logger));
+        Route route = router.addRoute(deploymentSubPath, new RestSTSService(restSTSInstance, logger));
         /*
         Need to persist the published Route instance as it is necessary for router removal.
          */
-        publishedRoutes.put(subPath, route);
-        /*
-        TODO: it is not clear that the deployment config element will be unique across both rest and soap sts instances.
-        Safest will be to generate a uuid in the STSInstanceConfig ctor, and reference this value as an indexed ldap
-        attribute when persisting the STSInstanceConfig to the SMS.
-         */
-        persistentStore.persistSTSInstance(instanceConfig.getDeploymentConfig().getUriElement(), instanceConfig);
+        publishedRoutes.put(deploymentSubPath, route);
+
+        persistentStore.persistSTSInstance(deploymentSubPath, instanceConfig);
     }
 
     /**
-     * Removes the published rest-sts instance at the specified subPath.
+     * Removes the published rest-sts instance at the specified subPath. Note that when previously-published Rest STS
+     * instances are reconstituted following an OpenAM restart, the publishInstance above will be called, which will
+     * re-constitute the Route state in the Map, state necessary to remove the Route corresponding to the STS instance
+     * from the Crest router. This is important because the Route has a package-private ctor.
      * @param subPath the path, relative to the base rest-sts service, to the to-be-removed service.
      * @param realm The realm of the STS instance
-     * @throws IllegalArgumentException if no rest-sts instance has been published at this relative path.
+     * @throws org.forgerock.openam.sts.STSPublishException if the entry in the SMS could not be removed, or if no
+     * Route entry could be found in the Map corresponding to a previously-published instance.
      */
     @Override
     public synchronized void removeInstance(String subPath, String realm) throws STSPublishException {
         Route route = publishedRoutes.remove(subPath);
         if (route == null) {
-            throw new IllegalArgumentException("No published Rest STS instance at path " + subPath);
+            throw new STSPublishException(ResourceException.BAD_REQUEST, "No previously published STS instance with id "
+                    + subPath + " in realm " + realm + " found!");
         }
         persistentStore.removeSTSInstance(subPath, realm);
         router.removeRoute(route);
