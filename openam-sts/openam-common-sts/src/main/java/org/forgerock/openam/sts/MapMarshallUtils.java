@@ -75,4 +75,29 @@ public class MapMarshallUtils {
         }
         return jsonValueMap;
     }
+
+    /**
+     * This method is called by AuthTargetMapping to marshal the contextMap from the Map<String, Object> returned by the
+     * jsonValue.asMap to the Map<String, String> stored by the AuthTargetMapping. The AuthTargetMapping specifies the
+     * authIndexType and authIndexValue for each type of token validated by an STS instance, and the contextMap provides
+     * any additional context required to consume the rest authN to invoke the particular target defined by the authIndexType
+     * and authIndexValue. For example the OpenID Connect ID Token authN module allows the user to specify the header name
+     * which will reference the token. This information must be reflected in the AuthTargetMapping if it is to validate
+     * OIDC tokens against this authN module. The contextMap is used to provide this information. Because this state must
+     * ultimately be stored in the SMS as a String, I cannot store the Map<String,Object> native to json maps, but rather
+     * must marshal this representation to a Map<String,String>.
+     * @param objectMap  The Map, representing the AuthTargetMapping context, as returned from jsonValue.asMap. Can
+     *                   possibly be null, in case the AuthTarget in the AuthTargetMapping does not have a context value.
+     * @return The Map<String,String> transformation of the objectMap.
+     */
+    public static Map<String,String> objectValueToStringValueMap(Map<String,Object> objectMap) {
+        if (objectMap == null) {
+            return null;
+        }
+        Map<String,String> stringMap = new HashMap<String, String>(objectMap.size());
+        for (Map.Entry<String,Object> entry : objectMap.entrySet()) {
+            stringMap.put(entry.getKey(), entry.getValue().toString());
+        }
+        return stringMap;
+    }
 }

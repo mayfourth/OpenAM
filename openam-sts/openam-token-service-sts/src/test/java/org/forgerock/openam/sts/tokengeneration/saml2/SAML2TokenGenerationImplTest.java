@@ -196,7 +196,7 @@ public class SAML2TokenGenerationImplTest {
     }
 
     private RestSTSInstanceConfig getRestSTSInstanceConfig(boolean signAssertion) throws UnsupportedEncodingException {
-        Map<String, Object> context = new HashMap<String, Object>();
+        Map<String, String> context = new HashMap<String, String>();
         context.put(AMSTSConstants.OPEN_ID_CONNECT_ID_TOKEN_AUTH_TARGET_HEADER_KEY, "oidc_id_token");
         AuthTargetMapping mapping = AuthTargetMapping.builder()
                 .addMapping(TokenType.USERNAME, "service", "ldapService")

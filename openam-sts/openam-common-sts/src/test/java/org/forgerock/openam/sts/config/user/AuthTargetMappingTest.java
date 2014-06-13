@@ -173,7 +173,6 @@ public class AuthTargetMappingTest {
         assertEquals(mapping, AuthTargetMapping.fromJson(new JsonValue(content)));
     }
 
-    //TODO: more tests, also with context, when implemented
     @Test
     public void testAttributeMappingRoundTrip() {
         AuthTargetMapping mapping = AuthTargetMapping
@@ -181,24 +180,43 @@ public class AuthTargetMappingTest {
                 .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509)
                 .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
                 .build();
-/*
-        AuthTargetMapping.AuthTarget usernameTarget = mapping.getAuthTargetMapping(UsernameToken.class);
-        System.out.println("usernameTarget: " + usernameTarget);
-        AuthTargetMapping.AuthTarget x509Target = mapping.getAuthTargetMapping(X509Certificate[].class);
-        System.out.println("x509Target: " + x509Target);
+        assertEquals(mapping, AuthTargetMapping.marshalFromAttributeMap(mapping.marshalToAttributeMap()));
 
-        AuthTargetMapping roundTripMapping = AuthTargetMapping.marshalFromAttributeMap(mapping.marshalToAttributeMap());
-        usernameTarget = roundTripMapping.getAuthTargetMapping(UsernameToken.class);
-        System.out.println("mapped usernameTarget: " + usernameTarget);
-        x509Target = roundTripMapping.getAuthTargetMapping(X509Certificate[].class);
-        System.out.println("mapped x509Target: " + x509Target);
-*/
+        mapping = AuthTargetMapping
+                .builder()
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
+                .build();
+        assertEquals(mapping, AuthTargetMapping.marshalFromAttributeMap(mapping.marshalToAttributeMap()));
+
+    }
+
+    @Test
+    public void testAttributeMappingRoundTripWithContext() {
+        AuthTargetMapping mapping = AuthTargetMapping
+                .builder()
+                .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509, buildContext())
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME)
+                .build();
+        assertEquals(mapping, AuthTargetMapping.marshalFromAttributeMap(mapping.marshalToAttributeMap()));
+
+        mapping = AuthTargetMapping
+                .builder()
+                .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509, buildContext())
+                .build();
+        assertEquals(mapping, AuthTargetMapping.marshalFromAttributeMap(mapping.marshalToAttributeMap()));
+
+        mapping = AuthTargetMapping
+                .builder()
+                .addMapping(TokenType.X509CERT, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, X509, buildContext())
+                .addMapping(TokenType.USERNAME, AMSTSConstants.AUTH_INDEX_TYPE_MODULE, USERNAME, buildContext())
+                .build();
         assertEquals(mapping, AuthTargetMapping.marshalFromAttributeMap(mapping.marshalToAttributeMap()));
     }
 
-    private Map<String, Object> buildContext() {
-        Map<String, Object> context = new HashMap<String, Object>();
+    private Map<String, String> buildContext() {
+        Map<String, String> context = new HashMap<String, String>();
         context.put("bobo", "doh");
+        context.put("corn", "holio");
         return context;
     }
 }

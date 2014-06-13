@@ -29,34 +29,34 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertFalse;
 import static org.testng.AssertJUnit.assertTrue;
 
-/**
- */
 public class RestSTSInstanceConfigTest {
-
+    private static final boolean WITH_SAML2_CONFIG = true;
     @Test
     public void testEquals() throws UnsupportedEncodingException {
-        RestSTSInstanceConfig ric1 = createInstanceConfig("/bob", "http://localhost:8080/openam");
-        RestSTSInstanceConfig ric2 = createInstanceConfig("/bob", "http://localhost:8080/openam");
+        RestSTSInstanceConfig ric1 = createInstanceConfig("/bob", "http://localhost:8080/openam", WITH_SAML2_CONFIG);
+        RestSTSInstanceConfig ric2 = createInstanceConfig("/bob", "http://localhost:8080/openam", WITH_SAML2_CONFIG);
         assertTrue(ric1.equals(ric2));
         assertTrue(ric1.hashCode() == ric2.hashCode());
     }
 
     @Test
     public void testNotEquals() throws UnsupportedEncodingException {
-        RestSTSInstanceConfig ric1 = createInstanceConfig("/bob", "http://localhost:8080/openam");
-        RestSTSInstanceConfig ric2 = createInstanceConfig("/bobo", "http://localhost:8080/openam");
+        RestSTSInstanceConfig ric1 = createInstanceConfig("/bob", "http://localhost:8080/openam", WITH_SAML2_CONFIG);
+        RestSTSInstanceConfig ric2 = createInstanceConfig("/bobo", "http://localhost:8080/openam", WITH_SAML2_CONFIG);
         assertFalse(ric1.equals(ric2));
         assertFalse(ric1.hashCode() == ric2.hashCode());
 
-        RestSTSInstanceConfig ric3 = createInstanceConfig("/bob", "http://localhost:8080/openam");
-        RestSTSInstanceConfig ric4 = createInstanceConfig("/bob", "http://localhost:8080/");
+        RestSTSInstanceConfig ric3 = createInstanceConfig("/bob", "http://localhost:8080/openam", !WITH_SAML2_CONFIG);
+        RestSTSInstanceConfig ric4 = createInstanceConfig("/bob", "http://localhost:8080/", !WITH_SAML2_CONFIG);
         assertFalse(ric3.equals(ric4));
         assertFalse(ric3.hashCode() == ric4.hashCode());
 
@@ -74,13 +74,13 @@ public class RestSTSInstanceConfigTest {
 
     @Test
     public void testJsonMarshalling() throws IOException {
-        RestSTSInstanceConfig origConfig = createInstanceConfig("/bob", "http://localhost:8080/openam");
+        RestSTSInstanceConfig origConfig = createInstanceConfig("/bob", "http://localhost:8080/openam", WITH_SAML2_CONFIG);
         assertTrue(origConfig.equals(RestSTSInstanceConfig.fromJson(origConfig.toJson())));
     }
 
     @Test
     public void testJsonStringMarshalling() throws IOException {
-        RestSTSInstanceConfig origConfig = createInstanceConfig("/bob", "http://localhost:8080/openam");
+        RestSTSInstanceConfig origConfig = createInstanceConfig("/bob", "http://localhost:8080/openam", WITH_SAML2_CONFIG);
         /*
         This is how the Crest HttpServletAdapter ultimately constitutes a JsonValue from a json string. See the
         org.forgerock.json.resource.servlet.HttpUtils.parseJsonBody (called from HttpServletAdapter.getJsonContent)
@@ -96,7 +96,7 @@ public class RestSTSInstanceConfigTest {
 
     @Test
     public void testOldJacksonJsonStringMarhalling() throws IOException {
-        RestSTSInstanceConfig origConfig = createInstanceConfig("/bob", "http://localhost:8080/openam");
+        RestSTSInstanceConfig origConfig = createInstanceConfig("/bob", "http://localhost:8080/openam", WITH_SAML2_CONFIG);
         /*
         This is how the Crest HttpServletAdapter ultimately constitutes a JsonValue from a json string. See the
         org.forgerock.json.resource.servlet.HttpUtils.parseJsonBody (called from HttpServletAdapter.getJsonContent)
@@ -113,15 +113,19 @@ public class RestSTSInstanceConfigTest {
 
     @Test
     public void testMapMarshalRoundTrip() throws IOException {
-        RestSTSInstanceConfig config = createInstanceConfig("/bob", "http://localhost:8080/openam");
-        Map<String, Set<String>> attrMap = config.marshalToAttributeMap();
-        RestSTSInstanceConfig reconstitutedInstance = RestSTSInstanceConfig.marshalFromAttributeMap(attrMap);
-        assertEquals(config, reconstitutedInstance);
+        RestSTSInstanceConfig config = createInstanceConfig("/bob", "http://localhost:8080/openam", WITH_SAML2_CONFIG);
+        assertEquals(config, RestSTSInstanceConfig.marshalFromAttributeMap(config.marshalToAttributeMap()));
+
+        config = createInstanceConfig("/bob", "http://localhost:8080/openam", !WITH_SAML2_CONFIG);
+        assertEquals(config, RestSTSInstanceConfig.marshalFromAttributeMap(config.marshalToAttributeMap()));
     }
 
-    private RestSTSInstanceConfig createInstanceConfig(String uriElement, String amDeploymentUrl) throws UnsupportedEncodingException {
+    private RestSTSInstanceConfig createInstanceConfig(String uriElement, String amDeploymentUrl, boolean withSaml2Config) throws UnsupportedEncodingException {
+        Map<String,String> oidcContext = new HashMap<String,String>();
+        oidcContext.put("context_key_1", "context_value_1");
         AuthTargetMapping mapping = AuthTargetMapping.builder()
                 .addMapping(TokenType.USERNAME, "service", "ldapService")
+                .addMapping(TokenType.OPENIDCONNECT, "module", "oidc", oidcContext)
                 .build();
 
         RestDeploymentConfig deploymentConfig =
@@ -140,35 +144,50 @@ public class RestSTSInstanceConfigTest {
                         .signatureKeyPassword("stskpass".getBytes(AMSTSConstants.UTF_8_CHARSET_ID))
                         .build();
 
-        SAML2Config saml2Config =
-                SAML2Config.builder()
-                        .nameIdFormat("transient")
-                        .tokenLifetimeInSeconds(500000)
-                        .build();
+        SAML2Config saml2Config = null;
+        if (withSaml2Config) {
+            List<String> audiences = new ArrayList<String>();
+            audiences.add("bobo_entity_id");
+            audiences.add("dodo_entity_id");
+            Map<String,String> attributeMap = new HashMap<String, String>();
+            attributeMap.put("mail", "email");
+            attributeMap.put("uid", "id");
+            saml2Config =
+                    SAML2Config.builder()
+                            .nameIdFormat("transient")
+                            .tokenLifetimeInSeconds(500000)
+                            .audiences(audiences)
+                            .attributeMap(attributeMap)
+                            .build();
+        }
 
-        return RestSTSInstanceConfig.builder()
+        RestSTSInstanceConfig.RestSTSInstanceConfigBuilderBase<?> builder = RestSTSInstanceConfig.builder()
                 .deploymentConfig(deploymentConfig)
                 .amDeploymentUrl(amDeploymentUrl)
                 .keystoreConfig(keystoreConfig)
                 .issuerName("Cornholio")
-                .saml2Config(saml2Config)
                 .addSupportedTokenTranslation(
                         TokenType.USERNAME,
                         TokenType.OPENAM,
-                        !AMSTSConstants.INVALIDATE_INTERIM_OPENAM_SESSION)
-                .addSupportedTokenTranslation(
-                        TokenType.USERNAME,
-                        TokenType.SAML2,
-                        AMSTSConstants.INVALIDATE_INTERIM_OPENAM_SESSION)
-                .addSupportedTokenTranslation(
-                        TokenType.OPENAM,
-                        TokenType.SAML2,
-                        !AMSTSConstants.INVALIDATE_INTERIM_OPENAM_SESSION)
-                .addSupportedTokenTranslation(
-                        TokenType.OPENIDCONNECT,
-                        TokenType.SAML2,
-                        AMSTSConstants.INVALIDATE_INTERIM_OPENAM_SESSION)
-                .build();
+                        !AMSTSConstants.INVALIDATE_INTERIM_OPENAM_SESSION);
+        if (withSaml2Config) {
+            builder
+                    .saml2Config(saml2Config)
+                    .addSupportedTokenTranslation(
+                            TokenType.USERNAME,
+                            TokenType.SAML2,
+                            AMSTSConstants.INVALIDATE_INTERIM_OPENAM_SESSION)
+                    .addSupportedTokenTranslation(
+                            TokenType.OPENAM,
+                            TokenType.SAML2,
+                            !AMSTSConstants.INVALIDATE_INTERIM_OPENAM_SESSION)
+                    .addSupportedTokenTranslation(
+                            TokenType.OPENIDCONNECT,
+                            TokenType.SAML2,
+                            AMSTSConstants.INVALIDATE_INTERIM_OPENAM_SESSION);
+
+        }
+        return builder.build();
     }
 
     private RestSTSInstanceConfig createIncompleteInstanceConfig() throws UnsupportedEncodingException {

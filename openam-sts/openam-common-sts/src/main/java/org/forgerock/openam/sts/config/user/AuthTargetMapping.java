@@ -19,6 +19,7 @@ package org.forgerock.openam.sts.config.user;
 
 import org.apache.ws.security.message.token.UsernameToken;
 import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.openam.sts.MapMarshallUtils;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.token.model.OpenIdConnectIdToken;
 
@@ -49,18 +50,20 @@ import static org.forgerock.json.fluent.JsonValue.object;
  * OpenIdConnectIdTokens must know what header name should reference the Id Token, a value dependant upon the value
  * configured for the OpenAM OIDC authN module.
  *
- * And the key for the mappings should not be the class, but the TokenType, as long as this is possible with the
- * URI dispatcher - TODO
  */
 public class AuthTargetMapping {
-    public static final String AUTH_INDEX_TYPE = "mapping-auth-index-type";
-    public static final String AUTH_INDEX_VALUE = "mapping-auth-index-value";
-    public static final String CONTEXT = "mapping-context";
-    public static final String COLON = ":";
-    public static final String SEMICOLON = ";";
-    public static final String BAR = "|";
+    private static final String AUTH_INDEX_TYPE = "mapping-auth-index-type";
+    private static final String AUTH_INDEX_VALUE = "mapping-auth-index-value";
+    private static final String CONTEXT = "mapping-context";
+    private static final String COLON = ":";
+    private static final String SEMICOLON = ";";
+    private static final String BAR = "|";
+    private static final String EQUALS = "=";
+    private static final String COMMA = ",";
+    //public visibility as referenced from RestDeploymentConfig-need to leak reference as these constants correspond
+    //to AttributeSchema names in restSTS.xml.
     public static final String AUTH_TARGET_MAPPINGS = "deployment-auth-target-mappings";
-    private static final Map<String, Object> NULL_MAP = null;
+    private static final Map<String, String> NULL_MAP = null;
 
     public static class AuthTargetMappingBuilder {
         private final Map<Class<?>, AuthTarget> mappings = new HashMap<Class<?>, AuthTarget>();
@@ -74,7 +77,7 @@ public class AuthTargetMapping {
          * by the associated authN module (e.g. the name of the header referencing the OpenID Connect ID Token).
 
          */
-        private AuthTargetMappingBuilder addMapping(Class<?> tokenClass, String authIndexType, String authIndexValue, Map<String, Object> context)  {
+        private AuthTargetMappingBuilder addMapping(Class<?> tokenClass, String authIndexType, String authIndexValue, Map<String,String> context)  {
             mappings.put(tokenClass, new AuthTarget(authIndexType, authIndexValue, context));
             return this;
         }
@@ -120,7 +123,7 @@ public class AuthTargetMapping {
             }
         }
 
-        public AuthTargetMappingBuilder addMapping(TokenType tokenType, String authIndexType, String authIndexValue, Map<String, Object> context)  {
+        public AuthTargetMappingBuilder addMapping(TokenType tokenType, String authIndexType, String authIndexValue, Map<String,String> context)  {
             switch (tokenType) {
                 case OPENIDCONNECT:
                     return addMapping(OpenIdConnectIdToken.class, authIndexType, authIndexValue, context);
@@ -142,13 +145,13 @@ public class AuthTargetMapping {
     public static class AuthTarget {
         private final String authIndexType;
         private final String authIndexValue;
-        private final Map<String, Object> context;
+        private final Map<String, String> context;
 
         AuthTarget(String authIndexType, String authIndexValue) {
             this(authIndexType, authIndexValue, null);
         }
 
-        AuthTarget(String authIndexType, String authIndexValue, Map<String, Object> context) {
+        AuthTarget(String authIndexType, String authIndexValue, Map<String, String> context) {
             if ((authIndexType == null) || (authIndexValue == null)) {
                 throw new IllegalArgumentException(AUTH_INDEX_TYPE + " or " + AUTH_INDEX_VALUE + " were null!");
             }
@@ -169,29 +172,55 @@ public class AuthTargetMapping {
             return authIndexValue;
         }
 
-        public Map<String, Object> getContext() { return context; }
+        public Map<String, String> getContext() { return context; }
 
         /*
-        Method also called in the context of marshalling to a Map<String,Object>, necessary for SMS persistence.
+        Method called in the context of marshalling to a Map<String,Object>, necessary for SMS persistence.
          */
+        public String toSmsString() {
+            StringBuilder valueBuilder =  new StringBuilder(AUTH_INDEX_TYPE).append(COLON).append(authIndexType)
+                    .append(SEMICOLON).append(AUTH_INDEX_VALUE).append(COLON).append(authIndexValue);
+            if (context != null) {
+                valueBuilder.append(SEMICOLON);
+                for (Map.Entry<String, String> entry : context.entrySet()) {
+                    valueBuilder.append(entry.getKey()).append(EQUALS).append(entry.getValue()).append(COMMA);
+                }
+            }
+            return valueBuilder.toString();
+        }
+
         @Override
         public String toString() {
-            return AUTH_INDEX_TYPE + COLON + authIndexType + SEMICOLON + AUTH_INDEX_VALUE + COLON + authIndexValue +
-                    SEMICOLON + CONTEXT + COLON + (context != null ? context.toString() : null);
+            return toSmsString();
         }
 
         /*
         Called in the context of marshalling from the Map<String, Object> representation, back to the AuthTarget representation.
-        TODO: not doing the context at the moment - return to this when type is resolved
-        authIndexType : module_instance ; authIndexValue : username ; context : null
+        authIndexType:module;authIndexValue:module_name  OR
+        authIndexType:service;authIndexValue:service_name;context_key1=context_value1,context_key_2=context_value2,
+
+        No effort was made to catch NoSuchElementException, thrown from StringTokenizer#nextToken(), as the
+        strings parsed in this method will only be generated by the toSmsString method in this class, and thus should
+        be predictable.
          */
-        static AuthTarget fromString(String stringAuthTarget) {
+        static AuthTarget fromSmsString(String stringAuthTarget) {
             StringTokenizer topLevelTokenizer = new StringTokenizer(stringAuthTarget, SEMICOLON);
             String authIndexTypeToken = topLevelTokenizer.nextToken();
             String authIndexValueToken = topLevelTokenizer.nextToken();
             String authIndexType =  authIndexTypeToken.substring(authIndexTypeToken.indexOf(COLON) + 1);
             String authIndexValue = authIndexValueToken.substring(authIndexValueToken.indexOf(COLON) + 1);
-            return new AuthTarget(authIndexType, authIndexValue);
+            if (topLevelTokenizer.hasMoreTokens()) {
+                Map<String, String> contextMap = new HashMap<String,String>();
+                String contextToken = topLevelTokenizer.nextToken();
+                StringTokenizer contextTokenizer = new StringTokenizer(contextToken, COMMA);
+                while (contextTokenizer.hasMoreTokens()) {
+                    StringTokenizer entryTokenizer = new StringTokenizer(contextTokenizer.nextToken(), EQUALS);
+                    contextMap.put(entryTokenizer.nextToken(), entryTokenizer.nextToken());
+                }
+                return new AuthTarget(authIndexType, authIndexValue, contextMap);
+            } else {
+                return new AuthTarget(authIndexType, authIndexValue);
+            }
         }
 
         @Override
@@ -230,7 +259,7 @@ public class AuthTargetMapping {
                 return new AuthTarget(json.get(AUTH_INDEX_TYPE).asString(), json.get(AUTH_INDEX_VALUE).asString());
             } else {
                 return new AuthTarget(json.get(AUTH_INDEX_TYPE).asString(),
-                        json.get(AUTH_INDEX_VALUE).asString(), json.get(CONTEXT).asMap());
+                        json.get(AUTH_INDEX_VALUE).asString(), MapMarshallUtils.objectValueToStringValueMap(json.get(CONTEXT).asMap()));
             }
         }
 
@@ -305,7 +334,7 @@ public class AuthTargetMapping {
         HashMap<String, Set<String>> attributes = new HashMap<String, Set<String>>();
         attributes.put(AUTH_TARGET_MAPPINGS, values);
         for (Map.Entry<Class<?>, AuthTarget> entry : mappings.entrySet()) {
-            values.add(entry.getKey().getName() + BAR + entry.getValue().toString());
+            values.add(entry.getKey().getName() + BAR + entry.getValue().toSmsString());
         }
         return attributes;
     }
@@ -318,8 +347,9 @@ public class AuthTargetMapping {
                 StringTokenizer tokenizer = new StringTokenizer(obj.toString(), BAR);
                 try {
                     Class<?> clazz = Class.forName(tokenizer.nextToken());
-                    AuthTarget authTarget = AuthTarget.fromString(tokenizer.nextToken());
-                    builder.addMapping(mapClassToTokenType(clazz), authTarget.getAuthIndexType(), authTarget.getAuthIndexValue());
+                    AuthTarget authTarget = AuthTarget.fromSmsString(tokenizer.nextToken());
+                    builder.addMapping(mapClassToTokenType(clazz), authTarget.getAuthIndexType(),
+                            authTarget.getAuthIndexValue(), authTarget.getContext());
                 } catch (ClassNotFoundException e) {
                     throw new IllegalStateException("Exception marshalling AuthTargetMapping from attributeMap: "
                             + attributes + "\n Exception: " + e);
