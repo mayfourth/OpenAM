@@ -19,7 +19,17 @@ package org.forgerock.openam.sts.rest.publish.service;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import org.forgerock.json.fluent.JsonValue;
-import org.forgerock.json.resource.*;
+import org.forgerock.json.resource.ActionRequest;
+import org.forgerock.json.resource.BadRequestException;
+import org.forgerock.json.resource.InternalServerErrorException;
+import org.forgerock.json.resource.NotSupportedException;
+import org.forgerock.json.resource.PatchRequest;
+import org.forgerock.json.resource.ReadRequest;
+import org.forgerock.json.resource.Resource;
+import org.forgerock.json.resource.ResultHandler;
+import org.forgerock.json.resource.ServerContext;
+import org.forgerock.json.resource.SingletonResourceProvider;
+import org.forgerock.json.resource.UpdateRequest;
 import org.forgerock.json.resource.servlet.HttpContext;
 import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.rest.RestSTS;
@@ -38,7 +48,8 @@ public class RestSTSPublishService implements SingletonResourceProvider {
     private static final String REALM = "realm";
     private static final String STS_ID = "sts_id";
     private static final String RESULT = "result";
-
+    private static final String SUCCESS = "success";
+    private static final String URL_ELEMENT = "url_element";
     private final RestSTSInstancePublisher publisher;
     private final Logger logger;
 
@@ -75,7 +86,7 @@ public class RestSTSPublishService implements SingletonResourceProvider {
                 if (logger.isDebugEnabled()) {
                     logger.debug("rest sts instance successfully published at " + urlElement);
                 }
-                handler.handleResult(json(object(field(RESULT, "rest sts instance successfully published at " + urlElement))));
+                handler.handleResult(json(object(field(RESULT, SUCCESS), field(URL_ELEMENT, urlElement))));
             } catch (STSPublishException e) {
                 String message = "Exception caught publishing instance: at url " + urlElement + ". Exception" + e;
                 logger.error(message, e);
