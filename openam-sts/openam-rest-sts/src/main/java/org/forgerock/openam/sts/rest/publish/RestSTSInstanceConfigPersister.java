@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 
 import javax.inject.Inject;
 import java.security.AccessController;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +45,7 @@ import java.util.Set;
 public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersister<RestSTSInstanceConfig> {
     private static final int PRIORITY_ZERO = 0;
 
+    private static final String ROOT_REALM = "/";
     private final SSOToken adminToken;
     private final MapMarshaller<RestSTSInstanceConfig> instanceConfigMapMarshaller;
     private final Logger logger;
@@ -149,7 +151,66 @@ public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersiste
         }
     }
 
-    public List<RestSTSInstanceConfig> getAllPublishedInstances() {
-        return null;
+    public List<RestSTSInstanceConfig> getAllPublishedInstances() throws STSPublishException {
+        List<RestSTSInstanceConfig> instances = new ArrayList<RestSTSInstanceConfig>();
+        for (String realm : getAllRealmNames()) {
+            ServiceConfig baseService;
+            try {
+                baseService = new ServiceConfigManager(AMSTSConstants.REST_STS_SERVICE_NAME, adminToken).getOrganizationConfig(realm, null);
+            } catch (SMSException e) {
+                logger.error("Could not obtain ServiceConfig instance for realm " + realm +
+                        ". Rest STS instances for this realm cannot be returned from getAllPublishedInstances. " +
+                        "Exception: " + e);
+                continue;
+            } catch (SSOException e) {
+                logger.error("Could not obtain ServiceConfig instance for realm " + realm +
+                        ". Rest STS instances for this realm cannot be returned from getAllPublishedInstances. " +
+                        "Exception: " + e);
+                continue;
+            }
+            if (baseService != null) {
+                Set<String> subConfigNames;
+                try {
+                    subConfigNames = baseService.getSubConfigNames();
+                } catch (SMSException e) {
+                    logger.error("Could not get list of RestSTSInstances in realm " + realm + ". Exception: " + e);
+                    continue;
+                }
+                for (String stsInstanceId : subConfigNames) {
+                    ServiceConfig instanceService;
+                    try {
+                        instanceService = baseService.getSubConfig(stsInstanceId);
+                    } catch (SSOException e) {
+                        logger.error("Could not get RestSTSInstance state for id " + stsInstanceId + " in realm " + realm + ". Exception: " + e);
+                        continue;
+                    } catch (SMSException e) {
+                        logger.error("Could not get RestSTSInstance state for id " + stsInstanceId + " in realm " + realm + ". Exception: " + e);
+                        continue;
+                    }
+                    if (instanceService != null) {
+                        Map<String, Set<String>> instanceAttrs = instanceService.getAttributes();
+                        //TODO - if the marshalFromAttributeMap throws a STSPublishException, I should catch it here, log and continue.
+                        instances.add(RestSTSInstanceConfig.marshalFromAttributeMap(instanceAttrs));
+                    } else {
+                        logger.error("Could not obtain the RestSTSInstanceConfig state for instance with id " + stsInstanceId + " in realm " + realm);
+                    }
+                }
+            } else {
+                logger.error("Could not obtain ServiceConfig instance for realm " + realm +
+                        ". Rest STS instances for this realm cannot be returned from getAllPublishedInstances.");
+            }
+        }
+        return instances;
+    }
+
+    private Set<String> getAllRealmNames() throws STSPublishException {
+        try {
+            OrganizationConfigManager ocm = new OrganizationConfigManager(adminToken, ROOT_REALM);
+            return ocm.getSubOrganizationNames();
+        } catch (SMSException e) {
+            throw new STSPublishException(ResourceException.INTERNAL_ERROR,
+                    "Could not obtain list of realms from the OrganizationConfigManager. " +
+                    "This means list of previously-published rest sts instances cannot be returned. Exception: " + e);
+        }
     }
 }

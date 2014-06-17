@@ -38,10 +38,14 @@ import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.forgerock.openam.sts.rest.publish.RestSTSInstancePublisher;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
 import static org.forgerock.json.fluent.JsonValue.object;
 
+//TODO: should this really be a CollectionResourceProvider?
 public class RestSTSPublishService implements SingletonResourceProvider {
     private static final String ADD_INSTANCE = "add_instance";
     private static final String REMOVE_INSTANCE = "remove_instance";
@@ -50,6 +54,7 @@ public class RestSTSPublishService implements SingletonResourceProvider {
     private static final String RESULT = "result";
     private static final String SUCCESS = "success";
     private static final String URL_ELEMENT = "url_element";
+    private static final String PUBLISHED_INSTANCES = "published_instances";
     private final RestSTSInstancePublisher publisher;
     private final Logger logger;
 
@@ -130,10 +135,19 @@ public class RestSTSPublishService implements SingletonResourceProvider {
     }
 
     public void readInstance(ServerContext context, ReadRequest request, ResultHandler<Resource> handler) {
-        /*
-        This should be updated to call publisher.getPublishedInstances().
-         */
-        handler.handleError(new NotSupportedException());
+        try {
+            List<RestSTSInstanceConfig> publishedInstances = publisher.getPublishedInstances();
+            List<JsonValue> jsonInstances = new ArrayList<JsonValue>(publishedInstances.size());
+            for (RestSTSInstanceConfig instanceConfig : publishedInstances) {
+                jsonInstances.add(instanceConfig.toJson());
+            }
+            //TODO: what about the etag - required for caching - what would define a good cache entry?
+            handler.handleResult(new Resource(PUBLISHED_INSTANCES, "revision_etag??", new JsonValue(jsonInstances)));
+        } catch (STSPublishException e) {
+            String message = "Exception caught obtaining list of previously published rest sts instances: " + e;
+            logger.error(message, e);
+            handler.handleError(new InternalServerErrorException(message, e));
+        }
     }
 
     public void updateInstance(ServerContext context, UpdateRequest request, ResultHandler<Resource> handler) {

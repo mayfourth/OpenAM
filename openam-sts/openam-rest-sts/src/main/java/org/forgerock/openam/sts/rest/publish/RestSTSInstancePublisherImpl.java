@@ -64,8 +64,8 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
      *                       can be reconstituted in case of a server restart.
      * @param restSTSInstance The RestSTS instance defining the functionality of the rest STS service.
      * @param deploymentSubPath the path, relative to the base rest-sts service, to the to-be-exposed rest-sts service.
-     * @throws STSInitializationException thrown in case a rest-sts instance has already been published at the specified
-     * subPath.
+     * @throws STSPublishException thrown in case a rest-sts instance has already been published at the specified
+     * subPath, or in case other errors prevented a successful publish.
      */
     @Override
     public synchronized void publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS restSTSInstance, String deploymentSubPath)
@@ -118,6 +118,7 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         router.removeRoute(route);
     }
 
+    @Override
     public List<RestSTSInstanceConfig> getPublishedInstances() throws STSPublishException{
         return persistentStore.getAllPublishedInstances();
     }
