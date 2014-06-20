@@ -84,14 +84,17 @@ public class RestSTSModule extends AbstractModule {
         return LoggerFactory.getLogger(AMSTSConstants.REST_STS_DEBUG_ID);
     }
 
-
+    @Provides
+    @Singleton
+    @Named(AMSTSConstants.REST_STS_PUBLISH_SERVICE_URI_ELEMENT)
+    String getRestSTSPublishServiceUriElement() {
+        return "/rest_sts_publish/publish";
+    }
     /*
-        The following methods provide the String constants corresponding to relatively static values relating to
+        The following 6 methods provide the String constants corresponding to relatively static values relating to
         consumption of the OpenAM rest context. This information is necessary for the STS instances to consume this
         context, and is the single point where these values need to be changed.
      */
-
-
     @Provides
     @Singleton
     @Named (AMSTSConstants.REST_AUTHN_URI_ELEMENT)

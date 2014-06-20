@@ -64,12 +64,12 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
      *                       can be reconstituted in case of a server restart.
      * @param restSTSInstance The RestSTS instance defining the functionality of the rest STS service.
      * @param deploymentSubPath the path, relative to the base rest-sts service, to the to-be-exposed rest-sts service.
+     * @param republish Indicates whether this is an original publish, or a republish following OpenAM restart.
      * @throws STSPublishException thrown in case a rest-sts instance has already been published at the specified
      * subPath, or in case other errors prevented a successful publish.
      */
-    @Override
-    public synchronized void publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS restSTSInstance, String deploymentSubPath)
-            throws STSPublishException {
+    public synchronized void publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS restSTSInstance,
+                                             String deploymentSubPath, boolean republish) throws STSPublishException {
         /*
         Exclude the possibility that a rest-sts instance has already been added at the sub-path.
 
@@ -93,8 +93,14 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         Need to persist the published Route instance as it is necessary for router removal.
          */
         publishedRoutes.put(deploymentSubPath, route);
-
-        persistentStore.persistSTSInstance(deploymentSubPath, instanceConfig);
+        /*
+        If this is a republish (i.e. re-constitute previously-published Rest STS instances following OpenAM restart),
+        then the RestSTSInsanceConfig does not need to be persisted, as it was obtained from the SMS via a GET
+        on the publish service by the RestSTSInstanceRepublishServlet.
+         */
+        if (!republish) {
+            persistentStore.persistSTSInstance(deploymentSubPath, instanceConfig);
+        }
     }
 
     /**
@@ -107,7 +113,6 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
      * @throws org.forgerock.openam.sts.STSPublishException if the entry in the SMS could not be removed, or if no
      * Route entry could be found in the Map corresponding to a previously-published instance.
      */
-    @Override
     public synchronized void removeInstance(String subPath, String realm) throws STSPublishException {
         Route route = publishedRoutes.remove(subPath);
         if (route == null) {
@@ -118,7 +123,6 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         router.removeRoute(route);
     }
 
-    @Override
     public List<RestSTSInstanceConfig> getPublishedInstances() throws STSPublishException{
         return persistentStore.getAllPublishedInstances();
     }

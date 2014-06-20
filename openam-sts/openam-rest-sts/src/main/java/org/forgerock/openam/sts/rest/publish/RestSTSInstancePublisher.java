@@ -33,7 +33,7 @@ import java.util.List;
  * locally (in the OpenAM .war) or remotely (in their own .war).
  */
 public interface RestSTSInstancePublisher {
-    void publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS instance, String subPath) throws STSPublishException;
+    void publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS instance, String subPath, boolean republish) throws STSPublishException;
     void removeInstance(String subPath, String realm) throws STSPublishException;
 
     /**
