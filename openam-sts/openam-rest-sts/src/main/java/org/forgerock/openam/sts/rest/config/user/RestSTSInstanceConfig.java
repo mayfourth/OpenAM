@@ -17,6 +17,7 @@
 package org.forgerock.openam.sts.rest.config.user;
 
 import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.MapMarshallUtils;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.config.user.KeystoreConfig;
@@ -139,10 +140,23 @@ public class RestSTSInstanceConfig extends STSInstanceConfig {
      * is passed to the TokenGenerationService so that the TGS can issue instance-specific tokens (i.e. reflecting the
      * KeystoreConfig and SAML2Config of the associated STS instance). This path is also the most specific element of the
      * DN identifying the config in the SMS.
+     *
+     * This method will be called to obtain the id under which the RestSTSInstanceConfig state is stored in the SMS, and
+     * the caching of the Route entry added to the Crest Router (needs to be cached to be later removed). Because this
+     * resource will be accessed as a url, it cannot have a trailing slash, as this slash is removed in the http request.
      */
     public String getDeploymentSubPath() {
-        return new UrlConstituentCatenatorImpl().catenateUrlConstituents(
+        String deploymentSubPath = new UrlConstituentCatenatorImpl().catenateUrlConstituents(
                 getDeploymentConfig().getRealm(), getDeploymentConfig().getUriElement());
+        if (deploymentSubPath.endsWith(AMSTSConstants.FORWARD_SLASH)) {
+            return deploymentSubPath.substring(0, deploymentSubPath.lastIndexOf(AMSTSConstants.FORWARD_SLASH));
+        }
+
+        if (deploymentSubPath.startsWith(AMSTSConstants.FORWARD_SLASH)) {
+            deploymentSubPath = deploymentSubPath.substring(1, deploymentSubPath.length());
+        }
+
+        return deploymentSubPath;
     }
 
     @Override

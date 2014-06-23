@@ -104,7 +104,7 @@ public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersiste
                     logger.debug("REST STS instance " + stsInstanceId + " in realm " + realm + " removed from persistent store.");
                 }
             } else {
-                throw new STSPublishException(ResourceException.INTERNAL_ERROR,
+                throw new STSPublishException(ResourceException.NOT_FOUND,
                         "Could not create ServiceConfigManager for realm " + realm +
                                 " in order to remove Rest STS instance with id " + stsInstanceId);
             }
@@ -132,12 +132,12 @@ public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersiste
                     Map<String, Set<String>> instanceAttrs = instanceService.getAttributes();
                     return RestSTSInstanceConfig.marshalFromAttributeMap(instanceAttrs);
                 } else {
-                    throw new STSPublishException(ResourceException.INTERNAL_ERROR,
+                    throw new STSPublishException(ResourceException.NOT_FOUND,
                             "Error reading RestSTSInstanceConfig instance from SMS: no instance state in realm " + realm
                                     + " corresponding to instance id " + stsInstanceId);
                 }
             } else {
-                throw new STSPublishException(ResourceException.INTERNAL_ERROR,
+                throw new STSPublishException(ResourceException.NOT_FOUND,
                         "Error reading RestSTSInstanceConfig instance from SMS: no base instance state in realm " + realm);
             }
         } catch (SSOException e) {

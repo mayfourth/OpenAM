@@ -204,6 +204,7 @@ public class AMSTSConstants {
 
     public static final String ROOT_REALM = "/";
 
+    public static final String FORWARD_SLASH = "/";
     /*
     Used for marshalling between byte[] and string representations. Does not seem to be defined anywhere in the pre 1.7 JDK.
      */

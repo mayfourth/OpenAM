@@ -48,13 +48,13 @@ public interface RestSTSInstancePublisher {
 
     /**
      * Remove the Rest STS instance from the SMS, and from the CREST router.
-     * @param subPath The deployment subPath, relative to the realm, obtained from RestDeploymentConfig#getUriElement
+     * @param stsId The sts id, obtained from RestSTSInstanceConfig#getDeploymentSubPath
      * @param realm The realm in which the Rest STS is to be deployed.
      *
      * Note that the subPath and realm constitute the unique identifier for a given Rest STS instance.
      * @throws STSPublishException
      */
-    void removeInstance(String subPath, String realm) throws STSPublishException;
+    void removeInstance(String stsId, String realm) throws STSPublishException;
 
     /**
      * Called to obtain the configuration elements corresponding to previously-published STS instances.
@@ -63,6 +63,8 @@ public interface RestSTSInstancePublisher {
      * @throws STSPublishException if exception encountered obtaining persisted instance state
      */
     List<RestSTSInstanceConfig> getPublishedInstances() throws STSPublishException;
+
+    RestSTSInstanceConfig getPublishedInstance(String stsId, String realm) throws STSPublishException;
 
     /**
      * Called by the RestSTSRepublishServlet upon startup to re-publish previously-published Rest STS instances.

@@ -21,6 +21,7 @@ import com.google.inject.Injector;
 import org.forgerock.json.resource.ResourceException;
 import org.forgerock.json.resource.Route;
 import org.forgerock.json.resource.Router;
+import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
 import org.forgerock.openam.sts.rest.RestSTS;
@@ -86,6 +87,14 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         published Routes in order to be able to remove them.
          */
         String deploymentSubPath = instanceConfig.getDeploymentSubPath();
+        if (deploymentSubPath.endsWith(AMSTSConstants.FORWARD_SLASH)) {
+            deploymentSubPath = deploymentSubPath.substring(0, deploymentSubPath.lastIndexOf(AMSTSConstants.FORWARD_SLASH));
+        }
+
+        if (deploymentSubPath.startsWith(AMSTSConstants.FORWARD_SLASH)) {
+            deploymentSubPath = deploymentSubPath.substring(1, deploymentSubPath.length());
+        }
+
         if (publishedRoutes.containsKey(deploymentSubPath)) {
             throw new STSPublishException(ResourceException.BAD_REQUEST, "A rest-sts instance at sub-path " +
                     deploymentSubPath + " has already been published.");
@@ -122,7 +131,7 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         if (route == null) {
             logger.error("Going to throw exception in RestSTSInstancePublisherImpl.removeInstance as the specified sts id, "
                     + stsId + " is not in the realm map. The set of keys in the realm map: " + publishedRoutes.keySet().toString());
-            throw new STSPublishException(ResourceException.BAD_REQUEST, "No previously published STS instance with id "
+            throw new STSPublishException(ResourceException.NOT_FOUND, "No previously published STS instance with id "
                     + stsId + " in realm " + realm + " found!");
         }
         persistentStore.removeSTSInstance(stsId, realm);
@@ -131,6 +140,10 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
 
     public List<RestSTSInstanceConfig> getPublishedInstances() throws STSPublishException{
         return persistentStore.getAllPublishedInstances();
+    }
+
+    public RestSTSInstanceConfig getPublishedInstance(String stsId, String realm) throws STSPublishException {
+        return persistentStore.getSTSInstanceConfig(stsId, realm);
     }
 
     public void republishExistingInstances() throws STSPublishException {
