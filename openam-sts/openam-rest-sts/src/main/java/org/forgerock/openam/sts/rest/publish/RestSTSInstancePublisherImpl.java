@@ -16,13 +16,15 @@
 
 package org.forgerock.openam.sts.rest.publish;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import org.forgerock.json.resource.ResourceException;
 import org.forgerock.json.resource.Route;
 import org.forgerock.json.resource.Router;
-import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
 import org.forgerock.openam.sts.rest.RestSTS;
+import org.forgerock.openam.sts.rest.config.RestSTSInstanceModule;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.forgerock.openam.sts.rest.service.RestSTSService;
 import org.slf4j.Logger;
@@ -63,13 +65,12 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
      *                       the RestSTS instance. This RestSTSInstanceConfig will be persisted so that persisted instances
      *                       can be reconstituted in case of a server restart.
      * @param restSTSInstance The RestSTS instance defining the functionality of the rest STS service.
-     * @param deploymentSubPath the path, relative to the base rest-sts service, to the to-be-exposed rest-sts service.
      * @param republish Indicates whether this is an original publish, or a republish following OpenAM restart.
      * @throws STSPublishException thrown in case a rest-sts instance has already been published at the specified
      * subPath, or in case other errors prevented a successful publish.
      */
-    public synchronized void publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS restSTSInstance,
-                                             String deploymentSubPath, boolean republish) throws STSPublishException {
+    public synchronized String publishInstance(RestSTSInstanceConfig instanceConfig, RestSTS restSTSInstance,
+                                             boolean republish) throws STSPublishException {
         /*
         Exclude the possibility that a rest-sts instance has already been added at the sub-path.
 
@@ -84,6 +85,7 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         complexities by checking my HashMap if an entry is present, as I need to maintain a reference to all
         published Routes in order to be able to remove them.
          */
+        String deploymentSubPath = instanceConfig.getDeploymentSubPath();
         if (publishedRoutes.containsKey(deploymentSubPath)) {
             throw new STSPublishException(ResourceException.BAD_REQUEST, "A rest-sts instance at sub-path " +
                     deploymentSubPath + " has already been published.");
@@ -101,6 +103,7 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         if (!republish) {
             persistentStore.persistSTSInstance(deploymentSubPath, instanceConfig);
         }
+        return deploymentSubPath;
     }
 
     /**
@@ -125,5 +128,27 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
 
     public List<RestSTSInstanceConfig> getPublishedInstances() throws STSPublishException{
         return persistentStore.getAllPublishedInstances();
+    }
+
+    public void republishExistingInstances() throws STSPublishException {
+        final List<RestSTSInstanceConfig> publishedInstances = getPublishedInstances();
+        for (RestSTSInstanceConfig instanceConfig : publishedInstances) {
+            Injector instanceInjector;
+            try {
+                instanceInjector = Guice.createInjector(new RestSTSInstanceModule(instanceConfig));
+            } catch (Exception e) {
+                logger.error("Exception caught creating the guice injector in republish corresponding to rest sts " +
+                        "instance: " + instanceConfig.toJson() + ". This instance cannot be republished. Exception: " + e);
+                continue;
+            }
+            try {
+                publishInstance(instanceConfig, instanceInjector.getInstance(RestSTS.class), true);
+                logger.info("Republished Rest STS instance corresponding to config " + instanceConfig.toJson());
+            } catch (STSPublishException e) {
+                logger.error("Exception caught publishing rest sts " +
+                        "instance: " + instanceConfig.toJson() + ". This instance cannot be republished. Exception: " + e);
+                continue;
+            }
+        }
     }
 }

@@ -21,15 +21,9 @@ import com.google.inject.Injector;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.json.resource.ActionRequest;
 import org.forgerock.json.resource.BadRequestException;
-import org.forgerock.json.resource.CollectionResourceProvider;
-import org.forgerock.json.resource.CreateRequest;
-import org.forgerock.json.resource.DeleteRequest;
 import org.forgerock.json.resource.InternalServerErrorException;
 import org.forgerock.json.resource.NotSupportedException;
 import org.forgerock.json.resource.PatchRequest;
-import org.forgerock.json.resource.QueryRequest;
-import org.forgerock.json.resource.QueryResult;
-import org.forgerock.json.resource.QueryResultHandler;
 import org.forgerock.json.resource.ReadRequest;
 import org.forgerock.json.resource.Resource;
 import org.forgerock.json.resource.ResultHandler;
@@ -47,10 +41,7 @@ import org.forgerock.openam.utils.JsonObject;
 import org.forgerock.openam.utils.JsonValueBuilder;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
@@ -112,9 +103,9 @@ public class RestSTSPublishService implements SingletonResourceProvider {
             }
             String urlElement = null;
             try {
-                urlElement = instanceConfig.getDeploymentSubPath();
                 boolean republish = AMSTSConstants.REST_STS_PUBLISH_SERVICE_ACTION_REPUBLISH_INSTANCE.equals(action);
-                publisher.publishInstance(instanceConfig, instanceInjector.getInstance(RestSTS.class), urlElement, republish);
+                urlElement =
+                        publisher.publishInstance(instanceConfig, instanceInjector.getInstance(RestSTS.class), republish);
                 if (logger.isDebugEnabled()) {
                     logger.debug("rest sts instance successfully published at " + urlElement);
                 }
@@ -162,6 +153,11 @@ public class RestSTSPublishService implements SingletonResourceProvider {
         handler.handleError(new NotSupportedException());
     }
 
+    /*
+    This method is currently not consumed, as the RestSTSInstanceRepublishServlet consumes the RestSTSInstancePublisher
+    directly. It is maintained to support the remote deployment of Rest STS instances, and as a means to remotely obtain
+    the inventory of published Rest STS instances.
+     */
     public void readInstance(ServerContext context, ReadRequest request, ResultHandler<Resource> handler) {
         try {
             List<RestSTSInstanceConfig> publishedInstances = publisher.getPublishedInstances();
@@ -169,7 +165,11 @@ public class RestSTSPublishService implements SingletonResourceProvider {
             for (RestSTSInstanceConfig instanceConfig : publishedInstances) {
                 jsonObject.put(instanceConfig.getDeploymentSubPath(), instanceConfig.toJson().toString());
             }
-            //TODO: revision etag?
+            /*
+            Note that the revision etag is not set, as this is not a resource which should really be cached.
+            If caching becomes necessary, a string composed of the hash codes of each of the RestSTSInstanceConfig
+            instances could be used (or a hash of that string).
+             */
             handler.handleResult(new Resource(PUBLISHED_INSTANCES, "", jsonObject.build()));
         } catch (STSPublishException e) {
             String message = "Exception caught obtaining list of previously published rest sts instances: " + e;
