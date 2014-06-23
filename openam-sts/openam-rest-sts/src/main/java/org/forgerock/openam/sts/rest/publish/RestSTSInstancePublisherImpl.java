@@ -107,22 +107,25 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
     }
 
     /**
-     * Removes the published rest-sts instance at the specified subPath. Note that when previously-published Rest STS
+     * Removes the published rest-sts instance at the specified stsId. Note that when previously-published Rest STS
      * instances are reconstituted following an OpenAM restart, the publishInstance above will be called, which will
      * re-constitute the Route state in the Map, state necessary to remove the Route corresponding to the STS instance
      * from the Crest router. This is important because the Route has a package-private ctor.
-     * @param subPath the path, relative to the base rest-sts service, to the to-be-removed service.
+     * @param stsId the path, relative to the base rest-sts service, to the to-be-removed service. Note that this path
+     *              includes the realm.
      * @param realm The realm of the STS instance
      * @throws org.forgerock.openam.sts.STSPublishException if the entry in the SMS could not be removed, or if no
      * Route entry could be found in the Map corresponding to a previously-published instance.
      */
-    public synchronized void removeInstance(String subPath, String realm) throws STSPublishException {
-        Route route = publishedRoutes.remove(subPath);
+    public synchronized void removeInstance(String stsId, String realm) throws STSPublishException {
+        Route route = publishedRoutes.remove(stsId);
         if (route == null) {
+            logger.error("Going to throw exception in RestSTSInstancePublisherImpl.removeInstance as the specified sts id, "
+                    + stsId + " is not in the realm map. The set of keys in the realm map: " + publishedRoutes.keySet().toString());
             throw new STSPublishException(ResourceException.BAD_REQUEST, "No previously published STS instance with id "
-                    + subPath + " in realm " + realm + " found!");
+                    + stsId + " in realm " + realm + " found!");
         }
-        persistentStore.removeSTSInstance(subPath, realm);
+        persistentStore.removeSTSInstance(stsId, realm);
         router.removeRoute(route);
     }
 
