@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import javax.inject.Inject;
 import java.security.AccessController;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -204,9 +205,16 @@ public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersiste
     }
 
     private Set<String> getAllRealmNames() throws STSPublishException {
+        Set<String> realmNames = new HashSet<String>();
+        /*
+        The OrganizationConfigManager#SubOrganizationNames only returns realms under the root realm. The root
+        realm needs to be added separately
+         */
+        realmNames.add(AMSTSConstants.ROOT_REALM);
         try {
             OrganizationConfigManager ocm = new OrganizationConfigManager(adminToken, ROOT_REALM);
-            return ocm.getSubOrganizationNames();
+            realmNames.addAll(ocm.getSubOrganizationNames());
+            return realmNames;
         } catch (SMSException e) {
             throw new STSPublishException(ResourceException.INTERNAL_ERROR,
                     "Could not obtain list of realms from the OrganizationConfigManager. " +
