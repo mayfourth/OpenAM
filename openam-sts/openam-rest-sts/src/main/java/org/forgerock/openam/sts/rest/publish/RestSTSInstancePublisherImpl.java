@@ -129,8 +129,6 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
     public synchronized void removeInstance(String stsId, String realm) throws STSPublishException {
         Route route = publishedRoutes.remove(stsId);
         if (route == null) {
-            logger.error("Going to throw exception in RestSTSInstancePublisherImpl.removeInstance as the specified sts id, "
-                    + stsId + " is not in the realm map. The set of keys in the realm map: " + publishedRoutes.keySet().toString());
             throw new STSPublishException(ResourceException.NOT_FOUND, "No previously published STS instance with id "
                     + stsId + " in realm " + realm + " found!");
         }

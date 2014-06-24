@@ -340,7 +340,7 @@ public class SoapSTSInstanceModule extends AbstractModule {
     @Provides
     @Named(AMSTSConstants.REST_TOKEN_GENERATION_SERVICE_URI_ELEMENT)
     String tokenGenerationServiceUriElement() {
-        return "/sts_tokengen/issue?_action=issue";
+        return "/sts-tokengen/issue?_action=issue";
     }
 
     @Provides

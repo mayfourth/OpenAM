@@ -56,6 +56,7 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
     private static final String PUBLISHED_INSTANCES = "published_instances";
     private static final String RESULT = "result";
     private static final String SUCCESS = "success";
+    private static final String EMPTY_STRING = "";
 
     private final RestSTSInstancePublisher publisher;
     private final Logger logger;
@@ -144,7 +145,7 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
 
     public void handleRead(ServerContext context, ReadRequest request, ResultHandler<Resource> handler) {
         try {
-            if ("".equals(request.getResourceName())) {
+            if (EMPTY_STRING.equals(request.getResourceName())) {
                 List<RestSTSInstanceConfig> publishedInstances = publisher.getPublishedInstances();
                 JsonObject jsonObject = JsonValueBuilder.jsonValue();
                 for (RestSTSInstanceConfig instanceConfig : publishedInstances) {
@@ -155,7 +156,7 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
                 If caching becomes necessary, a string composed of the hash codes of each of the RestSTSInstanceConfig
                 instances could be used (or a hash of that string).
                  */
-                handler.handleResult(new Resource(PUBLISHED_INSTANCES, "", jsonObject.build()));
+                handler.handleResult(new Resource(PUBLISHED_INSTANCES, EMPTY_STRING, jsonObject.build()));
             } else {
                 RestSTSInstanceConfig instanceConfig =
                         publisher.getPublishedInstance(request.getResourceName(), getRealmFromResourceName(request.getResourceName()));
@@ -175,9 +176,9 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
     }
 
     private String getRealmFromResourceName(String resourceName) {
-        if (resourceName.lastIndexOf("/") == -1) {
-            return "/";
+        if (resourceName.lastIndexOf(AMSTSConstants.FORWARD_SLASH) == -1) {
+            return AMSTSConstants.FORWARD_SLASH;
         }
-        return resourceName.substring(0, resourceName.lastIndexOf("/"));
+        return resourceName.substring(0, resourceName.lastIndexOf(AMSTSConstants.FORWARD_SLASH));
     }
 }

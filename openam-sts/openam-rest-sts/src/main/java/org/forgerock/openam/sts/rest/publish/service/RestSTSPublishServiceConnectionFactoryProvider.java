@@ -32,10 +32,10 @@ import org.slf4j.Logger;
 public class RestSTSPublishServiceConnectionFactoryProvider {
     public static ConnectionFactory getConnectionFactory() {
         final Router router = new Router();
-        router.addRoute("/publish/",
-                new RestSTSPublishService(RestSTSInjectorHolder.getInstance(Key.get(RestSTSInstancePublisher.class)),
-                        RestSTSInjectorHolder.getInstance(Key.get(Logger.class))));
-        router.addRoute(RoutingMode.STARTS_WITH, "/publish2",
+//        router.addRoute("/publish/",
+//                new RestSTSPublishService(RestSTSInjectorHolder.getInstance(Key.get(RestSTSInstancePublisher.class)),
+//                        RestSTSInjectorHolder.getInstance(Key.get(Logger.class))));
+        router.addRoute(RoutingMode.STARTS_WITH, "/publish",
                 new RestSTSPublishServiceRequestHandler(RestSTSInjectorHolder.getInstance(Key.get(RestSTSInstancePublisher.class)),
                         RestSTSInjectorHolder.getInstance(Key.get(Logger.class))));
         return Resources.newInternalConnectionFactory(router);

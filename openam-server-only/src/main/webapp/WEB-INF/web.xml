@@ -1086,15 +1086,15 @@
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>rest-sts</servlet-name>
-        <url-pattern>/rest_sts/*</url-pattern>
+        <url-pattern>/rest-sts/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>rest-sts-publish</servlet-name>
-        <url-pattern>/rest_sts_publish/*</url-pattern>
+        <url-pattern>/rest-sts-publish/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>sts-tokengeneration-service</servlet-name>
-        <url-pattern>/sts_tokengen/*</url-pattern>
+        <url-pattern>/sts-tokengen/*</url-pattern>
     </servlet-mapping>
 
     <!-- end of servlet mapping -->

@@ -88,7 +88,7 @@ public class RestSTSModule extends AbstractModule {
     @Singleton
     @Named(AMSTSConstants.REST_STS_PUBLISH_SERVICE_URI_ELEMENT)
     String getRestSTSPublishServiceUriElement() {
-        return "/rest_sts_publish/publish";
+        return "/rest-sts-publish/publish";
     }
     /*
         The following 6 methods provide the String constants corresponding to relatively static values relating to
@@ -120,7 +120,7 @@ public class RestSTSModule extends AbstractModule {
     @Singleton
     @Named(AMSTSConstants.REST_TOKEN_GENERATION_SERVICE_URI_ELEMENT)
     String tokenGenerationServiceUriElement() {
-        return "/sts_tokengen/issue?_action=issue";
+        return "/sts-tokengen/issue?_action=issue";
     }
 
     @Provides

@@ -64,6 +64,13 @@ public interface RestSTSInstancePublisher {
      */
     List<RestSTSInstanceConfig> getPublishedInstances() throws STSPublishException;
 
+    /**
+     * Called to return the config state corresponding to a specified Rest STS instance
+     * @param stsId The sts id, obtained from RestSTSInstanceConfig#getDeploymentSubPath
+     * @param realm The realm in which the Rest STS is to be deployed.
+     * @return The RestSTSInstanceConfig corresponding to this published instance
+     * @throws STSPublishException
+     */
     RestSTSInstanceConfig getPublishedInstance(String stsId, String realm) throws STSPublishException;
 
     /**
