@@ -80,7 +80,6 @@ public class ScriptedIdentity {
         HashSet attributeValues = new HashSet();
         attributeValues.add(attributeValue);
         attributes.put(attributeName, attributeValues);
-        store();
         try {
             amIdentity.setAttributes(attributes);
         } catch (IdRepoException e) {
@@ -93,7 +92,7 @@ public class ScriptedIdentity {
     /**
      * Persists the current state of the user's attributes
      */
-    private void store() {
+    public void store() {
         try {
             amIdentity.store();
         } catch (IdRepoException e) {

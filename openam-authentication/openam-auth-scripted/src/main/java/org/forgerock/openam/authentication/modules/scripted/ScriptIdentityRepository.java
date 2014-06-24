@@ -75,6 +75,7 @@ public class ScriptIdentityRepository {
     public void setAttribute(String userName, String attributeName, String attributeValue) {
         ScriptedIdentity amIdentity = getIdentity(userName);
         amIdentity.setAttribute(attributeName,attributeValue);
+        amIdentity.store();
     }
 
     /**
