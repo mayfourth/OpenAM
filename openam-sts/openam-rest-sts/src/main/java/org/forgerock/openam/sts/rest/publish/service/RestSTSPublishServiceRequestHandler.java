@@ -50,7 +50,12 @@ import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
 import static org.forgerock.json.fluent.JsonValue.object;
 
-/**
+ /**
+  * A custom RequestHandler to allow the Rest STS publish service to act like a CollectionResourceProvider, while still
+  * handling the routing of urls identifying rest sts instances, which are identified by their deployment url (relative
+  * to the servlet root of the rest-sts endpoint), deployment urls which can include realms, and thus '/' characters.
+  * These characters are not handled as resource names by the CollectionResourceProvider, which is necessary for the
+  * rest sts publish service.
  */
 class RestSTSPublishServiceRequestHandler implements RequestHandler {
     private static final String PUBLISHED_INSTANCES = "published_instances";
