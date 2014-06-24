@@ -299,19 +299,4 @@ public class AMSTSConstants {
     The name of the json field corresponding to the deployment path of a successfully-published Rest STS instance.
      */
     public static final String SUCCESSFUL_REST_STS_PUBLISH_URL_ELEMENT = "url_element";
-
-    /*
-    Name of the _action param posted at the Rest STS publish service to trigger publishing a new Rest STS instance.
-     */
-    public static final String REST_STS_PUBLISH_SERVICE_ACTION_ADD_INSTANCE = "add_instance";
-
-    /*
-    Name of the _action param posted at the Rest STS publish service to trigger removing a Rest STS instance.
-     */
-    public static final String REST_STS_PUBLISH_SERVICE_ACTION_REMOVE_INSTANCE = "remove_instance";
-
-    /*
-    Name of the _action param posted at the Rest STS publish service to trigger republishing a Rest STS instance.
-     */
-    public static final String REST_STS_PUBLISH_SERVICE_ACTION_REPUBLISH_INSTANCE = "republish_instance";
 }
