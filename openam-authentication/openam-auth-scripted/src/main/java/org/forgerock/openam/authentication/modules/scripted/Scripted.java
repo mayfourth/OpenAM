@@ -34,6 +34,8 @@ package org.forgerock.openam.authentication.modules.scripted;
 import com.sun.identity.authentication.callbacks.ScriptTextOutputCallback;
 import com.sun.identity.authentication.spi.AMLoginModule;
 import com.sun.identity.authentication.spi.AuthLoginException;
+import com.sun.identity.idm.AMIdentityRepository;
+import com.sun.identity.shared.datastruct.CollectionHelper;
 import com.sun.identity.shared.debug.Debug;
 import org.forgerock.guice.core.InjectorHolder;
 import org.forgerock.http.client.HttpClient;
@@ -53,8 +55,6 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.login.LoginException;
 import java.security.Principal;
 import java.util.Map;
-
-import com.sun.identity.shared.datastruct.CollectionHelper;
 
 /**
  * An authentication module that allows users to authenticate via a scripting language
@@ -81,6 +81,7 @@ public class Scripted extends AMLoginModule {
     public static final String HTTP_CLIENT_REQUEST_VARIABLE_NAME = "httpClientRequest";
     public static final String HTTP_CLIENT_VARIABLE_NAME = "httpClient";
     public static final String LOGGER_VARIABLE_NAME = "logger";
+    public static final String IDENTITY_REPOSITORY = "idRepository";
 
     private String userName;
     private String clientSideScript;
@@ -96,6 +97,7 @@ public class Scripted extends AMLoginModule {
     final HttpClientRequestFactory httpClientRequestFactory = InjectorHolder.getInstance(HttpClientRequestFactory.class);
     private HttpClient httpClient;
     private HttpClientRequest httpClientRequest;
+    private ScriptIdentityRepository identityRepository;
 
     /**
      * {@inheritDoc}
@@ -110,6 +112,15 @@ public class Scripted extends AMLoginModule {
         clientSideScriptEnabled = getClientSideScriptEnabled();
         httpClient = getHttpClient();
         httpClientRequest = getHttpRequest();
+        identityRepository  = getScriptIdentityRepository();
+    }
+
+    private ScriptIdentityRepository getScriptIdentityRepository() {
+        return new ScriptIdentityRepository(getAmIdentityRepository());
+    }
+
+    private AMIdentityRepository getAmIdentityRepository() {
+        return getAMIdentityRepository(getRequestOrg());
     }
 
     /**
@@ -139,6 +150,7 @@ public class Scripted extends AMLoginModule {
                 scriptVariables.put(FAILED_ATTR_NAME, FAILURE_VALUE);
                 scriptVariables.put(HTTP_CLIENT_VARIABLE_NAME, httpClient);
                 scriptVariables.put(HTTP_CLIENT_REQUEST_VARIABLE_NAME, httpClientRequest);
+                scriptVariables.put(IDENTITY_REPOSITORY, identityRepository);
 
                 try {
                     scriptEvaluator.evaluateScript(serverSideScript, scriptVariables);
