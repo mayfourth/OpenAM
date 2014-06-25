@@ -16,7 +16,7 @@
 
 package org.forgerock.openam.sts.config.user;
 
-import com.sun.identity.saml2.common.SAML2Constants;
+import org.apache.ws.security.saml.ext.builder.SAML2Constants;
 import org.apache.xml.security.c14n.Canonicalizer;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.openam.sts.MapMarshallUtils;
@@ -47,7 +47,11 @@ import static org.forgerock.json.fluent.JsonValue.object;
 public class SAML2Config {
     private static final String BAR = "|";
     public static class SAML2ConfigBuilder {
-        private String nameIdFormat = SAML2Constants.UNSPECIFIED;
+        /*
+        use the ws-security constant, instead of the SAML2Constants defined in openam-federation, as this dependency
+        introduces a dependency on openam-core, which pulls the ws-* dependencies into the soap-sts, which I don't want.
+         */
+        private String nameIdFormat = SAML2Constants.NAMEID_FORMAT_UNSPECIFIED;
         private Map<String, String> attributeMap;
         private long tokenLifetimeInSeconds = 60 * 10; //default token lifetime is 10 minutes
         /**

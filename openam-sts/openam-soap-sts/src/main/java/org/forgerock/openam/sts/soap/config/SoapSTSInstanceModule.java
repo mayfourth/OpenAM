@@ -346,7 +346,12 @@ public class SoapSTSInstanceModule extends AbstractModule {
     @Provides
     @Named(AMSTSConstants.AM_SESSION_COOKIE_NAME)
     String getAMSessionCookieName() {
-        return SystemPropertiesManager.get(Constants.AM_COOKIE_NAME);
+        /*
+        This cannot come from the SystemPropertiesManager, as this is not running in the context of OpenAM. Perhaps
+        set in SystemProperties, or some other properties file? Right now, just hard-code. TODO
+         */
+        return "iPlanetDirectoryPro";
+//        return SystemPropertiesManager.get(Constants.AM_COOKIE_NAME);
     }
 
     @Provides
