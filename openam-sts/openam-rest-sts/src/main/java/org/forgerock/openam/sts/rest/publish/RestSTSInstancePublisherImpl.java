@@ -44,6 +44,9 @@ import java.util.Map;
  * these operations in the case of failure (i.e. removing the route from the router). Because publishing rest-sts instances
  * will occur infrequently, synchronizing both of these actions seemed a better trade-off to insure consistent, non-interleaved
  * mutations of all stateful elements involved with publishing a rest-sts instance.
+ *
+ * TODO: transaction semantics for publish and remove - if one of the mutations throws an exception, take steps to unwind
+ * the other mutations!!!
  */
 public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
     private final Router router;

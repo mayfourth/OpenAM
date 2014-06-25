@@ -90,7 +90,7 @@ public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersiste
         }
     }
 
-    public void removeSTSInstance(String stsInstanceId, String realm) throws STSPublishException {
+    public synchronized void removeSTSInstance(String stsInstanceId, String realm) throws STSPublishException {
         /*
         Model for code below taken from AMAuthenticationManager.deleteAuthenticationInstance, as the 'multiple authN module per realm'
         model applies to the STS, and the AMAuthenticationManager seems to implement the SMS persistence concern of these semantics.
