@@ -27,14 +27,17 @@
  */
 
 /*
- * Portions Copyrighted 2010-2014 ForgeRock, Inc.
+ * Portions Copyrighted 2010-2014 ForgeRock AS, Inc.
  */
 package org.forgerock.openam.authentication.modules.scripted;
 
 import com.iplanet.sso.SSOException;
 import com.sun.identity.idm.AMIdentity;
 import com.sun.identity.idm.IdRepoException;
+import com.sun.identity.shared.debug.Debug;
+import org.forgerock.openam.utils.CollectionUtils;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,8 +45,9 @@ import java.util.Set;
 /**
  * A wrapper class to limit an authentication script's exposure to a AmIdentity object
  */
-public class ScriptedIdentity {
-    AMIdentity amIdentity;
+class ScriptedIdentity {
+    private final AMIdentity amIdentity;
+    private static final Debug DEBUG = Debug.getInstance("ScriptedIdentity");
 
     /**
      * The constructor for the <code>ScriptedIdentity</code> object
@@ -62,31 +66,49 @@ public class ScriptedIdentity {
         try {
             return amIdentity.getAttribute(attributeName);
         } catch (IdRepoException e) {
-            e.printStackTrace();
+            DEBUG.message("Exception trying to get attribute", e);
         } catch (SSOException e) {
-            e.printStackTrace();
+            DEBUG.message("SSO Exception", e);
         }
 
         return null;
     }
 
     /**
-     * Sets a particular attribute's value. If the attribute doesn't exist, it will be created.
+     * Sets the attribute's values. If the attribute already exists all existing values will be overridden. If it doesn't exist, it will be created.
      * @param attributeName The name of the attribute
-     * @param attributeValue The value of the attribute
+     * @param attributeValues The values of the attribute
      */
-    public void setAttribute(String attributeName, String attributeValue) {
+    public void setAttribute(String attributeName, Object[] attributeValues) {
+        Set attributeValuesAsSet = CollectionUtils.asSet(attributeValues);
         HashMap attributes = new HashMap();
-        HashSet attributeValues = new HashSet();
-        attributeValues.add(attributeValue);
-        attributes.put(attributeName, attributeValues);
+        attributes.put(attributeName, attributeValuesAsSet);
+
         try {
             amIdentity.setAttributes(attributes);
         } catch (IdRepoException e) {
-            e.printStackTrace();
+            DEBUG.message("Exception trying to set attribute", e);
         } catch (SSOException e) {
-            e.printStackTrace();
+            DEBUG.message("SSO Exception", e);
         }
+    }
+
+    public void addAttribute(String attributeName, String attributeValue) {
+        Set currentAttributeValues = null;
+        try {
+            currentAttributeValues = amIdentity.getAttribute(attributeName);
+        } catch (IdRepoException e) {
+            DEBUG.message("Attribute '" + attributeName + "' doesn't currently exist. Creating new attribute..");
+        } catch (SSOException e) {
+            DEBUG.message("SSO Exception", e);
+        }
+
+        if(currentAttributeValues == null) {
+            currentAttributeValues = new HashSet();
+        }
+
+        currentAttributeValues.add(attributeValue);
+        setAttribute(attributeName, currentAttributeValues.toArray());
     }
 
     /**
@@ -96,9 +118,9 @@ public class ScriptedIdentity {
         try {
             amIdentity.store();
         } catch (IdRepoException e) {
-            e.printStackTrace();
+            DEBUG.message("Exception persisting attribute", e);
         } catch (SSOException e) {
-            e.printStackTrace();
+            DEBUG.message("Exception persisting attribute", e);
         }
     }
 }

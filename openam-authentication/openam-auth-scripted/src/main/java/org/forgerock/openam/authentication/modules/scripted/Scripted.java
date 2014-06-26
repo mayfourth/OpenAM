@@ -132,7 +132,7 @@ public class Scripted extends AMLoginModule {
         switch (state) {
 
             case STATE_BEGIN:
-                if (!clientSideScriptEnabled) {
+                if (!clientSideScriptEnabled || clientSideScript.length() == 0) {
                     clientSideScript = " ";
                 }
 
