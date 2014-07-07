@@ -38,7 +38,9 @@
 <ModuleProperties moduleName="Scripted" version="1.0" >
     <Callbacks length="0" order="1" timeout="600" header="#WILL NOT BE SHOWN#" />
 
-    <Callbacks length="1" order="2" timeout="120" header="Sign in to OpenAM" >
+    <Callbacks length="3" order="2" timeout="120" header="Sign in to OpenAM" >
+        <TextOutputCallback messageType="script">PLACEHOLDER</TextOutputCallback>
+        <TextOutputCallback messageType="script">PLACEHOLDER</TextOutputCallback>
         <TextOutputCallback messageType="script">PLACEHOLDER</TextOutputCallback>
     </Callbacks>
 </ModuleProperties>
