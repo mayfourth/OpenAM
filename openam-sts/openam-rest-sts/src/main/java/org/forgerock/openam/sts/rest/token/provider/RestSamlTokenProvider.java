@@ -31,6 +31,7 @@ import org.forgerock.openam.sts.service.invocation.ProofTokenState;
 import org.forgerock.openam.sts.token.SAML2SubjectConfirmation;
 import org.forgerock.openam.sts.token.ThreadLocalAMTokenCache;
 
+import org.forgerock.openam.sts.token.provider.AMSessionInvalidator;
 import org.forgerock.openam.sts.token.provider.AuthnContextMapper;
 import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumer;
 import org.slf4j.Logger;
@@ -44,15 +45,11 @@ import java.util.Map;
  * generated from the preceding TokenValidation operation if the TokenTransform has been configured to invalidate
  * the interim OpenAM sessions generated from token validation. Note that thus the AMSessionInvalidator can be null.
  *
- * Note that this class may be a candidate for being moved to the common module, but the manner in which it pulls
- * SubjectConfirmation method specific data out of the additionalProperties in the TokenProviderParameters might not
- * work in the SOAP STS - this is TBD.
- *
  * See the TokenTranslateOperationImpl#buildTokenProviderParameters for details on how the additional state necessary
  * for issuing assertions of the various SubjectConfirmationMethod types are constituted in the additionalProperties
  * Map<String, Object> encapsulated in the TokenProviderParameters.
  */
-public class AMSAMLTokenProvider implements TokenProvider {
+public class RestSamlTokenProvider implements TokenProvider {
     private final TokenGenerationServiceConsumer tokenGenerationServiceConsumer;
     private final AMSessionInvalidator amSessionInvalidator;
     private final ThreadLocalAMTokenCache threadLocalAMTokenCache;
@@ -65,7 +62,7 @@ public class AMSAMLTokenProvider implements TokenProvider {
     /*
     ctor not injected as this class created by TokenTransformFactoryImpl
      */
-    public AMSAMLTokenProvider(TokenGenerationServiceConsumer tokenGenerationServiceConsumer,
+    public RestSamlTokenProvider(TokenGenerationServiceConsumer tokenGenerationServiceConsumer,
                                AMSessionInvalidator amSessionInvalidator,
                                ThreadLocalAMTokenCache threadLocalAMTokenCache,
                                String stsInstanceId,
@@ -88,17 +85,14 @@ public class AMSAMLTokenProvider implements TokenProvider {
     TokenProviderParameters. This value is set in the TokenTranslateOperationImpl by calling calling name() on the
     specified desired TokenType.
      */
-    @Override
     public boolean canHandleToken(String tokenType) {
         return canHandleToken(tokenType, null);
     }
 
-    @Override
     public boolean canHandleToken(String tokenType, String realm) {
         return TokenType.SAML2.name().equals(tokenType);
     }
 
-    @Override
     public TokenProviderResponse createToken(TokenProviderParameters tokenParameters) {
         try {
             final TokenProviderResponse tokenProviderResponse = new TokenProviderResponse();
@@ -192,6 +186,6 @@ public class AMSAMLTokenProvider implements TokenProvider {
                         stsInstanceId, realm, authnContextClassRef, (ProofTokenState)proofTokenStateObject);
         }
         throw new TokenCreationException(ResourceException.INTERNAL_ERROR,
-                "Unexpected SAML2SubjectConfirmation in AMSAMLTokenProvider: " + subjectConfirmation);
+                "Unexpected SAML2SubjectConfirmation in RestSamlTokenProvider: " + subjectConfirmation);
     }
 }

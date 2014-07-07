@@ -25,7 +25,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.inject.Provider;
 
-import com.sun.identity.shared.Constants;
 import com.sun.identity.shared.configuration.SystemPropertiesManager;
 import org.apache.cxf.sts.STSPropertiesMBean;
 import org.apache.cxf.sts.StaticSTSProperties;
@@ -369,6 +368,7 @@ public class SoapSTSInstanceModule extends AbstractModule {
     /*
     Allows for a custom AuthnContextMapper to be plugged-in. This AuthnContextMapper provides a
     SAML2 AuthnContext class ref value given an input token and input token type.
+    TODO: this should not be in the SystemPropertiesManager, but rather in the SAML2Config.
      */
     @Provides
     @Inject

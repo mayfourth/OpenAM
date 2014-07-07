@@ -25,7 +25,7 @@ import java.util.*;
 /**
  * Class which encapsulates all of the user-provided config information necessary to create an instance of the
  * STS.
- * It is an ummutable object with getter methods to obtain all of the necessary information needed by the various
+ * It is an immutable object with getter methods to obtain all of the necessary information needed by the various
  * guice modules and providers to inject the object graph corresponding to a fully-configured STS instance.
  *
  *

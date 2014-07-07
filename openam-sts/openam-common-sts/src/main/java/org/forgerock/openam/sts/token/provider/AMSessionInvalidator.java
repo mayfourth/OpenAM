@@ -14,7 +14,7 @@
  * Copyright 2013-2014 ForgeRock AS. All rights reserved.
  */
 
-package org.forgerock.openam.sts.rest.token.provider;
+package org.forgerock.openam.sts.token.provider;
 
 import org.forgerock.openam.sts.TokenCreationException;
 

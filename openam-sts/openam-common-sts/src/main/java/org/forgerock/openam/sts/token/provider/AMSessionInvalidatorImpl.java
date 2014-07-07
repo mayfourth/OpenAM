@@ -14,7 +14,7 @@
  * Copyright 2013-2014 ForgeRock AS. All rights reserved.
  */
 
-package org.forgerock.openam.sts.rest.token.provider;
+package org.forgerock.openam.sts.token.provider;
 
 import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.TokenCreationException;
@@ -30,7 +30,7 @@ import java.net.URISyntaxException;
 import org.slf4j.Logger;
 
 /**
- * {@link org.forgerock.openam.sts.rest.token.provider.AMSessionInvalidator}
+ * {@link AMSessionInvalidator}
  */
 public class AMSessionInvalidatorImpl implements AMSessionInvalidator {
     private final URI logoutUri;
@@ -62,7 +62,6 @@ public class AMSessionInvalidatorImpl implements AMSessionInvalidator {
         return new URI(sb.toString());
     }
 
-    @Override
     public void invalidateAMSession(String sessionId) throws TokenCreationException {
         ClientResource resource = new ClientResource(logoutUri);
         resource.setFollowingRedirects(false);

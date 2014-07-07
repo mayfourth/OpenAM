@@ -27,10 +27,10 @@ import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.XMLUtilities;
 import org.forgerock.openam.sts.XmlMarshaller;
 import org.forgerock.openam.sts.rest.config.user.TokenTransformConfig;
-import org.forgerock.openam.sts.rest.token.provider.AMSessionInvalidator;
+import org.forgerock.openam.sts.token.provider.AMSessionInvalidator;
 import org.forgerock.openam.sts.token.ThreadLocalAMTokenCache;
-import org.forgerock.openam.sts.rest.token.provider.AMSAMLTokenProvider;
-import org.forgerock.openam.sts.rest.token.provider.AMSessionInvalidatorImpl;
+import org.forgerock.openam.sts.rest.token.provider.RestSamlTokenProvider;
+import org.forgerock.openam.sts.token.provider.AMSessionInvalidatorImpl;
 import org.forgerock.openam.sts.token.UrlConstituentCatenator;
 import org.forgerock.openam.sts.token.model.OpenIdConnectIdToken;
 import org.forgerock.openam.sts.token.provider.AMTokenProvider;
@@ -111,7 +111,6 @@ public class TokenTransformFactoryImpl implements TokenTransformFactory {
         this.logger = logger;
     }
 
-    @Override
     public TokenTransform buildTokenTransform(TokenTransformConfig tokenTransformConfig) throws STSInitializationException {
         TokenType inputTokenType = tokenTransformConfig.getInputTokenType();
         TokenType outputTokenType = tokenTransformConfig.getOutputTokenType();
@@ -172,13 +171,13 @@ public class TokenTransformFactoryImpl implements TokenTransformFactory {
                 final AMSessionInvalidator sessionInvalidator =
                         new AMSessionInvalidatorImpl(amDeploymentUrl, jsonRestRoot, realm, restLogoutUriElement,
                                 amSessionCookieName, urlConstituentCatenator, logger);
-                return new AMSAMLTokenProvider(tokenGenerationServiceConsumer, sessionInvalidator,
+                return new RestSamlTokenProvider(tokenGenerationServiceConsumer, sessionInvalidator,
                         threadLocalAMTokenCache, stsInstanceId, realm, xmlUtilities, authnContextMapper, logger);
             } catch (URISyntaxException e) {
                 throw new STSInitializationException(ResourceException.INTERNAL_ERROR, e.getMessage(), e);
             }
         } else {
-            return new AMSAMLTokenProvider(tokenGenerationServiceConsumer, NULL_AM_SESSION_INVALIDATOR,
+            return new RestSamlTokenProvider(tokenGenerationServiceConsumer, NULL_AM_SESSION_INVALIDATOR,
                     threadLocalAMTokenCache, stsInstanceId, realm, xmlUtilities, authnContextMapper, logger);
         }
     }
