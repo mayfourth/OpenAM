@@ -16,18 +16,27 @@
 
 package org.forgerock.openam.sts.soap.token.provider;
 
+import org.apache.cxf.message.Message;
+import org.apache.cxf.phase.PhaseInterceptorChain;
 import org.apache.cxf.sts.STSConstants;
 import org.apache.cxf.sts.request.ReceivedKey;
+import org.apache.cxf.sts.request.ReceivedToken;
+import org.apache.cxf.sts.request.TokenRequirements;
 import org.apache.cxf.sts.token.provider.TokenProvider;
 import org.apache.cxf.sts.token.provider.TokenProviderParameters;
 import org.apache.cxf.sts.token.provider.TokenProviderResponse;
 import org.apache.ws.security.WSConstants;
+import org.apache.ws.security.message.token.UsernameToken;
 import org.forgerock.json.resource.ResourceException;
 import org.forgerock.openam.sts.AMSTSRuntimeException;
 import org.forgerock.openam.sts.TokenCreationException;
+import org.forgerock.openam.sts.TokenMarshalException;
+import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.XMLUtilities;
+import org.forgerock.openam.sts.XmlMarshaller;
 import org.forgerock.openam.sts.token.SAML2SubjectConfirmation;
 import org.forgerock.openam.sts.token.ThreadLocalAMTokenCache;
+import org.forgerock.openam.sts.token.model.OpenAMSessionToken;
 import org.forgerock.openam.sts.token.provider.AMSessionInvalidator;
 import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumer;
 import org.slf4j.Logger;
@@ -49,6 +58,7 @@ public class SoapSamlTokenProvider implements TokenProvider {
     private final String realm;
     private final XMLUtilities xmlUtilities;
     private final XmlTokenAuthnContextMapper authnContextMapper;
+    private final XmlMarshaller<OpenAMSessionToken> amSessionTokenXmlMarshaller;
     private final Logger logger;
 
     /*
@@ -61,6 +71,7 @@ public class SoapSamlTokenProvider implements TokenProvider {
                                  String realm,
                                  XMLUtilities xmlUtilities,
                                  XmlTokenAuthnContextMapper authnContextMapper,
+                                 XmlMarshaller<OpenAMSessionToken> amSessionTokenXmlMarshaller,
                                  Logger logger) {
         this.tokenGenerationServiceConsumer = tokenGenerationServiceConsumer;
         this.amSessionInvalidator = amSessionInvalidator;
@@ -69,6 +80,7 @@ public class SoapSamlTokenProvider implements TokenProvider {
         this.realm = realm;
         this.xmlUtilities = xmlUtilities;
         this.authnContextMapper = authnContextMapper;
+        this.amSessionTokenXmlMarshaller = amSessionTokenXmlMarshaller;
         this.logger = logger;
     }
 
@@ -160,10 +172,96 @@ public class SoapSamlTokenProvider implements TokenProvider {
     1. as part of token transformation defined in the validate operation
     2. as part of an issue operation
 
-    For case #1, the type of the validated token must be determined
+    For case #1, the type of the validated token must be determined - accessed via the TokenRequirements in the TokenProviderParameters
+    For case #2, I imagine that it is possible to obtain the validated token from the Security-Policy enforcing interceptors
+    traversed during the Issue operation invocation.
+
+    Firstly, I have to determine what invocation I am dealing with - presumably this is possible by looking at the
+    tokens in the TokenRequirements.
      */
     private String getAuthnContextClassRef(TokenProviderParameters tokenProviderParameters) {
-        return null;
+        TokenRequirements tokenRequirements = tokenProviderParameters.getTokenRequirements();
+        if (tokenRequirements.getRenewTarget() != null) {
+            //TODO: I am dealing with a renew - need to handle
+            return "bobo";
+        } else if (tokenRequirements.getValidateTarget() != null) {
+            /*
+            A validate invocation - so I need to parse out the validate token and determine its TokenType to pass to the
+            XmlTokenAuthnContextMapper.
+             */
+            ReceivedToken receivedToken = tokenRequirements.getValidateTarget();
+            /*
+            The set of input tokens we support is currently limited to:
+             1. UNTs
+             2. OpenAM tokens - will be represented as a DOM Element
+
+             When we support X509 Certificates, a new branch has to be added here. Not sure whether a X509Cert is represented
+             as a JAXBElement or a DOM Element. See ReceivedToken for details.
+             */
+            if (receivedToken.isUsernameToken()) {
+                if (receivedToken.getToken() instanceof UsernameToken) {
+                    return authnContextMapper.getAuthnContext(TokenType.USERNAME, ((UsernameToken)receivedToken.getToken()).getElement());
+                } else {
+                    String message = "Unexpected type for a ReceivedToken which reports that it is a UsernameToken: the type: "
+                            + receivedToken.getToken().getClass().getCanonicalName() + "; The actual token: " + receivedToken.getToken();
+                    logger.error(message);
+                    throw new AMSTSRuntimeException(ResourceException.NOT_SUPPORTED, message);
+                }
+            } else if (receivedToken.isDOMElement()) {
+                /*
+                Right now, this can only mean we are dealing with an OpenAMSession token. Attempt to marshal with
+                the amSessionTokenXmlMarshaller, just to be sure.
+                 */
+                Element tokenElement = (Element)receivedToken.getToken();
+                try {
+                    amSessionTokenXmlMarshaller.fromXml(tokenElement);
+                    return authnContextMapper.getAuthnContext(TokenType.OPENAM, tokenElement);
+                } catch (TokenMarshalException e) {
+                    /*
+                    Note it seems that we could enter this branch because the CXF-STS does not distinguish token validators
+                    for status validation, and token validators for the input in a transformation operation. Thus if a
+                    deployed STS instance supports a set of token validation operations which is a superset of the input
+                    set in token transformation operations, then this branch could be entered.
+                    TODO: see of this contingency could be obviated by distinguishing the status validators from the
+                    transformation validators.
+                     */
+                    String message = "Unexpected state in SoapSamlTokenProivder#getAuthnContextClassRef: the ReceivedToken" +
+                            " in the validateTarget is a DOM Element, but cannot be marshaled to an OpenAM Session token. " +
+                            " This means that the validate operation is being invoked with an unsupported token type. " +
+                            "The token element " + tokenElement;
+                    logger.error(message);
+                    throw new AMSTSRuntimeException(ResourceException.BAD_REQUEST, message);
+                }
+            } else {
+                String message = "Unexpected validateTarget token in SoapSamlTokenProvider#getAuthnContextClassRef - " +
+                        "the token is neither a DOM Element or a UNT. The token: " + receivedToken.getToken();
+                logger.error(message);
+                throw new AMSTSRuntimeException(ResourceException.NOT_SUPPORTED, message);
+            }
+
+        } else if (tokenRequirements.getCancelTarget() != null) {
+            /*
+            Should not enter this block, as Cancel operation was never bound in the STSEndpoint. Log an throw an exception
+            if this occurs, as it is unexpected.
+             */
+            String message = "Unexpected state in SoapSamlTokenProvider: TokenProviderParameters has a non-null cancelTarget " +
+                    "in the TokenRequirments. A cancel operation is not bound, so this state is unexpected!";
+            logger.error(message);
+            throw new AMSTSRuntimeException(ResourceException.INTERNAL_ERROR, message);
+        } else {
+            /*
+            Here we must be dealing with an Issue operation, so I need to obtain the token validated by the SecurityPolicy
+            bindings protecting the issue operation.
+             */
+            final Message currentMessage = PhaseInterceptorChain.getCurrentMessage();
+            Object obj = currentMessage.get(Message.IN_INTERCEPTORS);
+            /*
+            now go through and see if any are WSSecurityTokenHolder
+            WSSecurityTokenHolder holder
+            TODO: need to debug to figure this out.
+            */
+            return "bobo";
+        }
     }
 
     /*
