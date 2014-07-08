@@ -116,11 +116,6 @@ public class TokenGenerationServiceInvocationStateTest {
     }
 
     @Test (expectedExceptions=IllegalStateException.class)
-    public void testBearerNoSPACSURLStateValidation() throws Exception{
-        buildInvocationState(!WITH_SPECIOUS_INSTANCE_ID, WITH_PROOF_TOKEN_STATE, !WITH_SP_ACS_URL, SAML2SubjectConfirmation.BEARER);
-    }
-
-    @Test (expectedExceptions=IllegalStateException.class)
     public void testHoKNoProofTokenStateValidation() throws Exception {
         buildInvocationState(!WITH_SPECIOUS_INSTANCE_ID, !WITH_PROOF_TOKEN_STATE, !WITH_SP_ACS_URL, SAML2SubjectConfirmation.HOLDER_OF_KEY);
     }

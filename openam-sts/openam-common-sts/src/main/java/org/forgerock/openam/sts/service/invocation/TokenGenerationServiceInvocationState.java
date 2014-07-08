@@ -153,11 +153,6 @@ public class TokenGenerationServiceInvocationState {
         Reject.ifNull(saml2SubjectConfirmation, "SAML2 subject confirmation method must be set");
         Reject.ifNull(stsType, "sts type must be set");
         Reject.ifNull(realm, "realm must be set");
-        if (SAML2SubjectConfirmation.BEARER.equals(saml2SubjectConfirmation) && ((spAcsUrl == null) || spAcsUrl.isEmpty())) {
-            throw new IllegalStateException("According to section 4.1.4.2 of http://docs.oasis-open.org/security/saml/v2.0/saml-profiles-2.0-os.pdf:\n" +
-                    "Bearer assertions must contain a SubjectConfirmationData element that contains a Recipient attribute which\n" +
-                    "contains the service providers assertion consumer service url.");
-        }
         if (SAML2SubjectConfirmation.HOLDER_OF_KEY.equals(saml2SubjectConfirmation) && (proofTokenState == null)) {
             throw new IllegalStateException("Specified a SAML2 HolderOfKey assertion without specifying the " +
                     "ProofTokenState necessary to prove assertion ownership.");

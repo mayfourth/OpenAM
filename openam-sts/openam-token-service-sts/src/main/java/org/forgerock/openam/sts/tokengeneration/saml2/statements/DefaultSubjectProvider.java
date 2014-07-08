@@ -65,21 +65,32 @@ public class DefaultSubjectProvider implements SubjectProvider {
             switch (subjectConfirmation) {
                 case BEARER:
                     subConfirmation.setMethod(SAML2Constants.SUBJECT_CONFIRMATION_METHOD_BEARER);
-                     /*
-                    see section 4.1.4.2 of http://docs.oasis-open.org/security/saml/v2.0/saml-profiles-2.0-os.pdf -
-                    Recipient attribute of SubjectConfirmation element must be set to the Service Provider
-                    ACS url.
-                     */
-                    SubjectConfirmationData bearerConfirmationData =
-                            AssertionFactory.getInstance().createSubjectConfirmationData();
-                    bearerConfirmationData.setRecipient(spAcsUrl);
                     /*
-                    see section 4.1.4.2 of http://docs.oasis-open.org/security/saml/v2.0/saml-profiles-2.0-os.pdf - NotBefore cannot
-                    be set, but NotOnOrAfter must be set.
+                    For the Web SSO profile, a SAML2 Bearer assertion has to specify the SP's Assertion Consumer Service
+                    url in the SubjectConfirmationData. But the WSS SAML2 token profile,
+                    http://docs.oasis-open.org/wss/v1.1/wss-v1.1-spec-os-SAMLTokenProfile.pdf, does not specify any requirements
+                    on Bearer assertions (see section 3.5.3). It does not seem feasible to specify the SP's ACS url in the
+                    RequestSecurityToken defined in WS-Trust in a spec-compliant way, and because the WSS SAML token profile
+                    does not mandate any requirements for Bearer assertions, I need to handle the case where the SP's ACS
+                    url is not specified in the TokenGenerationService request.
                      */
-                    bearerConfirmationData.setNotOnOrAfter(new Date(assertionIssueInstant.getTime() +
-                            (saml2Config.getTokenLifetimeInSeconds() * 1000)));
-                    subConfirmation.setSubjectConfirmationData(bearerConfirmationData);
+                    if (spAcsUrl != null) {
+                         /*
+                        see section 4.1.4.2 of http://docs.oasis-open.org/security/saml/v2.0/saml-profiles-2.0-os.pdf -
+                        Recipient attribute of SubjectConfirmation element must be set to the Service Provider
+                        ACS url.
+                         */
+                        SubjectConfirmationData bearerConfirmationData =
+                                AssertionFactory.getInstance().createSubjectConfirmationData();
+                        bearerConfirmationData.setRecipient(spAcsUrl);
+                        /*
+                        see section 4.1.4.2 of http://docs.oasis-open.org/security/saml/v2.0/saml-profiles-2.0-os.pdf - NotBefore cannot
+                        be set, but NotOnOrAfter must be set.
+                         */
+                        bearerConfirmationData.setNotOnOrAfter(new Date(assertionIssueInstant.getTime() +
+                                (saml2Config.getTokenLifetimeInSeconds() * 1000)));
+                        subConfirmation.setSubjectConfirmationData(bearerConfirmationData);
+                    }
                     break;
                 case SENDER_VOUCHES:
                     subConfirmation.setMethod(SAML2Constants.SUBJECT_CONFIRMATION_METHOD_SENDER_VOUCHES);
