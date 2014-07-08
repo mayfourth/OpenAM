@@ -14,7 +14,7 @@
  * Copyright 2014 ForgeRock AS. All rights reserved.
  */
 
-package org.forgerock.openam.sts.token.provider;
+package org.forgerock.openam.sts.rest.token.provider;
 
 import org.apache.ws.security.saml.ext.builder.SAML2Constants;
 import org.forgerock.json.fluent.JsonValue;
@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import javax.inject.Inject;
 
 /**
- * @see org.forgerock.openam.sts.token.provider.AuthnContextMapper
+ * @see AuthnContextMapper
  */
 public class AuthnContextMapperImpl implements AuthnContextMapper {
     private final Logger logger;

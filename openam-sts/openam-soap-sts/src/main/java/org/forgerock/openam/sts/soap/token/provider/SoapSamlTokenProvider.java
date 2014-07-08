@@ -29,7 +29,6 @@ import org.forgerock.openam.sts.XMLUtilities;
 import org.forgerock.openam.sts.token.SAML2SubjectConfirmation;
 import org.forgerock.openam.sts.token.ThreadLocalAMTokenCache;
 import org.forgerock.openam.sts.token.provider.AMSessionInvalidator;
-import org.forgerock.openam.sts.token.provider.AuthnContextMapper;
 import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumer;
 import org.slf4j.Logger;
 import org.w3c.dom.Document;
@@ -49,7 +48,7 @@ public class SoapSamlTokenProvider implements TokenProvider {
     private final String stsInstanceId;
     private final String realm;
     private final XMLUtilities xmlUtilities;
-    private final AuthnContextMapper authnContextMapper;
+    private final XmlTokenAuthnContextMapper authnContextMapper;
     private final Logger logger;
 
     /*
@@ -61,7 +60,7 @@ public class SoapSamlTokenProvider implements TokenProvider {
                                  String stsInstanceId,
                                  String realm,
                                  XMLUtilities xmlUtilities,
-                                 AuthnContextMapper authnContextMapper,
+                                 XmlTokenAuthnContextMapper authnContextMapper,
                                  Logger logger) {
         this.tokenGenerationServiceConsumer = tokenGenerationServiceConsumer;
         this.amSessionInvalidator = amSessionInvalidator;
@@ -152,6 +151,17 @@ public class SoapSamlTokenProvider implements TokenProvider {
         }
     }
 
+    /*
+    This method must return the AuthnContextClassRef, a set of values defined in SAML2, included in the assertion generated
+    by the TokenGenerationService, which specify the authentication performed as part of issuing the assertion. Essentially
+    this value tells the relying party how the assertion subject was authenticated.
+
+    A SAML2 assertion will be generated under two circumstances:
+    1. as part of token transformation defined in the validate operation
+    2. as part of an issue operation
+
+    For case #1, the type of the validated token must be determined
+     */
     private String getAuthnContextClassRef(TokenProviderParameters tokenProviderParameters) {
         return null;
     }

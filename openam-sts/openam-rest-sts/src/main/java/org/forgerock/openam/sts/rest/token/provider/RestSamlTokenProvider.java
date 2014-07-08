@@ -32,7 +32,6 @@ import org.forgerock.openam.sts.token.SAML2SubjectConfirmation;
 import org.forgerock.openam.sts.token.ThreadLocalAMTokenCache;
 
 import org.forgerock.openam.sts.token.provider.AMSessionInvalidator;
-import org.forgerock.openam.sts.token.provider.AuthnContextMapper;
 import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumer;
 import org.slf4j.Logger;
 import org.w3c.dom.Document;

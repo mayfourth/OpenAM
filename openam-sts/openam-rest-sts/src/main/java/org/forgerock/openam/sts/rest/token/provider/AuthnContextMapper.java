@@ -14,7 +14,7 @@
  * Copyright 2014 ForgeRock AS. All rights reserved.
  */
 
-package org.forgerock.openam.sts.token.provider;
+package org.forgerock.openam.sts.rest.token.provider;
 
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.openam.sts.TokenType;

@@ -34,7 +34,7 @@ import org.forgerock.openam.sts.token.provider.AMSessionInvalidatorImpl;
 import org.forgerock.openam.sts.token.UrlConstituentCatenator;
 import org.forgerock.openam.sts.token.model.OpenIdConnectIdToken;
 import org.forgerock.openam.sts.token.provider.AMTokenProvider;
-import org.forgerock.openam.sts.token.provider.AuthnContextMapper;
+import org.forgerock.openam.sts.rest.token.provider.AuthnContextMapper;
 import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumer;
 import org.forgerock.openam.sts.token.validator.AMTokenValidator;
 import org.forgerock.openam.sts.token.validator.OpenIdConnectIdTokenValidator;

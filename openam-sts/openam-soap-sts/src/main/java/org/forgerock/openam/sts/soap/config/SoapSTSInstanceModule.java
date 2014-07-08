@@ -55,8 +55,8 @@ import org.forgerock.openam.sts.token.model.OpenAMSessionTokenMarshaller;
 import org.forgerock.openam.sts.token.model.OpenIdConnectIdToken;
 import org.forgerock.openam.sts.token.model.OpenIdConnectIdTokenMarshaller;
 import org.forgerock.openam.sts.token.provider.AMTokenProvider;
-import org.forgerock.openam.sts.token.provider.AuthnContextMapper;
-import org.forgerock.openam.sts.token.provider.AuthnContextMapperImpl;
+import org.forgerock.openam.sts.soap.token.provider.XmlTokenAuthnContextMapper;
+import org.forgerock.openam.sts.soap.token.provider.XmlTokenAuthnContextMapperImpl;
 import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumer;
 import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumerImpl;
 import org.forgerock.openam.sts.token.validator.PrincipalFromSession;
@@ -372,17 +372,17 @@ public class SoapSTSInstanceModule extends AbstractModule {
      */
     @Provides
     @Inject
-    AuthnContextMapper getAuthnContextMapper(Logger logger) {
+    XmlTokenAuthnContextMapper getAuthnContextMapper(Logger logger) {
         String customMapperClassName = SystemPropertiesManager.get(AMSTSConstants.CUSTOM_STS_AUTHN_CONTEXT_MAPPER_PROPERTY);
         if (customMapperClassName == null) {
-            return new AuthnContextMapperImpl(logger);
+            return new XmlTokenAuthnContextMapperImpl(logger);
         } else {
             try {
-                return Class.forName(customMapperClassName).asSubclass(AuthnContextMapper.class).newInstance();
+                return Class.forName(customMapperClassName).asSubclass(XmlTokenAuthnContextMapper.class).newInstance();
             } catch (Exception e) {
                 logger.error("Exception caught implementing custom AuthnContextMapper class " + customMapperClassName
                         + "; Returning default AuthnContextMapperImpl. The exception: " + e);
-                return new AuthnContextMapperImpl(logger);
+                return new XmlTokenAuthnContextMapperImpl(logger);
             }
         }
     }
