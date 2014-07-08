@@ -53,6 +53,7 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.TextOutputCallback;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.security.Principal;
@@ -266,10 +267,10 @@ public class Scripted extends AMLoginModule {
     }
 
     private Callback getHiddenFieldCallback() {
-        ScriptTextOutputCallback hiddenFieldCallback = new ScriptTextOutputCallback("" +
-                "document.write('<input type=\"hidden\" name=\"" + CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME + "\" " +
+        TextOutputCallback hiddenFieldCallback = new TextOutputCallback(TextOutputCallback.INFORMATION, "" +
+                "<input type=\"hidden\" name=\"" + CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME + "\" " +
                 "id=\"" + CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME + "\" " +
-                "value=\"\" />');");
+                "value=\"\" />");
 
         return hiddenFieldCallback;
     }
@@ -295,7 +296,7 @@ public class Scripted extends AMLoginModule {
     private Callback getScriptAndSelfSubmitCallback() {
         ScriptTextOutputCallback scriptAndSelfSubmitCallback = new ScriptTextOutputCallback(clientSideScript + "\n" +
                 "prepareScriptOutputDataForSubmission();\n" +
-                "document.forms['Login'].submit()");
+                "document.forms[0].submit()");
 
         return scriptAndSelfSubmitCallback;
     }

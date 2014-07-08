@@ -39,7 +39,7 @@
     <Callbacks length="0" order="1" timeout="600" header="#WILL NOT BE SHOWN#" />
 
     <Callbacks length="3" order="2" timeout="120" header="Sign in to OpenAM" >
-        <TextOutputCallback messageType="script">PLACEHOLDER</TextOutputCallback>
+        <TextOutputCallback messageType="information">PLACEHOLDER</TextOutputCallback>
         <TextOutputCallback messageType="script">PLACEHOLDER</TextOutputCallback>
         <TextOutputCallback messageType="script">PLACEHOLDER</TextOutputCallback>
     </Callbacks>

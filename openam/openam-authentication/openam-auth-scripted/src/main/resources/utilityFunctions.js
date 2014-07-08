@@ -25,5 +25,5 @@ function prepareScriptOutputDataForSubmission() {
             assembledScriptOutputData = assembledScriptOutputData + delimiterSymbol;
         }
     }
-    document.forms['Login'].elements['clientScriptOutputData'].value = assembledScriptOutputData;
+    document.forms[0].elements['clientScriptOutputData'].value = assembledScriptOutputData;
 }
