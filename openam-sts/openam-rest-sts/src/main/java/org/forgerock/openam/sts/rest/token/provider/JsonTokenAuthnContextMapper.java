@@ -28,7 +28,7 @@ import org.forgerock.openam.sts.TokenType;
  * the contract for this mapping.
  *
  */
-public interface AuthnContextMapper {
+public interface JsonTokenAuthnContextMapper {
     /**
      * Returns the AuthnContext value corresponding to the TokenType inputToken.
      * @param inputTokenType The TokenType validated as part of the token transformation

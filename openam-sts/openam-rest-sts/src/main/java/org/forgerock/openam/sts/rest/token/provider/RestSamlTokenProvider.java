@@ -55,7 +55,7 @@ public class RestSamlTokenProvider implements TokenProvider {
     private final String stsInstanceId;
     private final String realm;
     private final XMLUtilities xmlUtilities;
-    private final AuthnContextMapper authnContextMapper;
+    private final JsonTokenAuthnContextMapper jsonTokenAuthnContextMapper;
     private final Logger logger;
 
     /*
@@ -67,7 +67,7 @@ public class RestSamlTokenProvider implements TokenProvider {
                                String stsInstanceId,
                                String realm,
                                XMLUtilities xmlUtilities,
-                               AuthnContextMapper authnContextMapper,
+                               JsonTokenAuthnContextMapper jsonTokenAuthnContextMapper,
                                Logger logger) {
         this.tokenGenerationServiceConsumer = tokenGenerationServiceConsumer;
         this.amSessionInvalidator = amSessionInvalidator;
@@ -75,7 +75,7 @@ public class RestSamlTokenProvider implements TokenProvider {
         this.stsInstanceId = stsInstanceId;
         this.realm = realm;
         this.xmlUtilities = xmlUtilities;
-        this.authnContextMapper = authnContextMapper;
+        this.jsonTokenAuthnContextMapper = jsonTokenAuthnContextMapper;
         this.logger = logger;
     }
 
@@ -152,7 +152,7 @@ public class RestSamlTokenProvider implements TokenProvider {
                     "No entry in additionalProperties in TokenProviderParameters corresponding to key "
                             + AMSTSConstants.INPUT_TOKEN_STATE_KEY);
         }
-        return authnContextMapper.getAuthnContext(validatedTokenType, (JsonValue)tokenObject);
+        return jsonTokenAuthnContextMapper.getAuthnContext(validatedTokenType, (JsonValue)tokenObject);
     }
 
     /*

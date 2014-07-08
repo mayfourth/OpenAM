@@ -97,7 +97,6 @@ public class TokenTranslateOperationImpl implements TokenTranslateOperation {
         tokenTransforms = Collections.unmodifiableSet(interimTransforms);
     }
 
-    @Override
     public JsonValue translateToken(RestSTSServiceInvocationState invocationState, HttpContext httpContext, SecurityContext securityContext)
             throws TokenMarshalException, TokenValidationException, TokenCreationException {
         TokenType inputTokenType = tokenRequestMarshaller.getTokenType(invocationState.getInputTokenState());
@@ -212,7 +211,7 @@ public class TokenTranslateOperationImpl implements TokenTranslateOperation {
             }
             /*
              Set the inputToken JsonValue in the additionalProperties if we are issuing a SAML2 token so that the
-             AuthnContextMapper can use it to determine the appropriate AuthnContext mapping.
+             JsonTokenAuthnContextMapper can use it to determine the appropriate AuthnContext mapping.
              */
             additionalProperties.put(AMSTSConstants.INPUT_TOKEN_STATE_KEY, inputToken);
         }

@@ -24,13 +24,13 @@ import org.slf4j.Logger;
 import javax.inject.Inject;
 
 /**
- * @see AuthnContextMapper
+ * @see JsonTokenAuthnContextMapper
  */
-public class AuthnContextMapperImpl implements AuthnContextMapper {
+public class JsonTokenAuthnContextMapperImpl implements JsonTokenAuthnContextMapper {
     private final Logger logger;
 
     @Inject
-    public AuthnContextMapperImpl(Logger logger) {
+    public JsonTokenAuthnContextMapperImpl(Logger logger) {
         this.logger = logger;
     }
 
@@ -43,7 +43,7 @@ public class AuthnContextMapperImpl implements AuthnContextMapper {
             case OPENIDCONNECT:
                 return SAML2Constants.AUTH_CONTEXT_CLASS_REF_PASSWORD_PROTECTED_TRANSPORT;
             default:
-                logger.error("Unexpected TokenType passed to AuthnContextMapperImpl: " + inputTokenType + "; returning " +
+                logger.error("Unexpected TokenType passed to JsonTokenAuthnContextMapperImpl: " + inputTokenType + "; returning " +
                         SAML2Constants.AUTH_CONTEXT_CLASS_REF_UNSPECIFIED);
                 return SAML2Constants.AUTH_CONTEXT_CLASS_REF_UNSPECIFIED;
         }

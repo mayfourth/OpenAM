@@ -50,14 +50,14 @@ import org.forgerock.openam.sts.rest.operation.TokenTransformFactory;
 import org.forgerock.openam.sts.rest.operation.TokenTransformFactoryImpl;
 import org.forgerock.openam.sts.rest.operation.TokenTranslateOperation;
 import org.forgerock.openam.sts.rest.operation.TokenTranslateOperationImpl;
+import org.forgerock.openam.sts.rest.token.provider.JsonTokenAuthnContextMapperImpl;
 import org.forgerock.openam.sts.token.*;
 import org.forgerock.openam.sts.token.model.OpenAMSessionToken;
 import org.forgerock.openam.sts.token.model.OpenAMSessionTokenMarshaller;
 import org.forgerock.openam.sts.token.model.OpenIdConnectIdToken;
 import org.forgerock.openam.sts.token.model.OpenIdConnectIdTokenMarshaller;
 import org.forgerock.openam.sts.token.provider.AMTokenProvider;
-import org.forgerock.openam.sts.rest.token.provider.AuthnContextMapper;
-import org.forgerock.openam.sts.rest.token.provider.AuthnContextMapperImpl;
+import org.forgerock.openam.sts.rest.token.provider.JsonTokenAuthnContextMapper;
 import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumer;
 import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumerImpl;
 import org.forgerock.openam.sts.token.validator.PrincipalFromSession;
@@ -352,22 +352,22 @@ public class RestSTSInstanceModule extends AbstractModule {
     }
 
     /*
-    Allows for a custom AuthnContextMapper to be plugged-in. This AuthnContextMapper provides a
+    Allows for a custom JsonTokenAuthnContextMapper to be plugged-in. This JsonTokenAuthnContextMapper provides a
     SAML2 AuthnContext class ref value given an input token and input token type.
      */
     @Provides
     @Inject
-    AuthnContextMapper getAuthnContextMapper(Logger logger) {
+    JsonTokenAuthnContextMapper getAuthnContextMapper(Logger logger) {
         String customMapperClassName = stsInstanceConfig.getSaml2Config().getCustomAuthNContextMapperClassName();
         if (customMapperClassName == null) {
-            return new AuthnContextMapperImpl(logger);
+            return new JsonTokenAuthnContextMapperImpl(logger);
         } else {
             try {
-                return Class.forName(customMapperClassName).asSubclass(AuthnContextMapper.class).newInstance();
+                return Class.forName(customMapperClassName).asSubclass(JsonTokenAuthnContextMapper.class).newInstance();
             } catch (Exception e) {
-                logger.error("Exception caught implementing custom AuthnContextMapper class " + customMapperClassName
-                        + "; Returning default AuthnContextMapperImpl. The exception: " + e);
-                return new AuthnContextMapperImpl(logger);
+                logger.error("Exception caught implementing custom JsonTokenAuthnContextMapper class " + customMapperClassName
+                        + "; Returning default JsonTokenAuthnContextMapperImpl. The exception: " + e);
+                return new JsonTokenAuthnContextMapperImpl(logger);
             }
         }
     }

@@ -38,8 +38,8 @@ import org.forgerock.openam.sts.token.UrlConstituentCatenatorImpl;
 import org.forgerock.openam.sts.token.model.OpenIdConnectIdToken;
 import org.forgerock.openam.sts.token.model.OpenIdConnectIdTokenMarshaller;
 import org.forgerock.openam.sts.token.provider.AMTokenProvider;
-import org.forgerock.openam.sts.rest.token.provider.AuthnContextMapper;
-import org.forgerock.openam.sts.rest.token.provider.AuthnContextMapperImpl;
+import org.forgerock.openam.sts.rest.token.provider.JsonTokenAuthnContextMapper;
+import org.forgerock.openam.sts.rest.token.provider.JsonTokenAuthnContextMapperImpl;
 import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumer;
 import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumerImpl;
 import org.forgerock.openam.sts.token.validator.PrincipalFromSession;
@@ -86,7 +86,7 @@ public class TokenTransformFactoryImplTest {
             bind(new TypeLiteral<XmlMarshaller<OpenIdConnectIdToken>>(){}).to(OpenIdConnectIdTokenMarshaller.class);
             bind(TokenGenerationServiceConsumer.class).to(TokenGenerationServiceConsumerImpl.class);
             bind(XMLUtilities.class).to(XMLUtilitiesImpl.class);
-            bind(AuthnContextMapper.class).to(AuthnContextMapperImpl.class);
+            bind(JsonTokenAuthnContextMapper.class).to(JsonTokenAuthnContextMapperImpl.class);
         }
 
         @Provides
