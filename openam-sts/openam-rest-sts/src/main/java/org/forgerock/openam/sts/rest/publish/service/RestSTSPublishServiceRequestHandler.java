@@ -108,11 +108,11 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
                     Integer.toString(instanceConfig.hashCode()), json(object(field(RESULT, SUCCESS),
                     field(AMSTSConstants.SUCCESSFUL_REST_STS_PUBLISH_URL_ELEMENT, urlElement)))));
         } catch (STSPublishException e) {
-            String message = "Exception caught publishing instance: at url " + urlElement + ". Exception" + e;
+            String message = "Exception caught publishing instance: " + e;
             logger.error(message, e);
             handler.handleError(e);
         } catch (Exception e) {
-            String message = "Exception caught publishing instance: at url " + urlElement + ". Exception" + e;
+            String message = "Exception caught publishing instance: " + e;
             logger.error(message, e);
             handler.handleError(new InternalServerErrorException(message, e));
         }
