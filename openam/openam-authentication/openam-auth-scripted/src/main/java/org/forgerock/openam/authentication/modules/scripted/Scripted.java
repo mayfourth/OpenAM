@@ -35,6 +35,7 @@ import com.sun.identity.authentication.callbacks.ScriptTextOutputCallback;
 import com.sun.identity.authentication.spi.AMLoginModule;
 import com.sun.identity.authentication.spi.AuthLoginException;
 import com.sun.identity.idm.AMIdentityRepository;
+import com.sun.identity.shared.datastruct.CollectionHelper;
 import com.sun.identity.shared.debug.Debug;
 import org.forgerock.guice.core.InjectorHolder;
 import org.forgerock.http.client.HttpClient;
@@ -45,23 +46,19 @@ import org.forgerock.openam.scripting.ScriptEvaluator;
 import org.forgerock.openam.scripting.ScriptObject;
 import org.forgerock.openam.scripting.StandardScriptEvaluator;
 import org.forgerock.openam.scripting.SupportedScriptingLanguage;
+import org.forgerock.openam.utils.IOUtils;
 
 import javax.script.Bindings;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.TextOutputCallback;
 import javax.security.auth.login.LoginException;
-import javax.servlet.http.HttpServletRequest;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.security.Principal;
+import java.util.LinkedHashMap;
 import java.util.Map;
-
-import com.sun.identity.shared.datastruct.CollectionHelper;
+import java.util.StringTokenizer;
 
 /**
  * An authentication module that allows users to authenticate via a scripting language
@@ -93,7 +90,11 @@ public class Scripted extends AMLoginModule {
     public static final String HTTP_CLIENT_VARIABLE_NAME = "httpClient";
     public static final String LOGGER_VARIABLE_NAME = "logger";
     public static final String IDENTITY_REPOSITORY = "idRepository";
+    public static final String CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME = "clientScriptOutputData";
     public static final String CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME = "clientScriptOutputData";
+    public static final String REQUEST_DATA_VARIABLE_NAME = "requestData";
+
+    public static final String UTILITY_FUNCTIONS_FILE_CLASS_PATH = "/utilityFunctions.js";
 
     private String userName;
     private String clientSideScript;
@@ -110,6 +111,8 @@ public class Scripted extends AMLoginModule {
     private HttpClient httpClient;
     private HttpClientRequest httpClientRequest;
     private ScriptIdentityRepository identityRepository;
+    private String equalsSymbol;
+    private String delimiterSymbol;
 
     /**
      * {@inheritDoc}
@@ -125,6 +128,8 @@ public class Scripted extends AMLoginModule {
         httpClient = getHttpClient();
         httpClientRequest = getHttpRequest();
         identityRepository  = getScriptIdentityRepository();
+        equalsSymbol = getConfigValue(CLIENT_SCRIPT_EQUALS_SYMBOL_ATTR_NAME);
+        delimiterSymbol = getConfigValue(CLIENT_SCRIPT_DELIMITER_SYMBOL_ATTR_NAME);
     }
 
     private ScriptIdentityRepository getScriptIdentityRepository() {
@@ -154,20 +159,8 @@ public class Scripted extends AMLoginModule {
 
             case STATE_RUN_SCRIPT:
                 Bindings scriptVariables = new SimpleBindings();
-                scriptVariables.put("requestData", getScriptHttpRequestWrapper());
-                HttpServletRequest test = getHttpServletRequest();
-                try {
-                    String string = readStuff(test.getInputStream());
-                    System.out.println(string);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                String thingumyjiggler = test.getParameter("clientScriptOutputData");
-                String clientScriptOutputData = getScriptHttpRequestWrapper().
-                        getParameter("clientScriptOutputData");
-                //TODO Add to map later, for retrieval in the same way it was stored client-side? YES! If have time.
-                //TODO Sanitise the data if nec.
-                scriptVariables.put(CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME, clientScriptOutputData);
+                scriptVariables.put(REQUEST_DATA_VARIABLE_NAME, getScriptHttpRequestWrapper());
+                scriptVariables.put(CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME, getClientScriptOutputDataMap());
                 scriptVariables.put(LOGGER_VARIABLE_NAME, DEBUG);
                 scriptVariables.put(STATE_VARIABLE_NAME, state);
                 scriptVariables.put(USERNAME_VARIABLE_NAME, userName);
@@ -196,22 +189,6 @@ public class Scripted extends AMLoginModule {
                 throw new AuthLoginException("Invalid state");
         }
 
-    }
-
-    private String readStuff(InputStream in) throws IOException {
-        InputStreamReader is = new InputStreamReader(in);
-        StringBuilder sb=new StringBuilder();
-        BufferedReader br = new BufferedReader(is);
-        String read = br.readLine();
-
-        while(read != null) {
-            //System.out.println(read);
-            sb.append(read);
-            read =br.readLine();
-
-        }
-
-        return sb.toString();
     }
 
     private ScriptObject getServerSideScript() {
@@ -254,6 +231,26 @@ public class Scripted extends AMLoginModule {
         return serverSideScript;
     }
 
+    private Map getClientScriptOutputDataMap() {
+        String clientScriptOutputData = getScriptHttpRequestWrapper().
+                getParameter(CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME);
+        Map<String, String> dataMap = new LinkedHashMap<String, String>();
+
+        StringTokenizer tokenizer = new StringTokenizer(clientScriptOutputData, delimiterSymbol);
+        while (tokenizer.hasMoreTokens()) {
+            String token = tokenizer.nextToken();
+            String keyValueArray[] = token.split(equalsSymbol);
+            String key = keyValueArray[0];
+            String value = "";
+            if (keyValueArray.length == 2) {
+                value = keyValueArray[1];
+            }
+            dataMap.put(key, value);
+        }
+
+        return dataMap;
+    }
+
     private String getConfigValue(String attributeName) {
         return CollectionHelper.getMapAttr(moduleConfiguration, attributeName);
     }
@@ -263,54 +260,44 @@ public class Scripted extends AMLoginModule {
     }
 
     private void substituteUIStrings() throws AuthLoginException {
-        String equalsSymbol = getConfigValue(CLIENT_SCRIPT_EQUALS_SYMBOL_ATTR_NAME);
-        String delimiterSymbol = getConfigValue(CLIENT_SCRIPT_DELIMITER_SYMBOL_ATTR_NAME);
+        replaceCallback(STATE_RUN_SCRIPT, 0, getHiddenFieldCallback());
+        replaceCallback(STATE_RUN_SCRIPT, 1, getScriptOutputUtilityFunctionsCallback());
+        replaceCallback(STATE_RUN_SCRIPT, 2, getScriptAndSelfSubmitCallback());
+    }
+
+    private Callback getHiddenFieldCallback() {
         ScriptTextOutputCallback hiddenFieldCallback = new ScriptTextOutputCallback("" +
-            "document.write('<input type=\"hidden\" name=\"clientScriptOutputData\" id=\"clientScriptOutputData\" value=\"\" />');");
-        replaceCallback(STATE_RUN_SCRIPT, 0, hiddenFieldCallback);
-        //TODO handle problematic delimeters, specifically html chars, " ' etc. Probably best handled where set,
-        //TODO also will therefore need hints in .help text, probably.
-        ScriptTextOutputCallback scriptOutputHelperFunctionsCallback = new ScriptTextOutputCallback("" +
-                "var scriptOutputDataKeys = [];\n" +
-                "var scriptOutputDataValues = [];\n" +
-                "function addScriptOutputData(key, value) {\n" +
-                    "scriptOutputDataKeys.push(key);\n" +
-                    "scriptOutputDataValues.push(value);\n" +
-                "}\n" +
-                "function removeScriptOutputData(key) {\n" +
-                    "for (i = 0; i < scriptOutputDataKeys.length; i++) {\n " +
-                        "if (scriptOutputDataKeys[i] == key) {\n" +
-                            "break;\n" +
-                        "}\n" +
-                    "}\n" +
-                    "scriptOutputDataKeys.splice(i, 1);\n" +
-                    "scriptOutputDataValues.splice(i, 1);\n" +
-                "}\n" +
-                "function prepareScriptOutputDataForSubmission() {\n" +
-                    "alert('prepared KEYS: ' + scriptOutputDataKeys.toString());\n" +
-                    "alert('prepared VALUES: ' + scriptOutputDataValues.toString());\n" +
-                    "equalsSymbol='" + equalsSymbol + "';\n" +
-                    "delimiterSymbol='" + delimiterSymbol + "';\n" +
-                    "assembledScriptOutputData='';\n" +
-                    "for (i = 0; i < scriptOutputDataKeys.length; i++) {\n " +
-                        "assembledScriptOutputData = assembledScriptOutputData + " +
-                            "scriptOutputDataKeys[i] + " +
-                            "equalsSymbol + " +
-                            "scriptOutputDataValues[i];\n" +
-                        "if (i < (scriptOutputDataKeys.length - 1)) {\n" +
-                            "assembledScriptOutputData = assembledScriptOutputData + " +
-                                "delimiterSymbol;\n" +
-                        "}\n" +
-                    "}\n" +
-                    "document.forms['Login'].elements['clientScriptOutputData'].value = assembledScriptOutputData;\n" +
-                "}" +
-                "");
-        replaceCallback(STATE_RUN_SCRIPT, 1, scriptOutputHelperFunctionsCallback);
-        //TODO uncomment submission
-        ScriptTextOutputCallback scriptAndSelfSubmitCallback = new ScriptTextOutputCallback(clientSideScript +
+                "document.write('<input type=\"hidden\" name=\"" + CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME + "\" " +
+                "id=\"" + CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME + "\" " +
+                "value=\"\" />');");
+
+        return hiddenFieldCallback;
+    }
+
+    private Callback getScriptOutputUtilityFunctionsCallback() throws AuthLoginException {
+        String equalsSymbolJsStatement = "var equalsSymbol='" + equalsSymbol + "';\n";
+        String delimiterSymbolJsStatement = "var delimiterSymbol='" + delimiterSymbol + "';\n";
+
+        String utilityFunctionsJs = "";
+        try {
+            utilityFunctionsJs = IOUtils.getFileContentFromClassPath(UTILITY_FUNCTIONS_FILE_CLASS_PATH);
+        } catch (IOException e) {
+            throw new AuthLoginException("Could not find javascript utility functions expected at " +
+                    UTILITY_FUNCTIONS_FILE_CLASS_PATH);
+        }
+
+        ScriptTextOutputCallback scriptOutputUtilityFunctionsCallback =
+                new ScriptTextOutputCallback(equalsSymbolJsStatement + delimiterSymbolJsStatement + utilityFunctionsJs);
+
+        return scriptOutputUtilityFunctionsCallback;
+    }
+
+    private Callback getScriptAndSelfSubmitCallback() {
+        ScriptTextOutputCallback scriptAndSelfSubmitCallback = new ScriptTextOutputCallback(clientSideScript + "\n" +
                 "prepareScriptOutputDataForSubmission();\n" +
-                "//document.forms['Login'].submit()");
-        replaceCallback(STATE_RUN_SCRIPT, 2, scriptAndSelfSubmitCallback);
+                "document.forms['Login'].submit()");
+
+        return scriptAndSelfSubmitCallback;
     }
 
     private SupportedScriptingLanguage getScriptType() {
