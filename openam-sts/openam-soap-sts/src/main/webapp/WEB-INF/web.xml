@@ -23,11 +23,11 @@
      web-services.
     -->
     <servlet>
-        <servlet-name>new_sts</servlet-name>
+        <servlet-name>soap_sts</servlet-name>
         <servlet-class>org.forgerock.openam.sts.soap.STSBroker</servlet-class>
     </servlet>
     <servlet-mapping>
-        <servlet-name>new_sts</servlet-name>
-        <url-pattern>/new_sts/*</url-pattern>
+        <servlet-name>soap_sts</servlet-name>
+        <url-pattern>/sts/*</url-pattern>
     </servlet-mapping>
 </web-app>

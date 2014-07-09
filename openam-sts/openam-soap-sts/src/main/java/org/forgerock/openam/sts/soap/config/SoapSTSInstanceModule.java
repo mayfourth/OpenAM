@@ -136,9 +136,29 @@ public class SoapSTSInstanceModule extends AbstractModule {
         bind(SecurityTokenServiceProvider.class).to(STSEndpoint.class);
         bind(UrlConstituentCatenator.class).to(UrlConstituentCatenatorImpl.class);
 
+        /*
+        Bind the client class used to speak to the TokenGenerationService
+         */
         bind(TokenGenerationServiceConsumer.class).to(TokenGenerationServiceConsumerImpl.class);
+
+        /*
+        Bind a XMLUtilities class which encapsulates the shared XMLUtils class, so that static methods are not called
+        directly.
+         */
         bind(XMLUtilities.class).to(XMLUtilitiesImpl.class);
+
+        /*
+        The XmlTokenAuthContextMapper is used to take a token type and token xml and return the AuthnContextClassRef used
+        in the AuthenticationStatement of issued SAML assertions.
+         */
+        bind(XmlTokenAuthnContextMapper.class).to(XmlTokenAuthnContextMapperImpl.class);
+
+        /*
+        Bind the XmlMarhsaller for marshalling OpenAMSessionTokens to/from xml.
+         */
+        bind(new TypeLiteral<XmlMarshaller<OpenAMSessionToken>>(){}).to(OpenAMSessionTokenMarshaller.class);
     }
+
     /**
      * This method will provide the instance of the STSPropertiesMBean necessary both for the STS proper, and for the
      * CXF interceptor-set which enforces the SecurityPolicy bindings.
@@ -356,10 +376,25 @@ public class SoapSTSInstanceModule extends AbstractModule {
         return "/json";
     }
 
+    /*
+    This method is used to identify the soap sts instance. This identification is necessary when consuming
+    the TokenGenerationService, as it is used to look-up the sts-instance-specific configuration state
+    (crypto and SAML2 configurations) when issuing tokens for this sts instance. Note that this identifier
+    does not have to be unique across rest and soap sts instances, as each will be represented by a different
+    service-definition xml file and thus will be stored in a different DN by the SMS. The soap-sts will be identified
+    by a combination of the realm, and the uri element within this realm. The uriElement defines the final endpoint, and
+    it will always be deployed at a url which includes the realm.
+    The value returned from RestSTSInstanceConfig#getDeploymentSubPath() will:
+    1. determine the sub-path in the STSInstancePublisherImpl at which the new sts instance will be exposed
+    2. be the most discriminating DN element identifying the config state corresponding to the STS instance in the SMS/LDAP
+    3. Because of #2, the same deployment sub-path will be used to identify the rest sts instance when this instance consumes
+    the TokenGenerationService, thereby allowing the TGS to look-up the instance-specific state necessary to produce
+    instance-specific tokens.
+     */
     @Provides
     @Named(AMSTSConstants.STS_INSTANCE_ID)
     String getSTSInstanceId() {
-        return stsInstanceConfig.getDeploymentConfig().getUriElement();
+        return stsInstanceConfig.getDeploymentSubPath();
     }
 
     /*

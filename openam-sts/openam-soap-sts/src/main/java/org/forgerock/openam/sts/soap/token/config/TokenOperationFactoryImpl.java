@@ -30,9 +30,16 @@ import org.apache.cxf.sts.token.validator.TokenValidator;
 import org.forgerock.json.resource.ResourceException;
 import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.STSInitializationException;
+import org.forgerock.openam.sts.XMLUtilities;
+import org.forgerock.openam.sts.XmlMarshaller;
+import org.forgerock.openam.sts.soap.token.provider.SoapSamlTokenProvider;
+import org.forgerock.openam.sts.soap.token.provider.XmlTokenAuthnContextMapper;
 import org.forgerock.openam.sts.token.UrlConstituentCatenator;
+import org.forgerock.openam.sts.token.model.OpenAMSessionToken;
+import org.forgerock.openam.sts.token.provider.AMSessionInvalidator;
 import org.forgerock.openam.sts.token.provider.AMTokenProvider;
 import org.forgerock.openam.sts.token.ThreadLocalAMTokenCache;
+import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumer;
 import org.forgerock.openam.sts.token.validator.AMTokenValidator;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.token.validator.PrincipalFromSession;
@@ -47,19 +54,42 @@ public class TokenOperationFactoryImpl implements TokenOperationFactory {
     private final Provider<AMTokenProvider> amTokenProviderProvider;
     private final ThreadLocalAMTokenCache threadLocalAMTokenCache;
     private final PrincipalFromSession principalFromSession;
+    private final TokenGenerationServiceConsumer tokenGenerationServiceConsumer;
+    private final AMSessionInvalidator amSessionInvalidator;
+    private final String stsInstanceId;
+    private final String realm;
+    private final XMLUtilities xmlUtilities;
+    private final XmlTokenAuthnContextMapper xmlTokenAuthnContextMapper;
+    private final XmlMarshaller<OpenAMSessionToken> amSessionTokenXmlMarshaller;
     private final Logger logger;
 
+    /*
+     */
     @Inject
     public TokenOperationFactoryImpl(
             Provider<org.forgerock.openam.sts.token.validator.wss.UsernameTokenValidator> wssUsernameTokenValidatorProvider,
             Provider<AMTokenProvider> amTokenProviderProvider,
             ThreadLocalAMTokenCache threadLocalAMTokenCache,
             PrincipalFromSession principalFromSession,
+            TokenGenerationServiceConsumer tokenGenerationServiceConsumer,
+            AMSessionInvalidator amSessionInvalidator,
+            @Named(AMSTSConstants.STS_INSTANCE_ID) String stsInstanceId,
+            @Named (AMSTSConstants.REALM) String realm,
+            XMLUtilities xmlUtilities,
+            XmlTokenAuthnContextMapper xmlTokenAuthnContextMapper,
+            XmlMarshaller<OpenAMSessionToken> amSessionTokenXmlMarshaller,
             Logger logger) {
         this.wssUsernameTokenValidatorProvider = wssUsernameTokenValidatorProvider;
         this.amTokenProviderProvider = amTokenProviderProvider;
         this.threadLocalAMTokenCache = threadLocalAMTokenCache;
         this.principalFromSession = principalFromSession;
+        this.tokenGenerationServiceConsumer = tokenGenerationServiceConsumer;
+        this.amSessionInvalidator = amSessionInvalidator;
+        this.stsInstanceId = stsInstanceId;
+        this.realm = realm;
+        this.xmlUtilities = xmlUtilities;
+        this.xmlTokenAuthnContextMapper = xmlTokenAuthnContextMapper;
+        this.amSessionTokenXmlMarshaller = amSessionTokenXmlMarshaller;
         this.logger = logger;
     }
     /**
@@ -94,7 +124,6 @@ public class TokenOperationFactoryImpl implements TokenOperationFactory {
      * the validate operation called with a TokenType other than STATUS.
      * TODO: revisit the necessity of this method.
      */
-    @Override
     public TokenValidator getTokenValidatorForTransformOperation(TokenType inputTokenType, TokenType outputTokenType) {
         return null;
     }
@@ -106,7 +135,6 @@ public class TokenOperationFactoryImpl implements TokenOperationFactory {
      *                        Validate operation.
      * @return A TokenProvider which can issue the TokenType specified in the outputTokenType parameter.
      */
-    @Override
     public TokenProvider getTokenProviderForTransformOperation(TokenType inputTokenType, TokenType outputTokenType)
             throws STSInitializationException{
         if (TokenType.OPENAM.equals(outputTokenType)) {
@@ -119,7 +147,17 @@ public class TokenOperationFactoryImpl implements TokenOperationFactory {
 
     public TokenProvider getTokenProviderForType(TokenType tokenType) throws STSInitializationException {
         if (TokenType.SAML2.equals(tokenType)) {
-            return new SAMLTokenProvider();
+          /*  return new SAMLTokenProvider(); */
+            return new SoapSamlTokenProvider(
+                    tokenGenerationServiceConsumer,
+                    amSessionInvalidator,
+                    threadLocalAMTokenCache,
+                    stsInstanceId,
+                    realm,
+                    xmlUtilities,
+                    xmlTokenAuthnContextMapper,
+                    amSessionTokenXmlMarshaller,
+                    logger);
         } else {
             //we are only supporting issuing SAML tokens at this point.
             throw new STSInitializationException(ResourceException.BAD_REQUEST,
@@ -128,7 +166,6 @@ public class TokenOperationFactoryImpl implements TokenOperationFactory {
         }
     }
 
-    @Override
     public TokenValidator getTokenValidatorForRenewal(TokenType tokenType) throws STSInitializationException{
         if (TokenType.SAML2.equals(tokenType)) {
             return new SAMLTokenValidator();

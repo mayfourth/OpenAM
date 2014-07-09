@@ -54,7 +54,7 @@ public class STSInstancePublisherImpl implements STSInstancePublisher {
     public void publishSTSInstance() {
         JaxWsServerFactoryBean serverFactoryBean = new JaxWsServerFactoryBean();
         serverFactoryBean.setWsdlLocation(stsInstanceConfig.getDeploymentConfig().getWsdlLocation());
-        serverFactoryBean.setAddress(stsInstanceConfig.getDeploymentConfig().getUriElement());
+        serverFactoryBean.setAddress(stsInstanceConfig.getDeploymentSubPath());
         serverFactoryBean.setServiceBean(securityTokenServiceProvider);
         serverFactoryBean.setServiceName(stsInstanceConfig.getDeploymentConfig().getService());
         serverFactoryBean.setEndpointName(stsInstanceConfig.getDeploymentConfig().getPort());

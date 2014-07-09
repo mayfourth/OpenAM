@@ -52,10 +52,10 @@ public class STSBroker extends CXFNonSpringServlet {
          so I went back to the CXF-specific way of publishing a web-service. That is probably the best approach - provides
          more isolation from container vagaries.
 
-        Endpoint.publish("/sts_publish/", new STSPublishImpl());
+        Endpoint.publish("/sts-publish/", new STSPublishImpl());
         */
         JaxWsServerFactoryBean serverFactoryBean = new JaxWsServerFactoryBean();
-        serverFactoryBean.setAddress("/sts_publish/");
+        serverFactoryBean.setAddress("/sts-publish/");
         serverFactoryBean.setServiceBean(new STSPublishImpl());
         serverFactoryBean.create();
     }

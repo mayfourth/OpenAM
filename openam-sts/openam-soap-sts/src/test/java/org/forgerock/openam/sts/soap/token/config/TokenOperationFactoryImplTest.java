@@ -17,18 +17,26 @@
 package org.forgerock.openam.sts.soap.token.config;
 
 import com.google.inject.*;
-import org.apache.cxf.sts.token.provider.SAMLTokenProvider;
 import org.apache.cxf.sts.token.renewer.SAMLTokenRenewer;
 import org.apache.ws.security.message.token.UsernameToken;
 import org.forgerock.openam.sts.AMSTSConstants;
+import org.forgerock.openam.sts.XMLUtilities;
+import org.forgerock.openam.sts.XMLUtilitiesImpl;
 import org.forgerock.openam.sts.config.user.AuthTargetMapping;
 import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.XmlMarshaller;
+import org.forgerock.openam.sts.soap.token.provider.SoapSamlTokenProvider;
+import org.forgerock.openam.sts.soap.token.provider.XmlTokenAuthnContextMapper;
+import org.forgerock.openam.sts.soap.token.provider.XmlTokenAuthnContextMapperImpl;
 import org.forgerock.openam.sts.token.*;
 import org.forgerock.openam.sts.token.model.OpenAMSessionToken;
 import org.forgerock.openam.sts.token.model.OpenAMSessionTokenMarshaller;
+import org.forgerock.openam.sts.token.provider.AMSessionInvalidator;
+import org.forgerock.openam.sts.token.provider.AMSessionInvalidatorImpl;
 import org.forgerock.openam.sts.token.provider.AMTokenProvider;
+import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumer;
+import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumerImpl;
 import org.forgerock.openam.sts.token.validator.PrincipalFromSession;
 import org.forgerock.openam.sts.token.validator.PrincipalFromSessionImpl;
 import org.forgerock.openam.sts.token.validator.wss.AuthenticationHandler;
@@ -42,9 +50,12 @@ import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
+import javax.inject.*;
 import javax.inject.Inject;
-import javax.inject.Named;
+
 import org.slf4j.Logger;
+
+import java.net.URISyntaxException;
 
 import static org.testng.Assert.assertTrue;
 
@@ -70,6 +81,12 @@ public class TokenOperationFactoryImplTest {
             bind(UrlConstituentCatenator.class).to(UrlConstituentCatenatorImpl.class);
             bind(TokenOperationFactory.class).to(TokenOperationFactoryImpl.class);
             bind(PrincipalFromSession.class).to(PrincipalFromSessionImpl.class);
+            bind(UrlConstituentCatenator.class).to(UrlConstituentCatenatorImpl.class);
+            bind(TokenGenerationServiceConsumer.class).to(TokenGenerationServiceConsumerImpl.class);
+            bind(XMLUtilities.class).to(XMLUtilitiesImpl.class);
+            bind(XmlTokenAuthnContextMapper.class).to(XmlTokenAuthnContextMapperImpl.class);
+            bind(new TypeLiteral<XmlMarshaller<OpenAMSessionToken>>(){}).to(OpenAMSessionTokenMarshaller.class);
+
         }
 
         @Provides
@@ -140,8 +157,33 @@ public class TokenOperationFactoryImplTest {
             return LoggerFactory.getLogger(AMSTSConstants.REST_STS_DEBUG_ID);
         }
 
+        @Provides
+        @javax.inject.Singleton
+        @Named(AMSTSConstants.REST_TOKEN_GENERATION_SERVICE_URI_ELEMENT)
+        String tokenGenerationServiceUriElement() {
+            return "/sts-tokengen/issue?_action=issue";
+        }
 
+        @Provides
+        @Named(AMSTSConstants.STS_INSTANCE_ID)
+        String getSTSInstanceId() {
+            return "cho_mama";
+        }
+
+        @Provides
+        @Inject
+        AMSessionInvalidator getSessionInvalidator(
+                @Named(AMSTSConstants.AM_DEPLOYMENT_URL) String deploymentUrl,
+                @Named(AMSTSConstants.AM_REST_AUTHN_JSON_ROOT) String jsonRestRoot,
+                @Named (AMSTSConstants.REALM) String realm,
+                @Named(AMSTSConstants.REST_LOGOUT_URI_ELEMENT) String logoutUriElement,
+                @Named(AMSTSConstants.AM_SESSION_COOKIE_NAME) String sessionCookieName,
+                Logger logger) throws URISyntaxException {
+            return new AMSessionInvalidatorImpl(deploymentUrl, jsonRestRoot, realm, logoutUriElement,
+                    sessionCookieName, new UrlConstituentCatenatorImpl(), logger);
+        }
     }
+
     @BeforeTest
     public void getTokenOperationFactory() {
         operationFactory = Guice.createInjector(new MyModule()).getInstance(TokenOperationFactory.class);
@@ -174,7 +216,7 @@ public class TokenOperationFactoryImplTest {
 
     @Test
     public void testProvider() throws STSInitializationException {
-        assertTrue(operationFactory.getTokenProviderForType(TokenType.SAML2) instanceof SAMLTokenProvider);
+        assertTrue(operationFactory.getTokenProviderForType(TokenType.SAML2) instanceof SoapSamlTokenProvider);
     }
 
     @Test(expectedExceptions = STSInitializationException.class)

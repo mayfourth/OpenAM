@@ -16,8 +16,10 @@
 
 package org.forgerock.openam.sts.soap.config.user;
 
+import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.config.user.STSInstanceConfig;
+import org.forgerock.openam.sts.token.UrlConstituentCatenatorImpl;
 import org.forgerock.util.Reject;
 
 import java.util.*;
@@ -140,6 +142,32 @@ public class SoapSTSInstanceConfig extends STSInstanceConfig {
 
     public Set<TokenType> getRenewTokenTypes() {
         return renewTokenTypes;
+    }
+
+    /**
+     * @return This method will return the sub-path at which the soap STS instance will be deployed (sub-path relative to the
+     * path to the soap_sts servlet defined in the soap sts' web.xml (/sts/*)). This string serves to identify the soap
+     * STS instance. This identifier
+     * is passed to the TokenGenerationService so that the TGS can issue instance-specific tokens (i.e. reflecting the
+     * KeystoreConfig and SAML2Config of the associated STS instance). This path is also the most specific element of the
+     * DN identifying the config in the SMS.
+     *
+     * This method will be called to obtain the id under which the SoapSTSInstanceConfig state is stored in the SMS, and the
+     * path to the sts instance published via the STSInstancePublisherImpl. Because this
+     * resource will be accessed as a url, it cannot have a trailing slash, as this slash is removed in the http request.
+     */
+    public String getDeploymentSubPath() {
+        String deploymentSubPath = new UrlConstituentCatenatorImpl().catenateUrlConstituents(
+                getDeploymentConfig().getRealm(), getDeploymentConfig().getUriElement());
+        if (deploymentSubPath.endsWith(AMSTSConstants.FORWARD_SLASH)) {
+            return deploymentSubPath.substring(0, deploymentSubPath.lastIndexOf(AMSTSConstants.FORWARD_SLASH));
+        }
+
+        if (deploymentSubPath.startsWith(AMSTSConstants.FORWARD_SLASH)) {
+            deploymentSubPath = deploymentSubPath.substring(1, deploymentSubPath.length());
+        }
+
+        return deploymentSubPath;
     }
 
     @Override

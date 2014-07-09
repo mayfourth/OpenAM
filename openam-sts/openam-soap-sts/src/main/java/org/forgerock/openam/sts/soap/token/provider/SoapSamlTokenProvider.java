@@ -34,6 +34,7 @@ import org.forgerock.openam.sts.TokenMarshalException;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.XMLUtilities;
 import org.forgerock.openam.sts.XmlMarshaller;
+import org.forgerock.openam.sts.service.invocation.ProofTokenState;
 import org.forgerock.openam.sts.token.SAML2SubjectConfirmation;
 import org.forgerock.openam.sts.token.ThreadLocalAMTokenCache;
 import org.forgerock.openam.sts.token.model.OpenAMSessionToken;
@@ -42,6 +43,9 @@ import org.forgerock.openam.sts.token.provider.TokenGenerationServiceConsumer;
 import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import javax.xml.ws.handler.MessageContext;
+import java.security.cert.X509Certificate;
 
 
 public class SoapSamlTokenProvider implements TokenProvider {
@@ -135,6 +139,10 @@ public class SoapSamlTokenProvider implements TokenProvider {
         }
     }
 
+    /*
+    The TokenGenerationService needs to the SAML2SubjectConfirmation as a parameter. This method will return the appropriate
+    SubjectConfirmation value, depending upon the KeyType specified in the RST invocation, and also the OnBehalfOf value.
+     */
     private SAML2SubjectConfirmation determineSubjectConfirmation(TokenProviderParameters tokenProviderParameters)  {
         String keyType = tokenProviderParameters.getKeyRequirements().getKeyType();
         if (STSConstants.BEARER_KEY_KEYTYPE.equals(keyType)) {
@@ -253,6 +261,8 @@ public class SoapSamlTokenProvider implements TokenProvider {
             Here we must be dealing with an Issue operation, so I need to obtain the token validated by the SecurityPolicy
             bindings protecting the issue operation.
              */
+            MessageContext messageContext = tokenProviderParameters.getWebServiceContext().getMessageContext();
+//            messageContext.
             final Message currentMessage = PhaseInterceptorChain.getCurrentMessage();
             Object obj = currentMessage.get(Message.IN_INTERCEPTORS);
             /*
@@ -279,10 +289,24 @@ public class SoapSamlTokenProvider implements TokenProvider {
                         stsInstanceId, realm, authnContextClassRef);
             case HOLDER_OF_KEY:
                 ReceivedKey receivedKey = tokenProviderParameters.getKeyRequirements().getReceivedKey();
-
-                //TODO: how to marshal receivedKey into ProofTokenState to replace the null below.
+                X509Certificate certificate = receivedKey.getX509Cert();
+                if (certificate == null) {
+                    String exceptionMessage = "The ReceivedKey instance in the KeyRequirements has a null X509Cert. Thus the " +
+                            "ProofTokenState necessary to consume the TokenGenerationService cannot be created.";
+                    logger.error(exceptionMessage + " PublicKey in the ReceivedToken: " + receivedKey.getPublicKey());
+                    throw new TokenCreationException(ResourceException.BAD_REQUEST, exceptionMessage);
+                }
+                ProofTokenState proofTokenState;
+                try {
+                    proofTokenState = ProofTokenState.builder().x509Certificate(certificate).build();
+                } catch (TokenMarshalException e) {
+                    String message = "In SoapSamlTokenProvider#getAssertion, could not marshal X509Cert in ReceivedKey " +
+                            "into ProofTokenState: " + e;
+                    logger.error(message, e);
+                    throw new TokenCreationException(ResourceException.BAD_REQUEST, message);
+                }
                 return tokenGenerationServiceConsumer.getSAML2HolderOfKeyAssertion(threadLocalAMTokenCache.getAMToken(),
-                        stsInstanceId, realm, authnContextClassRef, null);
+                        stsInstanceId, realm, authnContextClassRef, proofTokenState);
         }
         throw new TokenCreationException(ResourceException.INTERNAL_ERROR,
                 "Unexpected SAML2SubjectConfirmation in AMSAMLTokenProvider: " + subjectConfirmation);
