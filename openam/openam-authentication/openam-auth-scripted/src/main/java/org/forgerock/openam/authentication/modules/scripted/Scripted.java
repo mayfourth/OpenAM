@@ -115,11 +115,15 @@ public class Scripted extends AMLoginModule {
     private String equalsSymbol;
     private String delimiterSymbol;
 
+    private Map sharedState;
+
     /**
      * {@inheritDoc}
      */
     @Override
     public void init(Subject subject, Map sharedState, Map options) {
+        this.sharedState = sharedState;
+
         userName = (String) sharedState.get(getUserKey());
         moduleConfiguration = options;
         clientSideScript = getClientSideScript();
@@ -161,7 +165,8 @@ public class Scripted extends AMLoginModule {
             case STATE_RUN_SCRIPT:
                 Bindings scriptVariables = new SimpleBindings();
                 scriptVariables.put(REQUEST_DATA_VARIABLE_NAME, getScriptHttpRequestWrapper());
-                scriptVariables.put(CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME, getClientScriptOutputDataMap());
+                Map clientScriptOutputDataMap = getClientScriptOutputDataMap();
+                scriptVariables.put(CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME, clientScriptOutputDataMap);
                 scriptVariables.put(LOGGER_VARIABLE_NAME, DEBUG);
                 scriptVariables.put(STATE_VARIABLE_NAME, state);
                 scriptVariables.put(USERNAME_VARIABLE_NAME, userName);
@@ -180,6 +185,7 @@ public class Scripted extends AMLoginModule {
 
                 state = ((Number) scriptVariables.get(STATE_VARIABLE_NAME)).intValue();
                 userName = (String) scriptVariables.get(USERNAME_VARIABLE_NAME);
+                sharedState.put(CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME, clientScriptOutputDataMap);
 
                 if (state != SUCCESS_VALUE) {
                     throw new AuthLoginException("Authentication failed");
