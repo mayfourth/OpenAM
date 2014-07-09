@@ -302,7 +302,11 @@ public class Scripted extends AMLoginModule {
     private Callback getScriptAndSelfSubmitCallback() {
         ScriptTextOutputCallback scriptAndSelfSubmitCallback = new ScriptTextOutputCallback(clientSideScript + "\n" +
                 "prepareScriptOutputDataForSubmission();\n" +
-                "document.forms[0].submit()");
+                "if(window.jQuery) {\n" + // Crude detection to see if XUI is present.
+                    "$('input[type=submit]').trigger('click');\n" +
+                "} else {\n" +
+                    "document.forms[0].submit();\n" +
+                "}");
 
         return scriptAndSelfSubmitCallback;
     }
