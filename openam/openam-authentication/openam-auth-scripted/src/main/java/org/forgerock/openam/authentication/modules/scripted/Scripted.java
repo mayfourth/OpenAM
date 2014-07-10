@@ -243,16 +243,18 @@ public class Scripted extends AMLoginModule {
                 getParameter(CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME);
         Map<String, String> dataMap = new LinkedHashMap<String, String>();
 
-        StringTokenizer tokenizer = new StringTokenizer(clientScriptOutputData, delimiterSymbol);
-        while (tokenizer.hasMoreTokens()) {
-            String token = tokenizer.nextToken();
-            String keyValueArray[] = token.split(equalsSymbol);
-            String key = keyValueArray[0];
-            String value = "";
-            if (keyValueArray.length == 2) {
-                value = keyValueArray[1];
+        if (clientScriptOutputData != null && !(clientScriptOutputData.equals(""))) {
+            StringTokenizer tokenizer = new StringTokenizer(clientScriptOutputData, delimiterSymbol);
+            while (tokenizer.hasMoreTokens()) {
+                String token = tokenizer.nextToken();
+                String keyValueArray[] = token.split(equalsSymbol);
+                String key = keyValueArray[0];
+                String value = "";
+                if (keyValueArray.length == 2) {
+                    value = keyValueArray[1];
+                }
+                dataMap.put(key, value);
             }
-            dataMap.put(key, value);
         }
 
         return dataMap;
