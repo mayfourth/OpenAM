@@ -21,6 +21,7 @@ import com.google.inject.Injector;
 import org.forgerock.json.resource.ResourceException;
 import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.TokenType;
+import org.forgerock.openam.sts.config.user.SAML2Config;
 import org.forgerock.openam.sts.soap.publish.STSInstancePublisher;
 import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.config.user.AuthTargetMapping;
@@ -32,6 +33,10 @@ import org.forgerock.openam.sts.soap.config.user.SoapSTSInstanceConfig;
 import javax.jws.WebService;
 import javax.xml.namespace.QName;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This is a web-service which allows for the programmatic publication of STS instances.
@@ -54,7 +59,6 @@ public class STSPublishImpl implements STSPublish {
     public STSPublishImpl() {
     }
 
-    @Override
     public void publishSTSEndpoint(String uriElement, String securityPolicyBindingId, String amDeploymentUrl) throws STSInitializationException {
         publishSTS(uriElement, securityPolicyBindingId, amDeploymentUrl);
     }
@@ -100,6 +104,17 @@ public class STSPublishImpl implements STSPublish {
                                         .wsdlLocation(getWsdlLocation(bndId))
                                         .authTargetMapping(mapping)
                                         .build();
+        Map<String, String> attributes = new HashMap<String, String>();
+        attributes.put("email", "mail");
+        //this list MUST contain the entity ids of all SPs which might need to consume the generated saml2 assertion
+        List<String> audiences = new ArrayList<String>();
+        audiences.add("da_assertion_consumer");
+        SAML2Config saml2Config =
+                SAML2Config.builder()
+                        .attributeMap(attributes)
+                        .nameIdFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
+                        .audiences(audiences)
+                        .build();
 
         KeystoreConfig keystoreConfig = null;
         try {
@@ -119,6 +134,7 @@ public class STSPublishImpl implements STSPublish {
                 .deploymentConfig(deploymentConfig)
                 .amDeploymentUrl(amDeploymentUrl)
                 .keystoreConfig(keystoreConfig)
+                .saml2Config(saml2Config)
                 .issuerName("OpenAM")
                 .addIssueTokenType(TokenType.SAML2)
                 .addRenewTokenType(TokenType.SAML2)
