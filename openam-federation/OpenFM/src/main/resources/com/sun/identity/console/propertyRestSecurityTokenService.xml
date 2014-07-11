@@ -17,7 +17,9 @@
 -->
 
 <!DOCTYPE propertysheet SYSTEM "propertysheet.dtd">
-
+<!--
+TODO: what does the autoSubmit attribute do? Does it mean that the attribute is not set if no value is specified?
+-->
 <propertysheet>
     <section name="Keystore" defaultValue="rest.sts.keystore.section.title">
         <property>
@@ -26,7 +28,6 @@
                    labelFor="keystore-filename"/>
             <cc name="keystore-filename"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -36,7 +37,6 @@
                    labelFor="keystore-password"/>
             <cc name="keystore-password"
                 tagclass="com.sun.web.ui.taglib.html.CCPasswordTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -46,7 +46,6 @@
                    labelFor="keystore-encryption-key-alias"/>
             <cc name="keystore-encryption-key-alias"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -56,7 +55,6 @@
                    labelFor="keystore-encryption-key-password"/>
             <cc name="keystore-encryption-key-password"
                 tagclass="com.sun.web.ui.taglib.html.CCPasswordTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -66,7 +64,6 @@
                    labelFor="keystore-signature-key-alias"/>
             <cc name="keystore-signature-key-alias"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -76,19 +73,20 @@
                    labelFor="keystore-signature-key-password"/>
             <cc name="keystore-signature-key-password"
                 tagclass="com.sun.web.ui.taglib.html.CCPasswordTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
     </section>
 
     <section name="SAML2" defaultValue="rest.sts.saml2.section.title">
+        <!--
+        TODO: probably want specific option set here
+        -->
         <property>
             <label name="lblSAML2NameIdFormat"
                    defaultValue="rest.sts.saml2.NameIdFormat"
                    labelFor="saml2-name-id-format"/>
             <cc name="saml2-name-id-format"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -98,7 +96,6 @@
                    labelFor="saml2-token-lifetime-seconds"/>
             <cc name="saml2-token-lifetime-seconds"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -108,7 +105,6 @@
                    labelFor="saml2-custom-conditions-provider-class-name"/>
             <cc name="saml2-custom-conditions-provider-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -118,7 +114,6 @@
                    labelFor="saml2-custom-subject-provider-class-name"/>
             <cc name="saml2-custom-subject-provider-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -128,7 +123,6 @@
                    labelFor="saml2-custom-authentication-statements-provider-class-name"/>
             <cc name="saml2-custom-authentication-statements-provider-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -138,7 +132,6 @@
                    labelFor="saml2-custom-attribute-statements-provider-class-name"/>
             <cc name="saml2-custom-attribute-statements-provider-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -148,7 +141,6 @@
                    labelFor="saml2-custom-authz-decision-statements-provider-class-name"/>
             <cc name="saml2-custom-authz-decision-statements-provider-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -158,7 +150,6 @@
                    labelFor="saml2-custom-attribute-mapper-class-name"/>
             <cc name="saml2-custom-attribute-mapper-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
@@ -168,40 +159,65 @@
                    labelFor="saml2-custom-authn-context-mapper-class-name"/>
             <cc name="saml2-custom-authn-context-mapper-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
             </cc>
         </property>
 
         <property>
-            <label name="lblSAML2CustomAuthenticationContextMapperClassName"
+            <label name="lblSAML2CanonicalizationAlgorithm"
                    defaultValue="rest.sts.saml2.CanonicalizationAlgorithm"
                    labelFor="saml2-canonicalization-algorithm"/>
             <cc name="saml2-canonicalization-algorithm"
-                tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
-                <attribute name="autoSubmit" value="false"/>
+                tagclass="com.sun.web.ui.taglib.html.CCDropDownMenuTag">
+                <option label="rest.sts.saml2.CanonicalizationExcNoComments" value="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                <option label="rest.sts.saml2.CanonicalizationExcWithComments" value="http://www.w3.org/2001/10/xml-exc-c14n#WithComments"/>
             </cc>
         </property>
 
-        <AttributeSchema name="saml2-canonicalization-algorithm"
-                         type="single" syntax="string" i18nKey="saml2_canonicalization_algorithm"
-                         validator="RequiredValueValidator">
-            <DefaultValues>
-                <Value>http://www.w3.org/2001/10/xml-exc-c14n#</Value>
-            </DefaultValues>
-        </AttributeSchema>
+        <property>
+            <label name="lblSAML2SignatureAlgorithm"
+                   defaultValue="rest.sts.saml2.SignatureAlgorithm"
+                   labelFor="saml2-signature-algorithm"/>
+            <cc name="saml2-signature-algorithm"
+                tagclass="com.sun.web.ui.taglib.html.CCDropDownMenuTag">
+                <option label="rest.sts.saml2.SignatureDsaSha1" value="http://www.w3.org/2000/09/xmldsig#dsa-sha1"/>
+                <option label="rest.sts.saml2.SignatureRsaSha1" value="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+            </cc>
+        </property>
 
+        <property>
+            <label name="lblSAML2SignAssertion"
+                   defaultValue="rest.sts.saml2.SignAssertion"
+                   labelFor="saml2-sign-assertion"/>
+            <cc name="saml2-sign-assertion"
+                tagclass="com.sun.web.ui.taglib.html.CCCheckBoxTag">
+            </cc>
+        </property>
 
+        <property>
+            <label name="lblSAML2Audiences"
+                   defaultValue="rest.sts.saml2.Audiences"
+                   labelFor="saml2-audiences"/>
+            <!--
+            TODO: does the text area support multiple values? I need a list...
+            -->
+            <cc name="saml2-audiences"
+                tagclass="com.sun.web.ui.taglib.html.CCTextAreaTag">
+            </cc>
+        </property>
 
-
+        <property>
+            <label name="lblSAML2AttributeMap"
+                   defaultValue="rest.sts.saml2.AttributeMap"
+                   labelFor="saml2-attribute-map"/>
+            <!--
+            TODO: does the text area support multiple values? I need a list...
+            -->
+            <cc name="saml2-attribute-map"
+                tagclass="com.sun.web.ui.taglib.html.CCTextAreaTag">
+            </cc>
+        </property>
     </section>
-
-
-
-
-
-
-
-
+</propertysheet>
 
 <!--
 
@@ -246,22 +262,4 @@
         </DefaultValues>
     </AttributeSchema>
 
-    <AttributeSchema name="saml2-signature-algorithm"
-                     type="single" syntax="string" i18nKey="saml2_signature_algorithm">
-    </AttributeSchema>
-    <AttributeSchema name="saml2-sign-assertion"
-                     type="single" syntax="boolean" i18nKey="saml2_sign_assertion">
-    </AttributeSchema>
-    <AttributeSchema name="saml2-audiences"
-                     type="list"
-                     syntax="string"
-                     i18nKey="saml2_audiences">
-    </AttributeSchema>
-    <AttributeSchema name="saml2-attribute-map"
-                     type="list"
-                     syntax="string"
-                     i18nKey="saml2_attribute_map">
-    </AttributeSchema>
 -->
-
-</propertysheet>
