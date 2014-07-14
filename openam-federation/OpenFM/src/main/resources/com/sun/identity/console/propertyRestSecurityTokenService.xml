@@ -21,6 +21,70 @@
 TODO: what does the autoSubmit attribute do? Does it mean that the attribute is not set if no value is specified?
 -->
 <propertysheet>
+    <section name="General" defaultValue="rest.sts.general.section.title">
+        <property>
+            <label name="lblIssuerName"
+                   defaultValue="rest.sts.issuerName"
+                   labelFor="issuer-name"/>
+            <cc name="issuer-name"
+                tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
+            </cc>
+        </property>
+
+        <property>
+            <label name="lblTokenTransforms"
+                   defaultValue="rest.sts.tokentransforms"
+                   labelFor="supported-token-transforms"/>
+            <cc name="supported-token-transforms"
+                tagclass="com.sun.web.ui.taglib.html.CCSelectableListTag">
+                <option label="rest.sts.tranform.unt.saml2.true" value="USERNAME;SAML2;true"/>
+                <option label="rest.sts.tranform.unt.saml2.false" value="USERNAME;SAML2;false"/>
+                <option label="rest.sts.tranform.oidc.saml2.true" value="OPENIDCONNECT;SAML2;true"/>
+                <option label="rest.sts.tranform.oidc.saml2.false" value="OPENIDCONNECT;SAML2;false"/>
+                <option label="rest.sts.tranform.openam.saml2.true" value="OPENAM;SAML2;true"/>
+                <option label="rest.sts.tranform.openam.saml2.false" value="OPENAM;SAML2;false"/>
+                <attribute name="multiple" value="true" />
+            </cc>
+            <fieldhelp name="helpTokenTransforms" defaultValue="rest.sts.tokentransforms.help" />
+        </property>
+    </section>
+
+    <section name="Deployment" defaultValue="rest.sts.deployment.section.title">
+        <property>
+            <label name="lblDeploymentRealm"
+                   defaultValue="rest.sts.deployment.realm"
+                   labelFor="deployment-realm"/>
+            <cc name="deployment-realm"
+                tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
+            </cc>
+            <fieldhelp name="helpDeploymentRealm" defaultValue="rest.sts.deployment.realm.help" />
+        </property>
+
+        <property>
+            <label name="lblDeploymentUrlElement"
+                   defaultValue="rest.sts.deployment.UrlElement"
+                   labelFor="deployment-url-element"/>
+            <cc name="deployment-url-element"
+                tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
+            </cc>
+            <fieldhelp name="helpDeploymentUrlElement" defaultValue="rest.sts.deployment.UrlElement.help" />
+        </property>
+
+        <property>
+            <label name="lblAuthTargetMappings"
+                   defaultValue="rest.sts.deployment.AuthTargetMappings"
+                   labelFor="deployment-auth-target-mappings"/>
+            <cc name="deployment-auth-target-mappings"
+                tagclass="com.sun.web.ui.taglib.editablelist.CCEditableListTag">
+                <attribute name="name" value="list" />
+                <attribute name="listboxLabel" value="label.current.value" />
+                <attribute name="textboxLabel" value="label.new.value" />
+            </cc>
+            <fieldhelp name="helpAuthTargetMappings" defaultValue="rest.sts.deployment.AuthTargetMappings.help" />
+        </property>
+
+    </section>
+
     <section name="Keystore" defaultValue="rest.sts.keystore.section.title">
         <property>
             <label name="lblKeystoreFilename"
@@ -29,6 +93,7 @@ TODO: what does the autoSubmit attribute do? Does it mean that the attribute is 
             <cc name="keystore-filename"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
             </cc>
+            <fieldhelp name="helpKeystoreFilename" defaultValue="rest.sts.keystore.filename.help" />
         </property>
 
         <property>
@@ -86,7 +151,16 @@ TODO: what does the autoSubmit attribute do? Does it mean that the attribute is 
                    defaultValue="rest.sts.saml2.NameIdFormat"
                    labelFor="saml2-name-id-format"/>
             <cc name="saml2-name-id-format"
-                tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
+                tagclass="com.sun.web.ui.taglib.html.CCDropDownMenuTag">
+                <option label="rest.sts.saml2.nameidformat.unspecified" value="urn:oasis:names:tc:SAML:1.0:nameid-format:unspecified"/>
+                <option label="rest.sts.saml2.nameidformat.entity" value="urn:oasis:names:tc:SAML:2.0:nameid-format:entity"/>
+                <option label="rest.sts.saml2.nameidformat.email" value="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"/>
+                <option label="rest.sts.saml2.nameidformat.encrypted" value="urn:oasis:names:tc:SAML:2.0:nameid-format:encrypted"/>
+                <option label="rest.sts.saml2.nameidformat.persistent" value="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"/>
+                <option label="rest.sts.saml2.nameidformat.transient" value="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"/>
+                <option label="rest.sts.saml2.nameidformat.x509" value="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"/>
+                <option label="rest.sts.saml2.nameidformat.windowsdomain" value="urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName"/>
+                <option label="rest.sts.saml2.nameidformat.kerberos" value="urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos"/>
             </cc>
         </property>
 
@@ -106,6 +180,7 @@ TODO: what does the autoSubmit attribute do? Does it mean that the attribute is 
             <cc name="saml2-custom-conditions-provider-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
             </cc>
+            <fieldhelp name="helpSAML2CustomConditionsProviderClassName" defaultValue="rest.sts.saml2.CustomConditionsProviderClassName.help" />
         </property>
 
         <property>
@@ -115,6 +190,7 @@ TODO: what does the autoSubmit attribute do? Does it mean that the attribute is 
             <cc name="saml2-custom-subject-provider-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
             </cc>
+            <fieldhelp name="helpSAML2CustomSubjectProviderClassName" defaultValue="rest.sts.saml2.CustomSubjectProviderClassName.help" />
         </property>
 
         <property>
@@ -124,6 +200,7 @@ TODO: what does the autoSubmit attribute do? Does it mean that the attribute is 
             <cc name="saml2-custom-authentication-statements-provider-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
             </cc>
+            <fieldhelp name="helpSAML2CustomAuthenticationStatementsClassName" defaultValue="rest.sts.saml2.CustomAuthenticationStatementsClassName.help" />
         </property>
 
         <property>
@@ -133,15 +210,17 @@ TODO: what does the autoSubmit attribute do? Does it mean that the attribute is 
             <cc name="saml2-custom-attribute-statements-provider-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
             </cc>
+            <fieldhelp name="helpSAML2CustomAttributeStatementsClassName" defaultValue="rest.sts.saml2.CustomAttributeStatementsClassName.help" />
         </property>
 
         <property>
-            <label name="lblSAML2CustomAttributeStatementsClassName"
+            <label name="lblSAML2CustomAuthorizationDecisionStatementsClassName"
                    defaultValue="rest.sts.saml2.CustomAuthorizationDecisionStatementsClassName"
                    labelFor="saml2-custom-authz-decision-statements-provider-class-name"/>
             <cc name="saml2-custom-authz-decision-statements-provider-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
             </cc>
+            <fieldhelp name="helpSAML2CustomAuthorizationDecisionStatementsClassName" defaultValue="rest.sts.saml2.CustomAuthorizationDecisionStatementsClassName.help" />
         </property>
 
         <property>
@@ -151,6 +230,7 @@ TODO: what does the autoSubmit attribute do? Does it mean that the attribute is 
             <cc name="saml2-custom-attribute-mapper-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
             </cc>
+            <fieldhelp name="helpSAML2CustomAttributeMapperClassName" defaultValue="rest.sts.saml2.CustomAttributeMapperClassName.help" />
         </property>
 
         <property>
@@ -160,6 +240,7 @@ TODO: what does the autoSubmit attribute do? Does it mean that the attribute is 
             <cc name="saml2-custom-authn-context-mapper-class-name"
                 tagclass="com.sun.web.ui.taglib.html.CCTextFieldTag">
             </cc>
+            <fieldhelp name="helpSAML2CustomAuthenticationContextMapperClassName" defaultValue="rest.sts.saml2.CustomAuthenticationContextMapperClassName.help" />
         </property>
 
         <property>
@@ -179,9 +260,11 @@ TODO: what does the autoSubmit attribute do? Does it mean that the attribute is 
                    labelFor="saml2-signature-algorithm"/>
             <cc name="saml2-signature-algorithm"
                 tagclass="com.sun.web.ui.taglib.html.CCDropDownMenuTag">
+                <option label="rest.sts.saml2.SignatureKeyDetermined" value=""/>
                 <option label="rest.sts.saml2.SignatureDsaSha1" value="http://www.w3.org/2000/09/xmldsig#dsa-sha1"/>
                 <option label="rest.sts.saml2.SignatureRsaSha1" value="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
             </cc>
+            <fieldhelp name="helpSAML2SignatureAlgorithm" defaultValue="rest.sts.saml2.SignatureAlgorithm.help" />
         </property>
 
         <property>
@@ -192,74 +275,39 @@ TODO: what does the autoSubmit attribute do? Does it mean that the attribute is 
                 tagclass="com.sun.web.ui.taglib.html.CCCheckBoxTag">
             </cc>
         </property>
+ <!--
+             <cc name="SAMLAttributeMapping"
+                tagclass="com.sun.web.ui.taglib.editablelist.CCEditableListTag">
+                <attribute name="name" value="list" />
+                <attribute name="listboxLabel" value="label.current.value" />
+                <attribute name="textboxLabel" value="label.new.value" />
+            </cc>
+ -->
 
         <property>
             <label name="lblSAML2Audiences"
                    defaultValue="rest.sts.saml2.Audiences"
                    labelFor="saml2-audiences"/>
-            <!--
-            TODO: does the text area support multiple values? I need a list...
-            -->
             <cc name="saml2-audiences"
-                tagclass="com.sun.web.ui.taglib.html.CCTextAreaTag">
+                tagclass="com.sun.web.ui.taglib.editablelist.CCEditableListTag">
+                <attribute name="name" value="list" />
+                <attribute name="listboxLabel" value="label.current.value" />
+                <attribute name="textboxLabel" value="label.new.value" />
             </cc>
+            <fieldhelp name="helpSAML2Audiences" defaultValue="rest.sts.saml2.Audiences.help" />
         </property>
 
         <property>
             <label name="lblSAML2AttributeMap"
                    defaultValue="rest.sts.saml2.AttributeMap"
                    labelFor="saml2-attribute-map"/>
-            <!--
-            TODO: does the text area support multiple values? I need a list...
-            -->
             <cc name="saml2-attribute-map"
-                tagclass="com.sun.web.ui.taglib.html.CCTextAreaTag">
+                tagclass="com.sun.web.ui.taglib.editablelist.CCEditableListTag">
+                <attribute name="name" value="list" />
+                <attribute name="listboxLabel" value="label.current.value" />
+                <attribute name="textboxLabel" value="label.new.value" />
             </cc>
+            <fieldhelp name="helpSAML2AttributeMap" defaultValue="rest.sts.saml2.AttributeMap.help" />
         </property>
     </section>
 </propertysheet>
-
-<!--
-
-    <AttributeSchema name="am-deployment-url"
-                     type="single" syntax="string" i18nKey="am_deployment_url"
-                     validator="RequiredValueValidator">
-        <DefaultValues>
-            <Value>%protocol://%host:%port%uri/</Value>
-        </DefaultValues>
-    </AttributeSchema>
-    <AttributeSchema name="issuer-name"
-                     type="single" syntax="string" i18nKey="issuer_name"
-                     validator="RequiredValueValidator">
-    </AttributeSchema>
-    <AttributeSchema name="supported-token-transforms"
-                     type="list"
-                     syntax="string"
-                     validator="RequiredValueValidator"
-                     i18nKey="supported_token_transforms">
-        <DefaultValues>
-            <Value>USERNAME;SAML2;true</Value>
-            <Value>OPENIDCONNECT;SAML2;true</Value>
-            <Value>OPENAM;SAML2;false</Value>
-        </DefaultValues>
-    </AttributeSchema>
-    <AttributeSchema name="deployment-realm"
-                     type="single" syntax="string" i18nKey="deployment_realm"
-                     validator="RequiredValueValidator">
-    </AttributeSchema>
-    <AttributeSchema name="deployment-url-element"
-                     type="single" syntax="string" i18nKey="deployment_url_element"
-                     validator="RequiredValueValidator">
-    </AttributeSchema>
-    <AttributeSchema name="deployment-auth-target-mappings"
-                     type="list"
-                     syntax="string"
-                     validator="RequiredValueValidator"
-                     i18nKey="deployment_auth_target_mappings">
-        <DefaultValues>
-            <Value>UsernameToken;service;ldapService</Value>
-            <Value>OpenIdConnectIdToken;module;oidc;oidc_id_token_auth_target_header_key=oidc_id_token</Value>
-        </DefaultValues>
-    </AttributeSchema>
-
--->
