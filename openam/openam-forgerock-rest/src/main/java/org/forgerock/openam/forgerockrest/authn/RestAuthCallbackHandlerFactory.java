@@ -17,23 +17,14 @@
 package org.forgerock.openam.forgerockrest.authn;
 
 import com.google.inject.Singleton;
+import com.sun.identity.authentication.callbacks.HiddenValueCallback;
 import com.sun.identity.authentication.share.RedirectCallbackHandler;
 import com.sun.identity.authentication.spi.HttpCallback;
 import com.sun.identity.authentication.spi.RedirectCallback;
 import com.sun.identity.authentication.spi.X509CertificateCallback;
 import com.sun.identity.shared.debug.Debug;
 import org.forgerock.json.resource.ResourceException;
-import org.forgerock.openam.forgerockrest.authn.callbackhandlers.RestAuthCallbackHandler;
-import org.forgerock.openam.forgerockrest.authn.callbackhandlers.RestAuthChoiceCallbackHandler;
-import org.forgerock.openam.forgerockrest.authn.callbackhandlers.RestAuthConfirmationCallbackHandler;
-import org.forgerock.openam.forgerockrest.authn.callbackhandlers.RestAuthHttpCallbackHandler;
-import org.forgerock.openam.forgerockrest.authn.callbackhandlers.RestAuthLanguageCallbackHandler;
-import org.forgerock.openam.forgerockrest.authn.callbackhandlers.RestAuthNameCallbackHandler;
-import org.forgerock.openam.forgerockrest.authn.callbackhandlers.RestAuthPasswordCallbackHandler;
-import org.forgerock.openam.forgerockrest.authn.callbackhandlers.RestAuthRedirectCallbackHandler;
-import org.forgerock.openam.forgerockrest.authn.callbackhandlers.RestAuthTextInputCallbackHandler;
-import org.forgerock.openam.forgerockrest.authn.callbackhandlers.RestAuthTextOutputCallbackHandler;
-import org.forgerock.openam.forgerockrest.authn.callbackhandlers.RestAuthX509CallbackHandler;
+import org.forgerock.openam.forgerockrest.authn.callbackhandlers.*;
 import org.forgerock.openam.forgerockrest.authn.exceptions.RestAuthException;
 
 import javax.inject.Inject;
@@ -45,7 +36,6 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.TextInputCallback;
 import javax.security.auth.callback.TextOutputCallback;
-import javax.ws.rs.core.Response;
 import java.text.MessageFormat;
 
 /**
@@ -88,7 +78,9 @@ public class RestAuthCallbackHandlerFactory {
      */
     public <T extends Callback> RestAuthCallbackHandler getRestAuthCallbackHandler(Class<T> callbackClass) throws RestAuthException {
 
-        if (NameCallback.class.isAssignableFrom(callbackClass)) {
+        if (HiddenValueCallback.class.isAssignableFrom(callbackClass)) {
+            return new RestAuthHiddenValueCallbackHandler();
+        } else if (NameCallback.class.isAssignableFrom(callbackClass)) {
             return new RestAuthNameCallbackHandler();
         } else if (PasswordCallback.class.isAssignableFrom(callbackClass)) {
             return new RestAuthPasswordCallbackHandler();

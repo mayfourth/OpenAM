@@ -31,6 +31,7 @@
  */
 package org.forgerock.openam.authentication.modules.scripted;
 
+import com.sun.identity.authentication.callbacks.HiddenValueCallback;
 import com.sun.identity.authentication.callbacks.ScriptTextOutputCallback;
 import com.sun.identity.authentication.spi.AMLoginModule;
 import com.sun.identity.authentication.spi.AuthLoginException;
@@ -53,7 +54,6 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.TextOutputCallback;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.security.Principal;
@@ -70,10 +70,6 @@ public class Scripted extends AMLoginModule {
     public static final String CLIENT_SCRIPT_ENABLED_ATTR_NAME = ATTR_NAME_PREFIX + "client-script-enabled";
     public static final String SCRIPT_TYPE_ATTR_NAME = ATTR_NAME_PREFIX + "script-type";
     public static final String SERVER_SCRIPT_ATTRIBUTE_NAME = ATTR_NAME_PREFIX + "server-script";
-    public static final String CLIENT_SCRIPT_EQUALS_SYMBOL_ATTR_NAME = ATTR_NAME_PREFIX +
-            "client-script-equals-symbol";
-    public static final String CLIENT_SCRIPT_DELIMITER_SYMBOL_ATTR_NAME = ATTR_NAME_PREFIX +
-            "client-script-delimiter-symbol";
     public static final String SCRIPT_NAME = "server-side-script";
 
     public static final String JAVA_SCRIPT_LABEL = "Java Script";
@@ -94,8 +90,6 @@ public class Scripted extends AMLoginModule {
     public static final String CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME = "clientScriptOutputData";
     public static final String CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME = "clientScriptOutputData";
     public static final String REQUEST_DATA_VARIABLE_NAME = "requestData";
-
-    public static final String UTILITY_FUNCTIONS_FILE_CLASS_PATH = "/utilityFunctions.js";
 
     private String userName;
     private String clientSideScript;
@@ -133,8 +127,6 @@ public class Scripted extends AMLoginModule {
         httpClient = getHttpClient();
         httpClientRequest = getHttpRequest();
         identityRepository  = getScriptIdentityRepository();
-        equalsSymbol = getConfigValue(CLIENT_SCRIPT_EQUALS_SYMBOL_ATTR_NAME);
-        delimiterSymbol = getConfigValue(CLIENT_SCRIPT_DELIMITER_SYMBOL_ATTR_NAME);
     }
 
     private ScriptIdentityRepository getScriptIdentityRepository() {
@@ -165,8 +157,13 @@ public class Scripted extends AMLoginModule {
             case STATE_RUN_SCRIPT:
                 Bindings scriptVariables = new SimpleBindings();
                 scriptVariables.put(REQUEST_DATA_VARIABLE_NAME, getScriptHttpRequestWrapper());
-                Map clientScriptOutputDataMap = getClientScriptOutputDataMap();
-                scriptVariables.put(CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME, clientScriptOutputDataMap);
+                String clientScriptOutputData;
+                clientScriptOutputData = ( (HiddenValueCallback) callbacks[0]).getValue();
+                if (clientScriptOutputData == null) { // To cope with the classic UI
+                    clientScriptOutputData = getScriptHttpRequestWrapper().
+                            getParameter(CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME);
+                }
+                scriptVariables.put(CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME, clientScriptOutputData);
                 scriptVariables.put(LOGGER_VARIABLE_NAME, DEBUG);
                 scriptVariables.put(STATE_VARIABLE_NAME, state);
                 scriptVariables.put(USERNAME_VARIABLE_NAME, userName);
@@ -185,7 +182,7 @@ public class Scripted extends AMLoginModule {
 
                 state = ((Number) scriptVariables.get(STATE_VARIABLE_NAME)).intValue();
                 userName = (String) scriptVariables.get(USERNAME_VARIABLE_NAME);
-                sharedState.put(CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME, clientScriptOutputDataMap);
+                sharedState.put(CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME, clientScriptOutputData);
 
                 if (state != SUCCESS_VALUE) {
                     throw new AuthLoginException("Authentication failed");
@@ -238,28 +235,6 @@ public class Scripted extends AMLoginModule {
         return serverSideScript;
     }
 
-    private Map getClientScriptOutputDataMap() {
-        String clientScriptOutputData = getScriptHttpRequestWrapper().
-                getParameter(CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME);
-        Map<String, String> dataMap = new LinkedHashMap<String, String>();
-
-        if (clientScriptOutputData != null && !(clientScriptOutputData.equals(""))) {
-            StringTokenizer tokenizer = new StringTokenizer(clientScriptOutputData, delimiterSymbol);
-            while (tokenizer.hasMoreTokens()) {
-                String token = tokenizer.nextToken();
-                String keyValueArray[] = token.split(equalsSymbol);
-                String key = keyValueArray[0];
-                String value = "";
-                if (keyValueArray.length == 2) {
-                    value = keyValueArray[1];
-                }
-                dataMap.put(key, value);
-            }
-        }
-
-        return dataMap;
-    }
-
     private String getConfigValue(String attributeName) {
         return CollectionHelper.getMapAttr(moduleConfiguration, attributeName);
     }
@@ -269,45 +244,19 @@ public class Scripted extends AMLoginModule {
     }
 
     private void substituteUIStrings() throws AuthLoginException {
-        replaceCallback(STATE_RUN_SCRIPT, 0, getHiddenFieldCallback());
-        replaceCallback(STATE_RUN_SCRIPT, 1, getScriptOutputUtilityFunctionsCallback());
-        replaceCallback(STATE_RUN_SCRIPT, 2, getScriptAndSelfSubmitCallback());
-    }
-
-    private Callback getHiddenFieldCallback() {
-        TextOutputCallback hiddenFieldCallback = new TextOutputCallback(TextOutputCallback.INFORMATION, "" +
-                "<input type=\"hidden\" name=\"" + CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME + "\" " +
-                "id=\"" + CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME + "\" " +
-                "value=\"\" />");
-
-        return hiddenFieldCallback;
-    }
-
-    private Callback getScriptOutputUtilityFunctionsCallback() throws AuthLoginException {
-        String equalsSymbolJsStatement = "var equalsSymbol='" + equalsSymbol + "';\n";
-        String delimiterSymbolJsStatement = "var delimiterSymbol='" + delimiterSymbol + "';\n";
-
-        String utilityFunctionsJs = "";
-        try {
-            utilityFunctionsJs = IOUtils.getFileContentFromClassPath(UTILITY_FUNCTIONS_FILE_CLASS_PATH);
-        } catch (IOException e) {
-            throw new AuthLoginException("Could not find javascript utility functions expected at " +
-                    UTILITY_FUNCTIONS_FILE_CLASS_PATH);
-        }
-
-        ScriptTextOutputCallback scriptOutputUtilityFunctionsCallback =
-                new ScriptTextOutputCallback(equalsSymbolJsStatement + delimiterSymbolJsStatement + utilityFunctionsJs);
-
-        return scriptOutputUtilityFunctionsCallback;
+        replaceCallback(STATE_RUN_SCRIPT, 1, getScriptAndSelfSubmitCallback());
     }
 
     private Callback getScriptAndSelfSubmitCallback() {
+        //String thing = "(function(output){\n" + clientSideScript +
+                //"\n})(document.forms[0].elements['clientScriptOutputData']);";
+        //ScriptTextOutputCallback scriptAndSelfSubmitCallback = new ScriptTextOutputCallback(thing);
+
         ScriptTextOutputCallback scriptAndSelfSubmitCallback = new ScriptTextOutputCallback(clientSideScript + "\n" +
-                "prepareScriptOutputDataForSubmission();\n" +
                 "if(window.jQuery) {\n" + // Crude detection to see if XUI is present.
-                    "$('input[type=submit]').trigger('click');\n" +
+                    //"$('input[type=submit]').trigger('click');\n" +
                 "} else {\n" +
-                    "document.forms[0].submit();\n" +
+                    //"document.forms[0].submit();\n" +
                 "}");
 
         return scriptAndSelfSubmitCallback;
