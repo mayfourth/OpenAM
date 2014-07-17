@@ -244,20 +244,24 @@ public class Scripted extends AMLoginModule {
     }
 
     private void substituteUIStrings() throws AuthLoginException {
-        replaceCallback(STATE_RUN_SCRIPT, 1, getScriptAndSelfSubmitCallback());
+        replaceCallback(STATE_RUN_SCRIPT, 1, getClientSideScriptAndSelfSubmitCallback());
     }
 
-    private Callback getScriptAndSelfSubmitCallback() {
-        //String thing = "(function(output){\n" + clientSideScript +
-                //"\n})(document.forms[0].elements['clientScriptOutputData']);";
-        //ScriptTextOutputCallback scriptAndSelfSubmitCallback = new ScriptTextOutputCallback(thing);
-
-        ScriptTextOutputCallback scriptAndSelfSubmitCallback = new ScriptTextOutputCallback(clientSideScript + "\n" +
-                "if(window.jQuery) {\n" + // Crude detection to see if XUI is present.
-                    //"$('input[type=submit]').trigger('click');\n" +
+    private Callback getClientSideScriptAndSelfSubmitCallback() {
+        // Create an anonymous function and pass it the name of the hidden output callback/element:
+        String clientSideScriptFunction = "(function(output){\n" +
+                clientSideScript +
+                "\n})" +
+                "(document.forms[0].elements['" + CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME + "']);\n";
+        // Auto submission logic for the form:
+        String autoSubmit = "" +
+                "if(!(window.jQuery)) {\n" + // Crude detection to see if XUI is present.
+                    "document.forms[0].submit();\n" +
                 "} else {\n" +
-                    //"document.forms[0].submit();\n" +
-                "}");
+                    "$('input[type=submit]').trigger('click');\n" +
+                "}";
+        ScriptTextOutputCallback scriptAndSelfSubmitCallback =
+                new ScriptTextOutputCallback(clientSideScriptFunction + autoSubmit);
 
         return scriptAndSelfSubmitCallback;
     }
