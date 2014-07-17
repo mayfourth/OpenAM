@@ -74,8 +74,8 @@ provided for required attributes upon service registration.
                                  validator="RequiredValueValidator"
                                  i18nKey="deployment_auth_target_mappings">
                     <DefaultValues>
-                        <Value>UsernameToken;service;ldapService</Value>
-                        <Value>OpenIdConnectIdToken;module;oidc;oidc_id_token_auth_target_header_key=oidc_id_token</Value>
+                        <Value>USERNAME;service;ldapService</Value>
+                        <Value>OPENIDCONNECT;module;oidc;oidc_id_token_auth_target_header_key=oidc_id_token</Value>
                     </DefaultValues>
                 </AttributeSchema>
                 <AttributeSchema name="keystore-filename"

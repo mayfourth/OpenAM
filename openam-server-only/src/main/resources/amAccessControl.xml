@@ -345,6 +345,7 @@
     <viewbean view="*" modify="*" classname="com.sun.identity.console.service.MAPDuplicationDeviceViewBean" />
     <viewbean view="*" modify="*" classname="com.sun.identity.console.service.G11NSupportedCharsetsAddViewBean" />
     <viewbean view="*" modify="*" classname="com.sun.identity.console.service.G11NCharsetAliasAddViewBean" />
+    <viewbean view="*" modify="*" classname="com.sun.identity.console.service.RestSecurityTokenServiceViewBean" />
     <viewbean view="*" modify="*" classname="com.sun.identity.console.session.SMProfileViewBean" />
     <viewbean view="*" modify="*" classname="com.sun.identity.console.delegation.DelegationViewBean" />
     <viewbean view="*" modify="*" classname="com.sun.identity.console.delegation.DelegationPropertiesViewBean" />
