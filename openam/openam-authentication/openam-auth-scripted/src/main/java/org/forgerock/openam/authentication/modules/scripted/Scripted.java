@@ -1,33 +1,17 @@
-/**
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- *
- * Copyright (c) 2005 Sun Microsystems Inc. All Rights Reserved
- *
- * The contents of this file are subject to the terms
- * of the Common Development and Distribution License
- * (the License). You may not use this file except in
- * compliance with the License.
- *
- * You can obtain a copy of the License at
- * https://opensso.dev.java.net/public/CDDLv1.0.html or
- * opensso/legal/CDDLv1.0.txt
- * See the License for the specific language governing
- * permission and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL
- * Header Notice in each file and include the License file
- * at opensso/legal/CDDLv1.0.txt.
- * If applicable, add the following below the CDDL Header,
- * with the fields enclosed by brackets [] replaced by
- * your own identifying information:
- * "Portions Copyrighted [year] [name of copyright owner]"
- *
- * $Id: LDAP.java,v 1.17 2010/01/25 22:09:16 qcheng Exp $
- *
- */
-
 /*
- * Portions Copyrighted 2010-2014 ForgeRock, Inc.
+ * The contents of this file are subject to the terms of the Common Development and
+ * Distribution License (the License). You may not use this file except in compliance with the
+ * License.
+ *
+ * You can obtain a copy of the License at legal/CDDLv1.0.txt. See the License for the
+ * specific language governing permission and limitations under the License.
+ *
+ * When distributing Covered Software, include this CDDL Header Notice in each file and include
+ * the License file at legal/CDDLv1.0.txt. If applicable, add the following below the CDDL
+ * Header, with the fields enclosed by brackets [] replaced by your own identifying
+ * information: "Portions copyright [year] [name of copyright owner]".
+ *
+ * Copyright 2014 ForgeRock AS.
  */
 package org.forgerock.openam.authentication.modules.scripted;
 
@@ -47,7 +31,6 @@ import org.forgerock.openam.scripting.ScriptEvaluator;
 import org.forgerock.openam.scripting.ScriptObject;
 import org.forgerock.openam.scripting.StandardScriptEvaluator;
 import org.forgerock.openam.scripting.SupportedScriptingLanguage;
-import org.forgerock.openam.utils.IOUtils;
 
 import javax.script.Bindings;
 import javax.script.ScriptException;
@@ -55,11 +38,8 @@ import javax.script.SimpleBindings;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.login.LoginException;
-import java.io.IOException;
 import java.security.Principal;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 /**
  * An authentication module that allows users to authenticate via a scripting language
@@ -248,20 +228,11 @@ public class Scripted extends AMLoginModule {
     }
 
     private Callback getClientSideScriptAndSelfSubmitCallback() {
-        // Create an anonymous function and pass it the name of the hidden output callback/element:
-        String clientSideScriptFunction = "(function(output){\n" +
-                clientSideScript +
-                "\n})" +
-                "(document.forms[0].elements['" + CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME + "']);\n";
-        // Auto submission logic for the form:
-        String autoSubmit = "" +
-                "if(!(window.jQuery)) {\n" + // Crude detection to see if XUI is present.
-                    "document.forms[0].submit();\n" +
-                "} else {\n" +
-                    "$('input[type=submit]').trigger('click');\n" +
-                "}";
+        String clientSideScriptExecutorFunction = ScriptedClientUtilityFunctions.
+                createClientSideScriptExecutorFunction(clientSideScript, CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME);
+        String autoSubmit = ScriptedClientUtilityFunctions.createAutoSubmissionLogic();
         ScriptTextOutputCallback scriptAndSelfSubmitCallback =
-                new ScriptTextOutputCallback(clientSideScriptFunction + autoSubmit);
+                new ScriptTextOutputCallback(clientSideScriptExecutorFunction + autoSubmit);
 
         return scriptAndSelfSubmitCallback;
     }

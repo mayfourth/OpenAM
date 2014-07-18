@@ -11,27 +11,23 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2013-2014 ForgeRock AS.
+ * Copyright 2014 ForgeRock AS.
  */
-
 package org.forgerock.openam.forgerockrest.authn.callbackhandlers;
 
 import com.sun.identity.authentication.callbacks.HiddenValueCallback;
 import com.sun.identity.shared.debug.Debug;
-import org.apache.commons.lang.StringUtils;
 import org.forgerock.json.fluent.JsonException;
 import org.forgerock.json.fluent.JsonValue;
-import org.forgerock.openam.forgerockrest.authn.exceptions.RestAuthResponseException;
 import org.forgerock.openam.forgerockrest.authn.exceptions.RestAuthException;
+import org.forgerock.openam.forgerockrest.authn.exceptions.RestAuthResponseException;
 import org.forgerock.openam.utils.JsonValueBuilder;
-import org.json.JSONObject;
 
-import javax.security.auth.callback.NameCallback;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Defines methods to update a NameCallback from the headers and request of a Rest call and methods to convert a
+ * Defines methods to update a HiddenValueCallback from the request of a Rest call and methods to convert a
  * Callback to and from a JSON representation.
  */
 public class RestAuthHiddenValueCallbackHandler extends AbstractRestAuthCallbackHandler<HiddenValueCallback> {

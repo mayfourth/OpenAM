@@ -15,17 +15,21 @@
 */
 package com.sun.identity.authentication.callbacks;
 
+import org.forgerock.util.Reject;
+
 public class HiddenValueCallback implements javax.security.auth.callback.Callback, java.io.Serializable {
 
-    private String id;
     private String value;
-    private String defaultValue = "";
+    private final String id;
+    private final String defaultValue = "";
 
     public HiddenValueCallback(String id) {
+        Reject.ifNull(id, "A HiddenValueCallback must be given an id.");
         this.id = id;
     }
 
     public HiddenValueCallback(String id, String value) {
+        Reject.ifNull(id, "A HiddenValueCallback must be given an id.");
         this.id = id;
         this.value = value;
     }
@@ -40,10 +44,6 @@ public class HiddenValueCallback implements javax.security.auth.callback.Callbac
 
     public String getId() {
         return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public java.lang.String getDefaultValue() { return defaultValue; }
