@@ -46,7 +46,7 @@ import static org.forgerock.json.fluent.JsonValue.object;
  * TODO: do I want a name-qualifier in addition to a nameIdFormat?
  */
 public class SAML2Config {
-    private static final String BAR = "|";
+    private static final String EQUALS = "=";
     public static class SAML2ConfigBuilder {
         /*
         use the ws-security constant, instead of the SAML2Constants defined in openam-federation, as this dependency
@@ -441,7 +441,7 @@ public class SAML2Config {
             Set<String> attributeValues = new LinkedHashSet<String>();
             finalMap.put(ATTRIBUTE_MAP, attributeValues);
             for (Map.Entry<String, String> entry : ((Map<String, String>)attributesObject).entrySet()) {
-                attributeValues.add(entry.getKey() + BAR + entry.getValue());
+                attributeValues.add(entry.getKey() + EQUALS + entry.getValue());
             }
         } else {
             throw new IllegalStateException("Type corresponding to " + ATTRIBUTE_MAP + " key unexpected. Type: "
@@ -483,7 +483,7 @@ public class SAML2Config {
         jsonAttributes.remove(ATTRIBUTE_MAP);
         Map<String, Object> jsonAttributeMap = new LinkedHashMap<String, Object>();
         for (String entry : attributes) {
-            StringTokenizer st = new StringTokenizer(entry, BAR);
+            StringTokenizer st = new StringTokenizer(entry, EQUALS);
             jsonAttributeMap.put(st.nextToken(), st.nextToken());
         }
         jsonAttributes.put(ATTRIBUTE_MAP, new JsonValue(jsonAttributeMap));

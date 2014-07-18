@@ -87,7 +87,7 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
       corrections to the configuration state.
       */
     public void handleCreate(ServerContext context, CreateRequest request, ResultHandler<Resource> handler) {
-        RestSTSInstanceConfig instanceConfig = null;
+        RestSTSInstanceConfig instanceConfig;
         final JsonValue requestContent = request.getContent();
         /*
         I want to distinguish the case where this method is invoked with a payload generated via a toJson()
@@ -111,7 +111,7 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
                 instanceConfig = RestSTSInstanceConfig.marshalFromJsonAttributeMap(requestContent.get(
                         AMSTSConstants.REST_STS_PUBLISH_INSTANCE_STATE));
             } catch (Exception e) {
-                logger.error("Exception caught marshalling json into RestSTSInstanceConfig instance for " +
+                logger.error("Exception caught marshalling attribute map into RestSTSInstanceConfig instance for " +
                         "ViewBean invocation context: " + e);
                 handler.handleError(new BadRequestException(e));
                 return;

@@ -2,12 +2,14 @@ package com.sun.identity.console.service;
 
 import com.iplanet.jato.model.ModelControlException;
 import com.iplanet.jato.view.event.RequestInvocationEvent;
+import com.sun.identity.console.base.AMPropertySheet;
 import com.sun.identity.console.base.AMServiceProfileViewBeanBase;
 import com.sun.identity.console.base.model.AMAdminConstants;
 import com.sun.identity.console.base.model.AMAdminUtils;
 import com.sun.identity.console.base.model.AMConsoleException;
 import com.sun.identity.console.base.model.AMPropertySheetModel;
 import com.sun.identity.console.base.model.AMServiceProfileModel;
+import com.sun.identity.console.base.model.AMSystemConfig;
 import com.sun.web.ui.view.alert.CCAlert;
 import org.forgerock.json.fluent.JsonValue;
 import org.restlet.data.MediaType;
@@ -19,6 +21,7 @@ import org.restlet.resource.ResourceException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +48,11 @@ public class RestSecurityTokenServiceViewBean extends AMServiceProfileViewBeanBa
     openam-console module, so this value must be duplicate here.
      */
     public static final String REST_STS_PUBLISH_INSTANCE_STATE = "instance_state";
+
+    /*
+    This String must match the string defined in STSInstanceConfig.AM_DEPLOYMENT_URL.
+     */
+    public static final String AM_DEPLOYMENT_URL = "am-deployment-url";
 
 
     public static final String DEFAULT_DISPLAY_URL =
@@ -90,26 +98,27 @@ public class RestSecurityTokenServiceViewBean extends AMServiceProfileViewBeanBa
      * save
      * @param event Request invocation event
      */
-    public void handleButton1Request(RequestInvocationEvent event)
-            throws ModelControlException {
-        /*
-        This is the code directly from the superclass. Presumably it saves state in the sms ? I need to
-        marshal a RestSTSInstanceConfig instance from the attributes and call the
-        rest sts publish service here...
-        Also I need to set the amDeploymentUrl TODO
-         */
+    public void handleButton1Request(RequestInvocationEvent event) throws ModelControlException {
         submitCycle = true;
-        Map<String, Set<String>> configurationState = (Map<String, Set<String>>)getAttributeValues();
+        Map<String, Set<String>> configurationState = (Map<String, Set<String>>)getAttributeSettings();
+        /*
+        Add the url corresponding to the am deployment, as this information does not have to be solicited from the user.
+         */
+        Set<String> deploymentUrlSet = new HashSet<String>();
+        deploymentUrlSet.add(getAMDeploymentUrl());
+        configurationState.put(AM_DEPLOYMENT_URL, deploymentUrlSet);
         JsonValue propertiesMap = new JsonValue(marshalSetValuesToListValues(configurationState));
         JsonValue invocationJson = json(object(
                 field(REST_STS_PUBLISH_INVOCATION_CONTEXT, REST_STS_PUBLISH_INVOCATION_CONTEXT_VIEW_BEAN),
                 field(REST_STS_PUBLISH_INSTANCE_STATE, propertiesMap)));
+        Representation representation;
         try {
-            Representation representation = new ClientResource(getRestSTSPublishEndpointUrl())
+            representation = new ClientResource(getRestSTSPublishEndpointUrl())
                     .post(new StringRepresentation(invocationJson.toString(), MediaType.APPLICATION_JSON));
             setInlineAlertMessage(CCAlert.TYPE_INFO, "message.information",
                     representation.getText()); //TODO - create an I18N message that just displays success and url fragment
         } catch (ResourceException re) {
+
             //the Restlet ResourceException only displays status in toString method.
             setInlineAlertMessage(CCAlert.TYPE_ERROR, "message.error", re.getMessage());
         } catch (Exception e) {
@@ -135,9 +144,32 @@ public class RestSecurityTokenServiceViewBean extends AMServiceProfileViewBeanBa
         forwardTo();
     }
 
+    /*
+    Returns a map of all settings, including those not changed from the default values in the model.
+     */
+    private Map getAttributeSettings()
+            throws ModelControlException {
+        Map values = null;
+        AMServiceProfileModel model = (AMServiceProfileModel)getModel();
+
+        if (model != null) {
+            AMPropertySheet ps = (AMPropertySheet)getChild(PROPERTY_ATTRIBUTE);
+            try {
+                values = ps.getAttributeValues(model.getAttributeValues(), false, model);
+            } catch (AMConsoleException e) {
+                throw new ModelControlException(e.getMessage(), e);
+            }
+        }
+
+        return values;
+    }
+
     private String getRestSTSPublishEndpointUrl() {
-        //TODO: proper endpoint
-        return "http://localhost:8080/openam/rest-sts-publish/publish?_action=create";
+        return getAMDeploymentUrl() + "/rest-sts-publish/publish?_action=create";
+    }
+
+    private String getAMDeploymentUrl() {
+        return AMSystemConfig.serverURL + AMSystemConfig.serverDeploymentURI;
     }
 
     /*
@@ -161,7 +193,30 @@ public class RestSecurityTokenServiceViewBean extends AMServiceProfileViewBeanBa
      * @param event Request invocation event
      *
     public void handleButton3Request(RequestInvocationEvent event) {
-    returnToMainPage();
+    --no worky--
+    removePageSessionAttribute(PAGE_MODIFIED);
+    backTrail();
+    try {
+    String name = (String) getPageSessionAttribute(
+    AMAdminConstants.SAVE_VB_NAME);
+    SCConfigViewBean vb = (SCConfigViewBean) getViewBean(
+    Class.forName(name));
+    passPgSessionMap(vb);
+    vb.forwardTo(getRequestContext());
+    } catch (ClassNotFoundException e) {
+    debug.warning(
+    "RestSecurityTokenServiceViewBean.handleButton3Request:", e);
+    }
+
+    --possible??--
+    MAPClientManagerViewBean vb = (MAPClientManagerViewBean)getViewBean(
+    MAPClientManagerViewBean.class);
+    passPgSessionMap(vb);
+    vb.forwardTo(getRequestContext());
+
+    --this did nothing--
+    super.handleButton2Request(event);
+
     }
      */
     public void handleButton3Request(RequestInvocationEvent event)
@@ -180,5 +235,4 @@ public class RestSecurityTokenServiceViewBean extends AMServiceProfileViewBeanBa
                     "RestSecurityTokenServiceViewBean.handleButton3Request:", e);
         }
     }
-
 }
