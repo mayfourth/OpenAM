@@ -22,8 +22,13 @@ import org.forgerock.openam.scripting.ScriptObject;
 import org.forgerock.openam.scripting.ScriptingLanguage;
 import org.forgerock.openam.scripting.SupportedScriptingLanguage;
 
-import java.util.*;
-
+import java.util.ResourceBundle;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Set;
+import java.util.MissingResourceException;
 
 /**
  * The <code>ScriptValidator</code> is tasked with validating an Authentication script. It will use the validator
