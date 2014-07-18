@@ -90,12 +90,11 @@
         infoText        CDATA                   ""
 >
 
-<!-- NameCallback element is used to obtain user name or any data which
-can be entered by the user. The element Prompt will be used by the module
-to set the prompt to be used by the client to get the name. The attribute
-"isRequired" tells authentication UI whether the element corresponding to
-this callback is a required field or not and attribute "attribute" is the
-corresponding LDAP attribute for this callback value. -->
+<!-- HiddenValueCallback element is used to hold any data required in a hidden
+    element. The Id will be the id of the element as it is produced on the page.
+    The attribute "isRequired" tells authentication UI whether the element
+    corresponding to this callback is a required field or not and attribute
+    "attribute" is the corresponding LDAP attribute for this callback value. -->
 <!ELEMENT       HiddenValueCallback    ( Id ) >
 <!ATTLIST       HiddenValueCallback
         isRequired      ( true | false )        "false"
