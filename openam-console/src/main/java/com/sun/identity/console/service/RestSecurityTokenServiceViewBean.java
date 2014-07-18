@@ -4,6 +4,8 @@ import com.iplanet.jato.model.ModelControlException;
 import com.iplanet.jato.view.event.RequestInvocationEvent;
 import com.sun.identity.console.base.AMPropertySheet;
 import com.sun.identity.console.base.AMServiceProfileViewBeanBase;
+import com.sun.identity.console.base.AMViewBeanBase;
+import com.sun.identity.console.base.PageTrail;
 import com.sun.identity.console.base.model.AMAdminConstants;
 import com.sun.identity.console.base.model.AMAdminUtils;
 import com.sun.identity.console.base.model.AMConsoleException;
@@ -222,17 +224,51 @@ public class RestSecurityTokenServiceViewBean extends AMServiceProfileViewBeanBa
     public void handleButton3Request(RequestInvocationEvent event)
             throws ModelControlException, AMConsoleException {
         removePageSessionAttribute(PAGE_MODIFIED);
-        backTrail();
-        try {
-            String name = (String) getPageSessionAttribute(
-                    AMAdminConstants.SAVE_VB_NAME);
-            SCConfigViewBean vb = (SCConfigViewBean) getViewBean(
-                    Class.forName(name));
-            passPgSessionMap(vb);
-            vb.forwardTo(getRequestContext());
-        } catch (ClassNotFoundException e) {
-            debug.warning(
-                    "RestSecurityTokenServiceViewBean.handleButton3Request:", e);
+        AMViewBeanBase vb = getPreviousPage();
+        passPgSessionMap(vb);
+        vb.forwardTo(getRequestContext());
+    }
+
+    /*
+    Attempt, via various means, to get the ViewBean corresponding to previous page.
+     */
+    private AMViewBeanBase getPreviousPage() throws AMConsoleException {
+        PageTrail.Marker marker = backTrail();
+        if (marker != null) {
+            /*
+            This branch seems never to be entered. Perhaps remove? TODO:
+             */
+            try {
+                return (AMViewBeanBase) getViewBean(Class.forName(marker.getViewBeanClassName()));
+            } catch (ClassNotFoundException e) {
+                throw new AMConsoleException("Could not find class corresponding to class name"
+                        + marker.getViewBeanClassName() + ". Exception: " + e);
+            }
+        } else if (getPageSessionAttribute(AMAdminConstants.SAVE_VB_NAME) != null) {
+            /*
+            This branch is entered if this ViewBean is invoked from the global configuration page
+             */
+            String name = (String) getPageSessionAttribute(AMAdminConstants.SAVE_VB_NAME);
+            if (name == null) {
+                throw new AMConsoleException("No page session attribute corresponding to " + AMAdminConstants.SAVE_VB_NAME);
+            }
+            try {
+                return (AMViewBeanBase) getViewBean(Class.forName(name));
+            } catch (ClassNotFoundException e) {
+                throw new AMConsoleException("Could not find class corresponding to class name "
+                        + name + ". Exception: " + e);
+            }
+        } else {
+            /*
+            This branch is entered if an instance of the Rest SecurityTokenService is configured via the
+            Access Control -> Realm -> Services (add) tab.
+             */
+            try {
+                return (AMViewBeanBase) getViewBean(Class.forName("com.sun.identity.console.realm.ServicesViewBean"));
+            } catch (ClassNotFoundException e) {
+                throw new AMConsoleException("Could not find class corresponding to class name "
+                        + "com.sun.identity.console.realm.ServicesViewBean" + ". Exception: " + e);
+            }
         }
     }
 }
