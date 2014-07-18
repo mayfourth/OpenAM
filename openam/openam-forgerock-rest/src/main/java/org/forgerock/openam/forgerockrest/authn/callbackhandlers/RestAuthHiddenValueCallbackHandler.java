@@ -16,7 +16,6 @@
 package org.forgerock.openam.forgerockrest.authn.callbackhandlers;
 
 import com.sun.identity.authentication.callbacks.HiddenValueCallback;
-import com.sun.identity.shared.debug.Debug;
 import org.forgerock.json.fluent.JsonException;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.openam.forgerockrest.authn.exceptions.RestAuthException;
@@ -27,12 +26,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Defines methods to update a HiddenValueCallback from the request of a Rest call and methods to convert a
- * Callback to and from a JSON representation.
+ * Defines methods to update a HiddenValueCallback from the request of a Rest call and methods to convert the
+ * HiddenValueCallback to and from a JSON representation.
  */
 public class RestAuthHiddenValueCallbackHandler extends AbstractRestAuthCallbackHandler<HiddenValueCallback> {
-
-    private static final Debug DEBUG = Debug.getInstance("amAuthREST");
 
     private static final String CALLBACK_NAME = "HiddenValueCallback";
 
@@ -44,14 +41,13 @@ public class RestAuthHiddenValueCallbackHandler extends AbstractRestAuthCallback
     }
 
     /**
-     * Checks the request for the presence of a header "X-OpenAM-Username", if set and not an empty string then
-     * sets the header value on the Callback and returns true. Otherwise does nothing and returns false.
+     * Does nothing and returns false (not a "zero page login").
      *
      * {@inheritDoc}
      */
     boolean doUpdateCallbackFromRequest(HttpServletRequest request, HttpServletResponse response,
                                         HiddenValueCallback callback) throws RestAuthResponseException {
-        return true;
+        return false;
     }
 
     /**

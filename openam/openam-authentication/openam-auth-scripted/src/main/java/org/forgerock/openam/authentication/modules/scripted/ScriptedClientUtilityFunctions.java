@@ -15,18 +15,34 @@
  */
 package org.forgerock.openam.authentication.modules.scripted;
 
+/**
+ * Useful functions to be used with client side scripts, and methods for injection of such scripts, used with scripted
+ * auth modules.
+ */
 public class ScriptedClientUtilityFunctions {
 
-    // Create an anonymous function and pass it the name of the hidden output callback/element:
-    public static String createClientSideScriptExecutorFunction(String script, String outputParameterName) {
+    /**
+     * Creates an anonymous function which causes the script to run automatically when the client page containing the
+     * function is rendered. This function takes as an argument the id of the form element which will hold the values
+     * returned by the client script to the server.
+     *
+     * @param script The client side script to be ran.
+     * @param outputParameterId The id of the form element.
+     * @return The anonymous function, supplied with the element with the id.
+     */
+    public static String createClientSideScriptExecutorFunction(String script, String outputParameterId) {
         String clientSideScriptFunction = "(function(output){\n" +
                 script +
                 "\n})" +
-                "(document.forms[0].elements['" + outputParameterName + "']);\n";
+                "(document.forms[0].elements['" + outputParameterId + "']);\n";
         return clientSideScriptFunction;
     }
 
-    // Auto submission logic for the form:
+    /**
+     * Creates a piece of Javascript which will cause the login form to submit.
+     *
+     * @return The Javascript which causes the form submission.
+     */
     public static String createAutoSubmissionLogic() {
         String autoSubmit = "" +
                 "if(!(window.jQuery)) {\n" + // Crude detection to see if XUI is not present.

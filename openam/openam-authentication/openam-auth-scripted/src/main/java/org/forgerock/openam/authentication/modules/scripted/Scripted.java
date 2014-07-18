@@ -86,8 +86,6 @@ public class Scripted extends AMLoginModule {
     private HttpClient httpClient;
     private HttpClientRequest httpClientRequest;
     private ScriptIdentityRepository identityRepository;
-    private String equalsSymbol;
-    private String delimiterSymbol;
 
     private Map sharedState;
 
@@ -137,12 +135,7 @@ public class Scripted extends AMLoginModule {
             case STATE_RUN_SCRIPT:
                 Bindings scriptVariables = new SimpleBindings();
                 scriptVariables.put(REQUEST_DATA_VARIABLE_NAME, getScriptHttpRequestWrapper());
-                String clientScriptOutputData;
-                clientScriptOutputData = ( (HiddenValueCallback) callbacks[0]).getValue();
-                if (clientScriptOutputData == null) { // To cope with the classic UI
-                    clientScriptOutputData = getScriptHttpRequestWrapper().
-                            getParameter(CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME);
-                }
+                String clientScriptOutputData = getClientScriptOutputData(callbacks);
                 scriptVariables.put(CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME, clientScriptOutputData);
                 scriptVariables.put(LOGGER_VARIABLE_NAME, DEBUG);
                 scriptVariables.put(STATE_VARIABLE_NAME, state);
@@ -173,6 +166,16 @@ public class Scripted extends AMLoginModule {
                 throw new AuthLoginException("Invalid state");
         }
 
+    }
+
+    private String getClientScriptOutputData(Callback[] callbacks) {
+        String clientScriptOutputData;
+        clientScriptOutputData = ( (HiddenValueCallback) callbacks[0]).getValue();
+        if (clientScriptOutputData == null) { // To cope with the classic UI
+            clientScriptOutputData = getScriptHttpRequestWrapper().
+                    getParameter(CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME);
+        }
+        return clientScriptOutputData;
     }
 
     private ScriptObject getServerSideScript() {

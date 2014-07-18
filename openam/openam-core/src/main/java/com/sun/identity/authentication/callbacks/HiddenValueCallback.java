@@ -17,34 +17,68 @@ package com.sun.identity.authentication.callbacks;
 
 import org.forgerock.util.Reject;
 
+/**
+ * Adds a hidden value callback so that the login form can return values that the are not visually rendered on the page.
+ */
 public class HiddenValueCallback implements javax.security.auth.callback.Callback, java.io.Serializable {
 
     private String value;
     private final String id;
     private final String defaultValue = "";
 
+    /**
+     * Create a new HiddenValueCallback with the id as specified.
+     *
+     * @param id The id for the HiddenValueCallback when it is rendered as an HTML element.
+     */
     public HiddenValueCallback(String id) {
         Reject.ifNull(id, "A HiddenValueCallback must be given an id.");
         this.id = id;
     }
 
+    /**
+     * Create a new HiddenValueCallback with the id and initial value as specified.
+     *
+     * @param id The id for the HiddenValueCallback when it is rendered as an HTML element.
+     * @param value The initial value for the HiddenValueCallback when it is rendered as an HTML element.
+     */
     public HiddenValueCallback(String id, String value) {
         Reject.ifNull(id, "A HiddenValueCallback must be given an id.");
         this.id = id;
         this.value = value;
     }
 
+    /**
+     * Get the value set on the HiddenValueCallback when it is sent in a REST request.
+     *
+     * @return The value set on the callback.
+     */
     public String getValue() {
         return value;
     }
 
+    /**
+     * Set the value on the HiddenValueCallback.
+     *
+     * @param value The value to set on the callback.
+     */
     public void setValue(String value) {
         this.value = value;
     }
 
+    /**
+     * Get the id for the HiddenValueCallback to use when it is rendered as an HTML element.
+     *
+     * @return The id for the callback.
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * Get the initial default value set on the HiddenValueCallback.
+     *
+     * @return The initial default value.
+     */
     public java.lang.String getDefaultValue() { return defaultValue; }
 }
