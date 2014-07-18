@@ -272,12 +272,8 @@ class AMModuleProperties {
                     }
 
                     tmp = getAttribute(node, "isRequired");
-                    if (tmp != null) {
-                        if (tmp.equals("true")) {
-                            require.add("true");
-                        } else {
-                            require.add("");
-                        }
+                    if ("true".equals(tmp)) {
+                        require.add("true");
                     } else {
                         require.add("");
                     }
