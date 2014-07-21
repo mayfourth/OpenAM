@@ -16,14 +16,11 @@
     information: "Portions Copyrighted [year] [name of copyright owner]"
 --%>
 
-
-
-
 <%@ page info="SCServiceProfile" language="java" %>
 <%@taglib uri="/WEB-INF/jato.tld" prefix="jato" %>
 <%@taglib uri="/WEB-INF/cc.tld" prefix="cc" %>
 <jato:useViewBean
-        className="com.sun.identity.console.service.RestSecurityTokenServiceViewBean"
+        className="com.sun.identity.console.reststs.RestSecurityTokenServiceViewBean"
         fireChildDisplayEvents="true" >
 
     <cc:i18nbundle baseName="amConsole" id="amConsole"
