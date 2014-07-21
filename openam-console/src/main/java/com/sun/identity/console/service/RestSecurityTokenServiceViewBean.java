@@ -117,7 +117,7 @@ public class RestSecurityTokenServiceViewBean extends AMServiceProfileViewBeanBa
     public void handleButton1Request(RequestInvocationEvent event) throws ModelControlException {
         submitCycle = true;
         Map<String, Set<String>> configurationState = (Map<String, Set<String>>)getAttributeSettings();
-        addOpenAMDeploymentUrlToConfigurationState(configurationState);
+        addProgrammaticConfigurationState(configurationState);
         if (configurationStateValid(configurationState)) {
             JsonValue propertiesMap = new JsonValue(marshalSetValuesToListValues(configurationState));
             JsonValue invocationJson = json(object(
@@ -147,12 +147,16 @@ public class RestSecurityTokenServiceViewBean extends AMServiceProfileViewBeanBa
     }
 
     /*
-    Add the url corresponding to the am deployment, as this information does not have to be solicited from the user.
+    Add the url corresponding to the am deployment, and the realm, as this information does not have to be solicited from the user.
      */
-    private void addOpenAMDeploymentUrlToConfigurationState(Map<String, Set<String>> configurationState) {
+    private void addProgrammaticConfigurationState(Map<String, Set<String>> configurationState) {
         Set<String> deploymentUrlSet = new HashSet<String>();
         deploymentUrlSet.add(getAMDeploymentUrl());
         configurationState.put(AM_DEPLOYMENT_URL, deploymentUrlSet);
+
+        String curRealm = (String)getPageSessionAttribute(
+                AMAdminConstants.CURRENT_REALM);
+
     }
 
     /*
