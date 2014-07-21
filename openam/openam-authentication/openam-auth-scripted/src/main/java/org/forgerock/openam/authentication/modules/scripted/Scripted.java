@@ -20,13 +20,14 @@ import com.sun.identity.authentication.callbacks.ScriptTextOutputCallback;
 import com.sun.identity.authentication.spi.AMLoginModule;
 import com.sun.identity.authentication.spi.AuthLoginException;
 import com.sun.identity.idm.AMIdentityRepository;
-import com.sun.identity.shared.datastruct.CollectionHelper;
+import com.sun.identity.authentication.util.ISAuthConstants;
 import com.sun.identity.shared.debug.Debug;
 import org.forgerock.guice.core.InjectorHolder;
-import org.forgerock.http.client.HttpClient;
-import org.forgerock.http.client.HttpClientFactory;
+import org.forgerock.http.client.RestletHttpClient;
+import org.forgerock.openam.authentication.modules.scripted.http.GroovyHttpClient;
 import org.forgerock.http.client.request.HttpClientRequest;
 import org.forgerock.http.client.request.HttpClientRequestFactory;
+import org.forgerock.openam.authentication.modules.scripted.http.JavaScriptHttpClient;
 import org.forgerock.openam.scripting.ScriptEvaluator;
 import org.forgerock.openam.scripting.ScriptObject;
 import org.forgerock.openam.scripting.StandardScriptEvaluator;
@@ -37,9 +38,13 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.NameCallback;
 import javax.security.auth.login.LoginException;
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.Map;
+
+import com.sun.identity.shared.datastruct.CollectionHelper;
 
 /**
  * An authentication module that allows users to authenticate via a scripting language
@@ -51,10 +56,12 @@ public class Scripted extends AMLoginModule {
     public static final String SCRIPT_TYPE_ATTR_NAME = ATTR_NAME_PREFIX + "script-type";
     public static final String SERVER_SCRIPT_ATTRIBUTE_NAME = ATTR_NAME_PREFIX + "server-script";
     public static final String SCRIPT_NAME = "server-side-script";
+    public static final String SERVER_SCRIPT_TIMEOUT_NAME = ATTR_NAME_PREFIX + "server-timeout";
+    public static final String SERVER_SCRIPT_CORE_THREAD_NAME = ATTR_NAME_PREFIX + "core-threads";
+    public static final String SERVER_SCRIPT_MAX_THREAD_NAME = ATTR_NAME_PREFIX + "max-threads";
 
-    public static final String JAVA_SCRIPT_LABEL = "Java Script";
+    public static final String JAVA_SCRIPT_LABEL = "JavaScript";
     public static final String GROOVY_LABEL = "Groovy";
-    private final static int STATE_BEGIN = 1;
 
     private final static int STATE_RUN_SCRIPT = 2;
     public static final String STATE_VARIABLE_NAME = "authState";
@@ -63,7 +70,6 @@ public class Scripted extends AMLoginModule {
     private static final String FAILED_ATTR_NAME = "FAILED";
     public static final int FAILURE_VALUE = -2;
     public static final String USERNAME_VARIABLE_NAME = "username";
-    public static final String HTTP_CLIENT_REQUEST_VARIABLE_NAME = "httpClientRequest";
     public static final String HTTP_CLIENT_VARIABLE_NAME = "httpClient";
     public static final String LOGGER_VARIABLE_NAME = "logger";
     public static final String IDENTITY_REPOSITORY = "idRepository";
@@ -81,30 +87,28 @@ public class Scripted extends AMLoginModule {
     /** Debug logger instance used by scripts to log error/debug messages. */
     private static final Debug DEBUG = Debug.getInstance("amScript");
 
-    final HttpClientFactory httpClientFactory = InjectorHolder.getInstance(HttpClientFactory.class);
     final HttpClientRequestFactory httpClientRequestFactory = InjectorHolder.getInstance(HttpClientRequestFactory.class);
-    private HttpClient httpClient;
-    private HttpClientRequest httpClientRequest;
+    private RestletHttpClient httpClient;
     private ScriptIdentityRepository identityRepository;
-
-    private Map sharedState;
+    private Map<String, Object> sharedStateWrapper;
+    private Map<String, Object> sharedState;
 
     /**
      * {@inheritDoc}
      */
     @Override
     public void init(Subject subject, Map sharedState, Map options) {
-        this.sharedState = sharedState;
-
         userName = (String) sharedState.get(getUserKey());
         moduleConfiguration = options;
+
         clientSideScript = getClientSideScript();
         scriptEvaluator = getScriptEvaluator();
         serverSideScript = getServerSideScript();
         clientSideScriptEnabled = getClientSideScriptEnabled();
         httpClient = getHttpClient();
-        httpClientRequest = getHttpRequest();
         identityRepository  = getScriptIdentityRepository();
+        sharedStateWrapper = new HashMap<String, Object>();
+        this.sharedState = sharedState;
     }
 
     private ScriptIdentityRepository getScriptIdentityRepository() {
@@ -123,8 +127,8 @@ public class Scripted extends AMLoginModule {
 
         switch (state) {
 
-            case STATE_BEGIN:
-                if (!clientSideScriptEnabled) {
+            case ISAuthConstants.LOGIN_START:
+                if (!clientSideScriptEnabled || clientSideScript.isEmpty()) {
                     clientSideScript = " ";
                 }
 
@@ -139,23 +143,24 @@ public class Scripted extends AMLoginModule {
                 scriptVariables.put(CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME, clientScriptOutputData);
                 scriptVariables.put(LOGGER_VARIABLE_NAME, DEBUG);
                 scriptVariables.put(STATE_VARIABLE_NAME, state);
+                scriptVariables.put("sharedState", sharedStateWrapper);
                 scriptVariables.put(USERNAME_VARIABLE_NAME, userName);
                 scriptVariables.put(SUCCESS_ATTR_NAME, SUCCESS_VALUE);
                 scriptVariables.put(FAILED_ATTR_NAME, FAILURE_VALUE);
                 scriptVariables.put(HTTP_CLIENT_VARIABLE_NAME, httpClient);
-                scriptVariables.put(HTTP_CLIENT_REQUEST_VARIABLE_NAME, httpClientRequest);
                 scriptVariables.put(IDENTITY_REPOSITORY, identityRepository);
 
                 try {
                     scriptEvaluator.evaluateScript(serverSideScript, scriptVariables);
                 } catch (ScriptException e) {
                     DEBUG.message("Error running server side scripts", e);
-                    throw new AuthLoginException("Error running script");
+                    throw new AuthLoginException("Error running script", e);
                 }
 
                 state = ((Number) scriptVariables.get(STATE_VARIABLE_NAME)).intValue();
                 userName = (String) scriptVariables.get(USERNAME_VARIABLE_NAME);
                 sharedState.put(CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME, clientScriptOutputData);
+                sharedState.putAll(sharedStateWrapper);
 
                 if (state != SUCCESS_VALUE) {
                     throw new AuthLoginException("Authentication failed");
@@ -170,7 +175,7 @@ public class Scripted extends AMLoginModule {
 
     private String getClientScriptOutputData(Callback[] callbacks) {
         String clientScriptOutputData;
-        clientScriptOutputData = ( (HiddenValueCallback) callbacks[0]).getValue();
+        clientScriptOutputData = ((HiddenValueCallback) callbacks[0]).getValue();
         if (clientScriptOutputData == null) { // To cope with the classic UI
             clientScriptOutputData = getScriptHttpRequestWrapper().
                     getParameter(CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME);
@@ -179,43 +184,51 @@ public class Scripted extends AMLoginModule {
     }
 
     private ScriptObject getServerSideScript() {
-        SupportedScriptingLanguage scriptType = getScriptType();
-        String rawScript = getRawServerSideScript();
-
-        return new ScriptObject(SCRIPT_NAME, rawScript, scriptType, null);
+        return new ScriptObject(SCRIPT_NAME, getRawServerSideScript(), getScriptType(), null);
     }
 
     private ScriptEvaluator getScriptEvaluator() {
-        return InjectorHolder.getInstance(StandardScriptEvaluator.class);
+        final StandardScriptEvaluator scriptEvaluator = InjectorHolder.getInstance(StandardScriptEvaluator.class);
+        scriptEvaluator.getEngineManager().configureTimeout(getServerTimeout());
+
+        try {
+            StandardScriptEvaluator.configureThreadPool(getCoreThreadSize(), getMaxThreadSize());
+        } catch (IllegalStateException ise) {
+            //we ignore this, but written explicitly for your knowledge
+        }
+
+        return scriptEvaluator;
     }
 
-    private HttpClient getHttpClient() {
-       return httpClientFactory.createHttpClient();
+    private RestletHttpClient getHttpClient() {
+        SupportedScriptingLanguage scriptType = getScriptType();
 
+        if(scriptType.equals(SupportedScriptingLanguage.JAVASCRIPT)) {
+            return InjectorHolder.getInstance(JavaScriptHttpClient.class);
+        } else if(scriptType.equals(SupportedScriptingLanguage.GROOVY)){
+            return InjectorHolder.getInstance(GroovyHttpClient.class);
+        }
+
+        return null;
     }
 
     private HttpClientRequest getHttpRequest() {
-       return httpClientRequestFactory.createRequest();
+        return httpClientRequestFactory.createRequest();
     }
 
     private String getClientSideScript() {
-        String clientSideScript = getConfigValue(CLIENT_SCRIPT_ATTR_NAME);
+        final String clientSideScript = getConfigValue(CLIENT_SCRIPT_ATTR_NAME);
+        return clientSideScript == null ? "" : clientSideScript;
+    }
 
-        if(clientSideScript == null) {
-            clientSideScript = "";
-        }
-
-        return clientSideScript;
+    private int getServerTimeout() {
+        final String value = getConfigValue(SERVER_SCRIPT_TIMEOUT_NAME);
+        return value == null || value.isEmpty() ? 0 : Integer.valueOf(value);
     }
 
     private String getRawServerSideScript() {
-        String serverSideScript = getConfigValue(SERVER_SCRIPT_ATTRIBUTE_NAME);
-
-        if (serverSideScript == null) {
-            serverSideScript = "";
-        }
-
-        return serverSideScript;
+        final String serverSideScript = getConfigValue(SERVER_SCRIPT_ATTRIBUTE_NAME);
+        return serverSideScript == null ? "" : serverSideScript;
     }
 
     private String getConfigValue(String attributeName) {
@@ -255,6 +268,16 @@ public class Scripted extends AMLoginModule {
     private boolean getClientSideScriptEnabled() {
         String clientSideScriptEnabled = getConfigValue(CLIENT_SCRIPT_ENABLED_ATTR_NAME);
         return Boolean.parseBoolean(clientSideScriptEnabled);
+    }
+
+    private int getCoreThreadSize() {
+        final String value = getConfigValue(SERVER_SCRIPT_CORE_THREAD_NAME);
+        return value == null || value.isEmpty() ? 1 : Integer.valueOf(value); //defaults to 1
+    }
+
+    private int getMaxThreadSize() {
+        final String value = getConfigValue(SERVER_SCRIPT_MAX_THREAD_NAME);
+        return value == null || value.isEmpty() ? 1 : Integer.valueOf(value); //defaults to 1
     }
 
     /**

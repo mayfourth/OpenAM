@@ -15,8 +15,10 @@
  */
 package org.forgerock.http.client;
 
+import org.forgerock.guice.core.InjectorHolder;
 import org.forgerock.http.client.request.HttpClientRequest;
 import org.forgerock.http.client.request.HttpClientRequestCookie;
+import org.forgerock.http.client.request.HttpClientRequestFactory;
 import org.forgerock.http.client.response.HttpClientResponse;
 import org.forgerock.http.client.response.SimpleHttpClientResponse;
 import org.restlet.Client;
@@ -28,21 +30,46 @@ import org.restlet.util.Series;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
- * A basic implementation of {@link HttpClient} that a script can use to send
+ * A basic http client that can be used to send
  * {@link org.forgerock.http.client.request.HttpClientRequest} objects and receive {@link org.forgerock.http.client.response.HttpClientResponse} objects.
  *
  * @since 12.0.0
  */
-public class RestletHttpClient implements HttpClient {
+public class RestletHttpClient {
+    final HttpClientRequestFactory httpClientRequestFactory = InjectorHolder.getInstance(HttpClientRequestFactory.class);
 
-    /**
-     * {@inheritDoc}
-     */
-    public HttpClientResponse perform(HttpClientRequest httpClientRequest) throws UnsupportedEncodingException {
+    protected HttpClientResponse getHttpClientResponse(String uri, String body, Map<String, List<Map<String,String>>> requestData, String method) throws UnsupportedEncodingException {
+        HttpClientRequest httpClientRequest = httpClientRequestFactory.createRequest();
+
+        httpClientRequest.setMethod(method);
+        httpClientRequest.setUri(uri);
+        httpClientRequest.setEntity(body);
+
+        if (requestData != null) {
+            List<Map<String,String>> cookies = requestData.get("cookies");
+            if (cookies != null) {
+                for (Map cookie : cookies) {
+                    httpClientRequest.addCookie((String) cookie.get("domain"),
+                            (String) cookie.get("field"), (String) cookie.get("value"));
+                }
+            }
+
+            List<Map<String,String>> headers = requestData.get("headers");
+            if (headers != null) {
+                for (Map header : headers) {
+                    httpClientRequest.addQueryParameter((String) header.get("field"),
+                            (String) header.get("value"));
+                }
+            }
+        }
+
+        return perform(httpClientRequest);
+    }
+
+    private HttpClientResponse perform(HttpClientRequest httpClientRequest) throws UnsupportedEncodingException {
         Request request = createRequest(httpClientRequest);
 
         Client client = new Client(Protocol.HTTP);
@@ -75,7 +102,7 @@ public class RestletHttpClient implements HttpClient {
         return new SimpleHttpClientResponse(statusCode, reasonPhrase, headersMap, messageBody, cookiesMap);
     }
 
-    private org.restlet.Request createRequest(HttpClientRequest httpClientRequest) throws UnsupportedEncodingException {
+    private Request createRequest(HttpClientRequest httpClientRequest) throws UnsupportedEncodingException {
         Request request = new Request();
         request.setMethod(Method.valueOf(httpClientRequest.getMethod()));
         request.setResourceRef(httpClientRequest.getUri());

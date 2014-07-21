@@ -40,18 +40,21 @@ define("org/forgerock/openam/ui/policy/ManagePoliciesView", [
 
         render: function (args, callback) {
 
-            var appName = uiUtils.getCurrentHash().split('/', 2)[1],
+            var appName = args[0],
                 self = this;
 
             this.parentRender(function () {
-                self.$el.find('#newPolicy').attr("href","#app/"+appName+"/policy/");
-                self.$el.find('#managePoliciesTitle').text("Manage "+appName+" Policies");
-                policyDelegate.getApplicationPolicies(appName, self.listPolicies);
+                self.$el.find('#newPolicy').attr("href", "#app/" + appName + "/policy/");
+                self.$el.find('#managePoliciesTitle').text("Manage " + appName + " Policies");
+
+                policyDelegate.getApplicationPolicies(appName).done(function (data) {
+                    self.listPolicies(data, callback, self.$el.find('#managePolicies'));
+                });
             });
         },
 
-        listPolicies: function (data) {
-            listView.render(data, "#managePolicies", "templates/policy/ListPoliciesTemplate.html");
+        listPolicies: function (data, callback, element) {
+            listView.render(data, callback, element, "templates/policy/ListPoliciesTemplate.html");
         }
     });
 

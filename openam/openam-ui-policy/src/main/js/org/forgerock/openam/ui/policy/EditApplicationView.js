@@ -32,7 +32,7 @@ define("org/forgerock/openam/ui/policy/EditApplicationView", [
     "org/forgerock/openam/ui/policy/ActionsView",
     "org/forgerock/openam/ui/policy/ResourcesListView",
     "org/forgerock/openam/ui/policy/AddNewResourceView",
-    "org/forgerock/openam/ui/policy/ReviewApplicationInfoView",
+    "org/forgerock/openam/ui/policy/ReviewInfoView",
     "org/forgerock/openam/ui/policy/PolicyDelegate",
     "org/forgerock/commons/ui/common/util/UIUtils",
     "org/forgerock/openam/ui/common/components/Accordion",
@@ -55,26 +55,41 @@ define("org/forgerock/openam/ui/policy/EditApplicationView", [
                 data = self.data,
                 appName = args[0],
                 appTypesPromise = policyDelegate.getApplicationTypes(),
-                conditionTypesPromise = policyDelegate.getConditionTypes(),
+                envConditionsPromise = policyDelegate.getEnvironmentConditions(),
+                subjConditionsPromise = policyDelegate.getSubjectConditions(),
+                decisionCombinersPromise = policyDelegate.getDecisionCombiners(),
                 appPromise = this.getApplication(appName);
 
             this.processApplicationTypes(appTypesPromise);
-            this.processConditionTypes(conditionTypesPromise);
 
-            $.when(appTypesPromise, conditionTypesPromise, appPromise).done(function (appTypes, conditionTypes, app) {
-                if (!data.app.applicationType) {
-                    data.app.applicationType = _.keys(data.appTypes)[0];
-                }
+            $.when(appTypesPromise, envConditionsPromise, subjConditionsPromise, decisionCombinersPromise, appPromise).done(
+                function (appTypes, envConditions, subjConditions, decisionCombiners) {
+                    if (!data.entity.applicationType) {
+                        data.entity.applicationType = _.keys(data.appTypes)[0];
+                    }
 
-                self.parentRender(function () {
-                    actionsView.render(data);
-                    resourcesListView.render(data);
-                    addNewResourceView.render(data);
-                    reviewInfoView.render(data);
+                    self.processConditions(data, envConditions[0].result, subjConditions[0].result);
 
-                    self.initAccordion();
+                    data.entity.entitlementCombiner = self.getAvailableDecisionCombiner(decisionCombiners);
+
+                    // Available resource patterns are supposed to be defined by the selected application type. For now we
+                    // assume any resource might be created, hence we hard code the '*'.
+                    data.entity.resourcePatterns = ['*'];
+                    data.entity.availableActions = data.typeActions[data.entity.applicationType];
+
+                    self.parentRender(function () {
+                        actionsView.render(data);
+                        resourcesListView.render(data);
+                        addNewResourceView.render(data);
+                        reviewInfoView.render(data, null, self.$el.find('#reviewInfo'), 'templates/policy/ReviewApplicationStepTemplate.html');
+
+                        self.initAccordion();
+
+                        if (callback) {
+                            callback();
+                        }
+                    });
                 });
-            });
         },
 
         /**
@@ -90,14 +105,14 @@ define("org/forgerock/openam/ui/policy/EditApplicationView", [
 
             if (appName) {
                 policyDelegate.getApplicationByName(appName).done(function (app) {
-                    self.data.app = app;
-                    self.data.appName = appName;
+                    self.data.entity = app;
+                    self.data.entityName = appName;
 
                     deferred.resolve();
                 });
             } else {
-                self.data.app = {};
-                self.data.appName = null;
+                self.data.entity = {};
+                self.data.entityName = null;
 
                 deferred.resolve();
             }
@@ -133,25 +148,34 @@ define("org/forgerock/openam/ui/policy/EditApplicationView", [
             });
         },
 
-        /**
-         * Processes response to form list of available condition types.
-         *
-         * @param conditionTypesPromise service response
-         */
-        //TODO: not used, as the API is not ready
-        processConditionTypes: function (conditionTypesPromise) {
-            var self = this;
-            conditionTypesPromise.done(function (resp) {
-                self.data.conditionTypes = resp.result;
+        getAvailableDecisionCombiner: function (decisionCombiners) {
+            // Only one decision combiner is available in the system.
+            return decisionCombiners[0].result[0].title;
+        },
+
+        processConditions: function (data, envConditions, subjConditions) {
+            data.envConditions = this.populateConditions(data.entity.conditions, envConditions);
+            data.subjConditions = this.populateConditions(data.entity.subjects, subjConditions);
+        },
+
+        populateConditions: function (selected, available) {
+            var result = [];
+            _.each(available, function (cond) {
+                result.push({
+                    name: cond.title,
+                    logical: cond.logical,
+                    selected: _.contains(selected, cond.title)});
             });
+            return result;
         },
 
         /**
          * Retrieves available actions for the selected application type.
          */
         handleAppTypeChange: function (e) {
-            this.data.app.applicationType = e.target.value;
-            this.data.app.actions = [];
+            this.data.entity.applicationType = e.target.value;
+            this.data.entity.actions = [];
+            this.data.entity.availableActions = this.data.typeActions[this.data.entity.applicationType];
 
             actionsView.render(this.data);
         },
@@ -163,7 +187,7 @@ define("org/forgerock/openam/ui/policy/EditApplicationView", [
             var self = this,
                 options = {};
 
-            if (this.data.app.name) {
+            if (this.data.entity.name) {
                 options.active = this.REVIEW_INFO_STEP;
             } else {
                 options.disabled = true;
@@ -174,18 +198,29 @@ define("org/forgerock/openam/ui/policy/EditApplicationView", [
             this.accordion.on('beforeChange', function (e, id) {
                 if (id === self.REVIEW_INFO_STEP) {
                     self.updateFields();
-                    reviewInfoView.render(self.data);
+                    reviewInfoView.render(self.data, null, self.$el.find('#reviewInfo'), 'templates/policy/ReviewApplicationStepTemplate.html');
                 }
             });
         },
 
         updateFields: function () {
-            var app = this.data.app,
+            var app = this.data.entity,
                 dataFields = this.$el.find('[data-field]'),
-                field;
+                dataField;
+
+            app.subjects = [];
+            app.conditions = [];
 
             _.each(dataFields, function (field, key, list) {
-                app[field.getAttribute('data-field')] = field.value;
+                dataField = field.getAttribute('data-field');
+
+                if (field.type === 'checkbox') {
+                    if (field.checked) {
+                        app[dataField].push(field.value);
+                    }
+                } else {
+                    app[dataField] = field.value;
+                }
             });
         },
 
@@ -198,7 +233,7 @@ define("org/forgerock/openam/ui/policy/EditApplicationView", [
         },
 
         submitForm: function () {
-            var app = this.data.app,
+            var app = this.data.entity,
                 persistedApp = _.clone(app);
 
             persistedApp.actions = {};
@@ -209,8 +244,8 @@ define("org/forgerock/openam/ui/policy/EditApplicationView", [
                 }
             });
 
-            if (this.data.appName) {
-                policyDelegate.updateApplication(this.data.appName, persistedApp).done(function () {
+            if (this.data.entityName) {
+                policyDelegate.updateApplication(this.data.entityName, persistedApp).done(function () {
                     eventManager.sendEvent(constants.EVENT_HANDLE_DEFAULT_ROUTE);
                     eventManager.sendEvent(constants.EVENT_DISPLAY_MESSAGE_REQUEST, "applicationUpdated");
                 });

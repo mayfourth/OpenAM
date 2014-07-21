@@ -108,7 +108,7 @@
         <federation.java.target.version>1.6</federation.java.target.version>
 
         <!-- Surefire Argument Line -->
-        <java.surefire.options>-Xms2g -Xmx2g -XX:MaxPermSize=512m</java.surefire.options>
+        <java.surefire.options>-Xms256m -Xmx256m -XX:MaxPermSize=96m</java.surefire.options>
 
         <!-- JavaDoc Setting Properties -->
         <javadoc.options>-J-Xms2g -J-Xmx2g -J-XX:MaxPermSize=512m</javadoc.options>
@@ -120,12 +120,12 @@
 
         <!-- Version Properties -->
         <opendj.server.version>2.6.0</opendj.server.version>
-        <opendj.sdk.version>2.6.8</opendj.sdk.version>
+        <opendj.sdk.version>2.6.9</opendj.sdk.version>
 
         <commons.forgerock-util.version>1.3.0</commons.forgerock-util.version>
         <commons.authfilter.version>1.4.0-SNAPSHOT</commons.authfilter.version>
         <forgerock.json.version>2.2.5-SNAPSHOT</forgerock.json.version>
-        <forgerock-ui.version>1.0.15-SNAPSHOT</forgerock-ui.version>
+        <forgerock-ui.version>1.0.16-SNAPSHOT</forgerock-ui.version>
         <restlet.version>2.1.7</restlet.version>
         <xercesj.version>2.11.0</xercesj.version>
         <powermock.version>1.5</powermock.version>
@@ -165,8 +165,8 @@
         <log4j.version>1.2.16</log4j.version>
         <mail.version>1.4.5</mail.version>
         <jersey-oauth.version>1.1.5.2</jersey-oauth.version>
-        <phobos-js.version>0.6.2</phobos-js.version>
         <relaxngDatatype.version>20020414</relaxngDatatype.version>
+        <rhino.version>1.7R4</rhino.version>
         <saaj-api.version>1.3.4</saaj-api.version>
         <saaj-impl.version>1.3.19</saaj-impl.version>
         <servlet-api.version>2.5</servlet-api.version>
@@ -561,6 +561,11 @@
             <dependency>
                 <groupId>org.forgerock.openam</groupId>
                 <artifactId>openam-auth-scripted</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.forgerock.openam</groupId>
+                <artifactId>openam-auth-scripted-deviceprint</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1050,11 +1055,11 @@
                 <version>${commons-logging-api.version}</version>
             </dependency>
 
-            <!-- JSR 223 packaged Rhino JS library -->
+            <!-- Mozilla Rhino Javascript engine -->
             <dependency>
-                <groupId>com.sun.phobos</groupId>
-                <artifactId>phobos-js</artifactId>
-                <version>${phobos-js.version}</version>
+                <groupId>org.mozilla</groupId>
+                <artifactId>rhino</artifactId>
+                <version>${rhino.version}</version>
             </dependency>
 
             <!-- Groovy scripting support -->
@@ -1734,6 +1739,12 @@
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
                 <version>6.8.5</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>1.6.1</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

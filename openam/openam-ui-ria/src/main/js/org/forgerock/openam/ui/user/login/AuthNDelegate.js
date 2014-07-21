@@ -128,6 +128,13 @@ define("org/forgerock/openam/ui/user/login/AuthNDelegate", [
                 var failedStage = requirementList.length;
                 obj.resetProcess();
                 promise.reject(failedStage);
+            },
+            goToFailureUrl = function (errorBody) {
+                if (errorBody.detail && errorBody.detail.failureUrl) {
+                    console.log(errorBody.detail.failureUrl);
+                    window.location.href = errorBody.detail.failureUrl;
+                }
+
             };
 
             obj.serviceCall({
@@ -180,7 +187,12 @@ define("org/forgerock/openam/ui/user/login/AuthNDelegate", [
                                .fail(processFailed);
 
                         } else {
-                            processFailed();
+                            if (errorBody.message === "User Account Locked"){
+                                eventManager.sendEvent(constants.EVENT_DISPLAY_MESSAGE_REQUEST, "loginFailureLockout");
+                            } else {
+                                processFailed();
+                            }
+                            goToFailureUrl(errorBody);
                         }
                     }
                 });
