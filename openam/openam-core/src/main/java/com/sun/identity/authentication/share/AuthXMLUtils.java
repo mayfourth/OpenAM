@@ -141,7 +141,7 @@ public class AuthXMLUtils {
             
             Node childNode = childNodes.item(i);
             String childNodeName = childNode.getNodeName();
-            if (childNodeName.equals(AuthXMLTags.HIDDEN_VALUE_CALLBACK)) {
+            if (AuthXMLTags.HIDDEN_VALUE_CALLBACK.equals(childNodeName)) {
                 if (callbacks != null) {
                     nameIndex= getNameCallbackIndex(callbacks,nameIndex);
                     if (nameIndex >= 0){
@@ -486,10 +486,8 @@ public class AuthXMLUtils {
         String id = getId(childNode);
 
         HiddenValueCallback hiddenValueCallback = null;
-        if (callback != null) {
-            if (callback instanceof HiddenValueCallback) {
-                hiddenValueCallback = (HiddenValueCallback) callback;
-            }
+        if (callback instanceof HiddenValueCallback) {
+            hiddenValueCallback = (HiddenValueCallback) callback;
         }
 
         if (hiddenValueCallback == null) {
@@ -1497,7 +1495,7 @@ public class AuthXMLUtils {
         if (pNode != null) {
             return (XMLUtils.getValueOfValueNode(pNode));
         }
-        return (null);
+        return null;
     }
     
     protected static String getValue(Node node) {

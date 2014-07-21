@@ -19,6 +19,8 @@ import org.forgerock.util.Reject;
 
 /**
  * Adds a hidden value callback so that the login form can return values that the are not visually rendered on the page.
+ *
+ * @since 12.0.0
  */
 public class HiddenValueCallback implements javax.security.auth.callback.Callback, java.io.Serializable {
 
@@ -80,5 +82,7 @@ public class HiddenValueCallback implements javax.security.auth.callback.Callbac
      *
      * @return The initial default value.
      */
-    public java.lang.String getDefaultValue() { return defaultValue; }
+    public java.lang.String getDefaultValue() {
+        return defaultValue;
+    }
 }

@@ -28,6 +28,8 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Defines methods to update a HiddenValueCallback from the request of a Rest call and methods to convert the
  * HiddenValueCallback to and from a JSON representation.
+ *
+ * @since 12.0.0
  */
 public class RestAuthHiddenValueCallbackHandler extends AbstractRestAuthCallbackHandler<HiddenValueCallback> {
 

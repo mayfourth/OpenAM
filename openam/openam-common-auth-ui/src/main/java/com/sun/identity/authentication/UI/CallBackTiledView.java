@@ -242,13 +242,10 @@ public class CallBackTiledView
     }
 
     private void setHiddenValueCallbackInfo(HiddenValueCallback hvc) {
-        setDisplayFieldValue(SCRIPT_CONTENT, "");
-        setDisplayFieldValue(TEXT_CONTENT, "");
-        setDisplayFieldValue(MESSAGE_TYPE, "");
 
         String value = hvc.getValue();
 
-        if ((value == null) || (value.equals(""))) {
+        if ((value == null) || (value.isEmpty())) {
             value = hvc.getDefaultValue();
         }
 
@@ -256,7 +253,6 @@ public class CallBackTiledView
         setDisplayFieldValue(TXT_ID, id);
 
         setDisplayFieldValue(TXT_VALUE, value);
-        setDisplayFieldValue(TXT_INFO, getInfoText());
 
         CallBackChoiceTiledView tView =
                 (CallBackChoiceTiledView) getChild(TILED_CHOICE);
@@ -353,7 +349,7 @@ public class CallBackTiledView
      * @return true if current callback is for hiddenValueBox
      */
     public boolean beginHiddenValueBoxDisplay(ChildDisplayEvent event) {
-        return (curCallback != null) && (curCallback instanceof HiddenValueCallback);
+        return (curCallback instanceof HiddenValueCallback);
     }
 
     /**

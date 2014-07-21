@@ -296,13 +296,14 @@ public abstract class AMLoginModule implements LoginModule {
         // if it is an external Callback, add to the extCallback list
         for (int i = 0; i < len; i++) {
             if (original[i] instanceof HiddenValueCallback) {
-                String defaultValue = ((HiddenValueCallback)original[i]).getDefaultValue();
+                final HiddenValueCallback hiddenValueCallback = (HiddenValueCallback) original[i];
+                String defaultValue = hiddenValueCallback.getDefaultValue();
                 if (defaultValue != null && defaultValue.length() != 0) {
                     copy[i] = new HiddenValueCallback(
-                            ((HiddenValueCallback)original[i]).getId(), defaultValue);
+                            hiddenValueCallback.getId(), defaultValue);
                 } else {
                     copy[i] = new HiddenValueCallback(
-                            ((HiddenValueCallback)original[i]).getId());
+                            hiddenValueCallback.getId());
                 }
                 extCallbacks.add(copy[i]);
                 if (debug.messageEnabled()) {

@@ -272,19 +272,19 @@ class AMModuleProperties {
                     }
 
                     tmp = getAttribute(node, "isRequired");
-                    if ("true".equals(tmp)) {
+                    if (Boolean.parseBoolean(tmp)) {
                         require.add("true");
                     } else {
                         require.add("");
                     }
                     tmp = getAttribute(node, "attribute");
-                    if (tmp!=null) {
+                    if (tmp != null) {
                         attribute.add(tmp);
                     } else {
                         attribute.add("");
                     }
                     tmp = getAttribute(node, "infoText");
-                    if (tmp!=null) {
+                    if (tmp != null) {
                         infoText.add(tmp);
                     } else {
                         infoText.add("");

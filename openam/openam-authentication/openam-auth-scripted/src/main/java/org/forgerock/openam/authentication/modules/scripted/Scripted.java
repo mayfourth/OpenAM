@@ -73,7 +73,9 @@ public class Scripted extends AMLoginModule {
     public static final String HTTP_CLIENT_VARIABLE_NAME = "httpClient";
     public static final String LOGGER_VARIABLE_NAME = "logger";
     public static final String IDENTITY_REPOSITORY = "idRepository";
+    // Incoming from client side:
     public static final String CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME = "clientScriptOutputData";
+    // Outgoing to server side:
     public static final String CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME = "clientScriptOutputData";
     public static final String REQUEST_DATA_VARIABLE_NAME = "requestData";
 
@@ -174,8 +176,7 @@ public class Scripted extends AMLoginModule {
     }
 
     private String getClientScriptOutputData(Callback[] callbacks) {
-        String clientScriptOutputData;
-        clientScriptOutputData = ((HiddenValueCallback) callbacks[0]).getValue();
+        String clientScriptOutputData = ((HiddenValueCallback) callbacks[0]).getValue();
         if (clientScriptOutputData == null) { // To cope with the classic UI
             clientScriptOutputData = getScriptHttpRequestWrapper().
                     getParameter(CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME);
@@ -240,10 +241,10 @@ public class Scripted extends AMLoginModule {
     }
 
     private void substituteUIStrings() throws AuthLoginException {
-        replaceCallback(STATE_RUN_SCRIPT, 1, getClientSideScriptAndSelfSubmitCallback());
+        replaceCallback(STATE_RUN_SCRIPT, 1, createClientSideScriptAndSelfSubmitCallback());
     }
 
-    private Callback getClientSideScriptAndSelfSubmitCallback() {
+    private Callback createClientSideScriptAndSelfSubmitCallback() {
         String clientSideScriptExecutorFunction = ScriptedClientUtilityFunctions.
                 createClientSideScriptExecutorFunction(clientSideScript, CLIENT_SCRIPT_OUTPUT_DATA_PARAMETER_NAME);
         String autoSubmit = ScriptedClientUtilityFunctions.createAutoSubmissionLogic();
