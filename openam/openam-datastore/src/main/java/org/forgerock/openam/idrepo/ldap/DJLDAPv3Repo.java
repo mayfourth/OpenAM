@@ -25,8 +25,8 @@ import com.sun.identity.common.CaseInsensitiveHashMap;
 import com.sun.identity.common.CaseInsensitiveHashSet;
 import com.sun.identity.idm.IdOperation;
 import com.sun.identity.idm.IdRepo;
+import static com.sun.identity.idm.IdRepo.ADDMEMBER;
 import com.sun.identity.idm.IdRepoBundle;
-import com.sun.identity.idm.IdRepoDuplicateObjectException;
 import com.sun.identity.idm.IdRepoException;
 import com.sun.identity.idm.IdRepoFatalException;
 import com.sun.identity.idm.IdRepoListener;
@@ -66,6 +66,7 @@ import org.forgerock.opendj.ldap.Connection;
 import org.forgerock.opendj.ldap.ConnectionFactory;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.Entry;
+import org.forgerock.opendj.ldap.EntryNotFoundException;
 import org.forgerock.opendj.ldap.ErrorResultException;
 import org.forgerock.opendj.ldap.ErrorResultIOException;
 import org.forgerock.opendj.ldap.Filter;
@@ -96,7 +97,7 @@ import org.forgerock.opendj.ldif.ConnectionEntryReader;
 /**
  * This is an IdRepo implementation that utilizes the LDAP protocol via OpenDJ LDAP SDK to access directory servers.
  */
-public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListener {
+public class DJLDAPv3Repo extends IdRepo {
 
     private static final String CLASS_NAME = DJLDAPv3Repo.class.getName();
     private static final Debug DEBUG = Debug.getInstance("DJLDAPv3Repo");
@@ -162,10 +163,9 @@ public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListen
     private Map<String, Map<String, Set<String>>> serviceMap;
     //holds the directory schema
     private volatile Schema schema;
-    //provides a cache for DNs (if enabled), because an entry tends to be requested in bursts.
-    private Cache dnCache;
-    // provides a switch to enable/disable the dnCache
-    private boolean dnCacheEnabled = false;
+    //provides a cache for DNs, because an entry tends to be requested in bursts.
+    //TODO should we update the DN cache for psearch results as well?
+    private Cache dnCache = new Cache(1500);
 
     /**
      * Initializes the IdRepo instance, basically within this method we process
@@ -193,10 +193,7 @@ public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListen
                         + ", hostSiteId=" + hostSiteId);
             }
         }
-        boolean dnCacheEnabled = CollectionHelper.getBooleanMapAttr(configMap, LDAP_DNCACHE_ENABLED, true);
-        if (dnCacheEnabled) {
-            dnCache = new Cache(CollectionHelper.getIntMapAttr(configParams, LDAP_DNCACHE_SIZE, 1500, DEBUG));
-        }
+
         ldapServers = LDAPUtils.prioritizeServers(configParams.get(LDAP_SERVER_LIST), hostServerId, hostSiteId);
 
         defaultSizeLimit = CollectionHelper.getIntMapAttr(configParams, LDAP_MAX_RESULTS, 100, DEBUG);
@@ -650,11 +647,7 @@ public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListen
         } catch (ErrorResultException ere) {
             DEBUG.error("Unable to add a new entry: " + name + " attrMap: "
                     + IdRepoUtils.getAttrMapWithoutPasswordAttrs(attrMap, null), ere);
-            if (ResultCode.ENTRY_ALREADY_EXISTS.equals(ere.getResult().getResultCode())) {
-                throw IdRepoDuplicateObjectException.nameAlreadyExists(name);
-            } else {
-                handleErrorResult(ere);
-            }
+            handleErrorResult(ere);
         } finally {
             IOUtils.closeIfNotNull(conn);
         }
@@ -1210,9 +1203,7 @@ public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListen
         } finally {
             IOUtils.closeIfNotNull(conn);
         }
-        if (dnCacheEnabled) {
-            dnCache.remove(generateDNCacheKey(name, type));
-        }
+        dnCache.remove(name + "," + type);
     }
 
     /**
@@ -1834,8 +1825,7 @@ public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListen
      * @param serviceName The name of the service, which in case of USER may be null.
      * @param attrNames The name of the service attributes that needs to be queried. In case of USER this may NOT be
      * null. In case of REALM, when null this will return all attributes for the service.
-     * @param extractor The attribute extractor to use.
-     * @param converter The attribute filter to use.
+     * @param isString Whether the attributes needs to be returned in binary or string format.
      * @return The matching service attributes.
      * @throws IdRepoException If there was an error while retrieving the service attributes from the user, or if the
      * identity type was invalid.
@@ -2050,17 +2040,11 @@ public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListen
             char[] password = CollectionHelper.getMapAttr(configMap, LDAP_SERVER_PASSWORD, "").toCharArray();
             if (pSearch == null) {
                 pSearch = new DJLDAPv3PersistentSearch(configMap, createConnectionFactory(username, password, 1));
-                if (dnCacheEnabled) {
-                    pSearch.addMovedOrRenamedListener(this);
-                }
                 pSearch.addListener(idRepoListener, getSupportedTypes());
                 pSearch.startPSearch();
                 pSearchMap.put(pSearchId, pSearch);
             } else {
                 pSearch.addListener(idRepoListener, getSupportedTypes());
-                if (dnCacheEnabled) {
-                    pSearch.addMovedOrRenamedListener(this);
-                }
             }
         }
         return 0;
@@ -2081,7 +2065,6 @@ public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListen
             if (pSearch == null) {
                 DEBUG.error("PSearch is already removed, unable to unregister");
             } else {
-                pSearch.removeMovedOrRenamedListener(this);
                 pSearch.removeListener(idRepoListener);
                 if (!pSearch.hasListeners()) {
                     pSearch.stopPSearch();
@@ -2107,24 +2090,6 @@ public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListen
         IOUtils.closeIfNotNull(connectionFactory);
         IOUtils.closeIfNotNull(bindConnectionFactory);
         idRepoListener = null;
-    }
-
-    /**
-     * Called if an identity has been renamed or moved within the identity store.
-     * @param previousDN The DN of the identity before the move or rename
-     */
-    public void identityMovedOrRenamed(DN previousDN) {
-
-        if (dnCacheEnabled) {
-            String name = LDAPUtils.getName(previousDN);
-            for (IdType idType : getSupportedTypes()) {
-                String previousId =  generateDNCacheKey(name, idType);
-                Object previousDn = dnCache.remove(previousId);
-                if (DEBUG.messageEnabled() && previousDn != null) {
-                    DEBUG.message("Removed " + previousId + " from DN Cache");
-                }
-            }
-        }
     }
 
     /**
@@ -2269,11 +2234,7 @@ public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListen
     }
 
     private String getDN(IdType type, String name, boolean shouldGenerate, String searchAttr) throws IdRepoException {
-
-        Object cachedDn = null;
-        if (dnCacheEnabled) {
-            cachedDn = dnCache.get(generateDNCacheKey(name, type));
-        }
+        Object cachedDn = dnCache.get(name + "," + type);
         if (cachedDn != null) {
             return cachedDn.toString();
         }
@@ -2326,8 +2287,8 @@ public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListen
             IOUtils.closeIfNotNull(conn);
         }
 
-        if (dnCacheEnabled && !shouldGenerate) {
-            dnCache.put(generateDNCacheKey(name, type), dn);
+        if (!shouldGenerate) {
+            dnCache.put(name + "," + type, dn);
         }
         return dn;
     }
@@ -2444,10 +2405,10 @@ public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListen
 
     private void handleErrorResult(ErrorResultException ere) throws IdRepoException {
         ResultCode resultCode = ere.getResult().getResultCode();
-        if (ResultCode.CONSTRAINT_VIOLATION.equals(resultCode)) {
+        if (resultCode.equals(ResultCode.CONSTRAINT_VIOLATION)) {
             throw new IdRepoFatalException(IdRepoBundle.BUNDLE_NAME, "313",
                     new Object[]{CLASS_NAME, resultCode.intValue(), ere.getResult().getDiagnosticMessage()});
-        } else if (ResultCode.NO_SUCH_OBJECT.equals(resultCode)) {
+        } else if (resultCode.equals(ResultCode.NO_SUCH_OBJECT)) {
             throw new IdentityNotFoundException(resultCode, "220", CLASS_NAME, ere.getResult().getDiagnosticMessage());
         } else {
             throw newIdRepoException(resultCode, "306", CLASS_NAME, resultCode.intValue());
@@ -2522,9 +2483,5 @@ public class DJLDAPv3Repo extends IdRepo implements IdentityMovedOrRenamedListen
             }
             return result;
         }
-    }
-
-    private String generateDNCacheKey(String name, IdType idType) {
-        return name + "," + idType;
     }
 }

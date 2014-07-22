@@ -1,4 +1,6 @@
-/*
+/**
+ * Copyright 2013-2014 ForgeRock AS.
+ *
  * The contents of this file are subject to the terms of the Common Development and
  * Distribution License (the License). You may not use this file except in compliance with the
  * License.
@@ -10,15 +12,13 @@
  * the License file at legal/CDDLv1.0.txt. If applicable, add the following below the CDDL
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
- *
- * Copyright 2013-2014 ForgeRock AS.
  */
 package org.forgerock.openam.cts.utils.blob.strategies;
 
-import org.apache.commons.io.IOUtils;
+import org.forgerock.openam.cts.api.tokens.Token;
 import org.forgerock.openam.cts.utils.blob.BlobStrategy;
 import org.forgerock.openam.cts.utils.blob.TokenStrategyFailedException;
-import org.forgerock.util.Reject;
+import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -28,6 +28,8 @@ import java.util.zip.GZIPOutputStream;
 
 /**
  * Responsible for compressing the binary object of Tokens using a GZip compression.
+ *
+ * @author robert.wapshott@forgerock.com
  */
 public class CompressionStrategy implements BlobStrategy {
 
@@ -36,43 +38,41 @@ public class CompressionStrategy implements BlobStrategy {
     /**
      * Compress the Tokens binary object.
      *
-     * @param blob Non null Token to modify.
+     * @param token Non null Token to modify.
      *
-     * @throws TokenStrategyFailedException {@inheritDoc}
+     * @throws org.forgerock.openam.cts.utils.blob.TokenStrategyFailedException {@inheritDoc}
      */
     @Override
-    public byte[] perform(byte[] blob) throws TokenStrategyFailedException {
-        Reject.ifTrue(blob == null);
+    public void perform(Token token) throws TokenStrategyFailedException {
         bout.reset();
         try {
             GZIPOutputStream out = new GZIPOutputStream(bout);
-            out.write(blob, 0, blob.length);
+            out.write(token.getBlob(), 0, token.getBlob().length);
             out.flush();
             out.close();
         } catch (IOException e) {
             throw new TokenStrategyFailedException(e);
         }
-        return bout.toByteArray();
+        token.setBlob(bout.toByteArray());
     }
 
     /**
      * Decompress the Tokens binary object.
      *
-     * @param blob Non null Token to modify.
+     * @param token Non null Token to modify.
      *
      * @throws TokenStrategyFailedException {@inheritDoc}
      */
     @Override
-    public byte[] reverse(byte[] blob) throws TokenStrategyFailedException {
-        Reject.ifTrue(blob == null);
+    public void reverse(Token token) throws TokenStrategyFailedException {
         bout.reset();
         try {
-            GZIPInputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(blob));
+            GZIPInputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(token.getBlob()));
             IOUtils.copy(inputStream, bout);
             inputStream.close();
         } catch (IOException e) {
             throw new TokenStrategyFailedException(e);
         }
-        return bout.toByteArray();
+        token.setBlob(bout.toByteArray());
     }
 }

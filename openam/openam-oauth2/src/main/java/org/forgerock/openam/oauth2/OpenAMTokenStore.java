@@ -31,6 +31,7 @@ import org.forgerock.oauth2.core.exceptions.InvalidGrantException;
 import org.forgerock.oauth2.core.exceptions.InvalidRequestException;
 import org.forgerock.oauth2.core.exceptions.ServerException;
 import org.forgerock.openam.cts.exceptions.CoreTokenException;
+import org.forgerock.openam.cts.exceptions.DeleteFailedException;
 import org.forgerock.openam.openidconnect.OpenAMOpenIdConnectToken;
 import org.forgerock.openidconnect.OpenIdConnectClientRegistration;
 import org.forgerock.openidconnect.OpenIdConnectClientRegistrationStore;
@@ -263,7 +264,7 @@ public class OpenAMTokenStore implements OpenIdConnectTokenStore {
         // Delete the code
         try {
             tokenStore.delete(authorizationCode);
-        } catch (CoreTokenException e) {
+        } catch (DeleteFailedException e) {
             logger.error("DefaultOAuthTokenStoreImpl::Unable to delete authorization code corresponding to id: "
                     + authorizationCode, e);
             throw new OAuthProblemException(Status.SERVER_ERROR_INTERNAL.getCode(),
@@ -302,7 +303,7 @@ public class OpenAMTokenStore implements OpenIdConnectTokenStore {
         // Delete the code
         try {
             tokenStore.delete(accessTokenId);
-        } catch (CoreTokenException e) {
+        } catch (DeleteFailedException e) {
             logger.error("Unable to delete access token corresponding to id: " + accessTokenId, e);
             throw new ServerException("Could not delete token from CTS: " + e.getMessage());
         }
@@ -316,7 +317,7 @@ public class OpenAMTokenStore implements OpenIdConnectTokenStore {
         // Delete the code
         try {
             tokenStore.delete(refreshTokenId);
-        } catch (CoreTokenException e) {
+        } catch (DeleteFailedException e) {
             logger.error("Unable to delete refresh token corresponding to id: " + refreshTokenId, e);
             throw new InvalidRequestException();
         }

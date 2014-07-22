@@ -1,4 +1,6 @@
-/*
+/**
+ * Copyright 2013 ForgeRock AS.
+ *
  * The contents of this file are subject to the terms of the Common Development and
  * Distribution License (the License). You may not use this file except in compliance with the
  * License.
@@ -10,14 +12,11 @@
  * the License file at legal/CDDLv1.0.txt. If applicable, add the following below the CDDL
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
- *
- * Copyright 2013-2014 ForgeRock AS.
  */
 package org.forgerock.openam.cts;
 
 import com.iplanet.am.util.SystemProperties;
 import com.sun.identity.shared.Constants;
-import org.forgerock.openam.cts.api.CoreTokenConstants;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.testng.PowerMockTestCase;
@@ -28,6 +27,9 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.times;
 
+/**
+ * @author robert.wapshott@forgerock.com
+ */
 @PrepareForTest(SystemProperties.class)
 public class ExternalTokenConfigTest extends PowerMockTestCase {
     @Test
@@ -48,7 +50,7 @@ public class ExternalTokenConfigTest extends PowerMockTestCase {
     @Test
     public void shouldIndicateHasChanged() {
         PowerMockito.mockStatic(SystemProperties.class);
-        given(SystemProperties.get(eq(CoreTokenConstants.CTS_STORE_HOSTNAME))).willReturn("badger");
+        given(SystemProperties.get(eq(Constants.CTS_STORE_HOSTNAME))).willReturn("badger");
 
         ExternalTokenConfig config = new ExternalTokenConfig();
         // When
@@ -60,7 +62,7 @@ public class ExternalTokenConfigTest extends PowerMockTestCase {
     @Test
     public void shouldSelectDefaultIfNullStoreMode() {
         PowerMockito.mockStatic(SystemProperties.class);
-        given(SystemProperties.get(eq(CoreTokenConstants.CTS_STORE_LOCATION))).willReturn(null);
+        given(SystemProperties.get(eq(Constants.CTS_STORE_LOCATION))).willReturn(null);
 
         ExternalTokenConfig config = new ExternalTokenConfig();
         // When
@@ -72,7 +74,7 @@ public class ExternalTokenConfigTest extends PowerMockTestCase {
     @Test
     public void shouldSelectDefaultIfEmptyStoreMode() {
         PowerMockito.mockStatic(SystemProperties.class);
-        given(SystemProperties.get(eq(CoreTokenConstants.CTS_STORE_LOCATION))).willReturn("");
+        given(SystemProperties.get(eq(Constants.CTS_STORE_LOCATION))).willReturn("");
 
         ExternalTokenConfig config = new ExternalTokenConfig();
         // When

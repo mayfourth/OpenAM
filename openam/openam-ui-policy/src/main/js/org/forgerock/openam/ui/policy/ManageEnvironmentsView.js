@@ -64,10 +64,11 @@ define( "org/forgerock/openam/ui/policy/ManageEnvironmentsView", [
                 this.buttons.clearBtn       = this.$el.find("a#clear");
                 this.buttons.addOperator    = this.$el.find("a#addOperator");
                 this.buttons.addEnvironment = this.$el.find("a#addEnvironment");
-                this.pickUpItem             = this.$el.find('#pickUpItem');
+
+                editEnvironment.render(data, null, this.element + ' #pickup-item');
 
                 var operatorRules = new OperatorRulesView();
-                    operatorRules.render(this.data, null, this.$el.find('#dropOffArea'), true );
+                operatorRules.render(this.data, null, this.$el.find('#dropoff-area'), true );
 
                 this.onClear();
                 this.initSorting();
@@ -140,7 +141,7 @@ define( "org/forgerock/openam/ui/policy/ManageEnvironmentsView", [
 
                         if(item.data().operator){
                             rule = $.extend( false, item, new OperatorRulesView() );
-                            rule.rebindElement(self.data, '#dropOffArea');
+                            rule.rebindElement(self.data, '#dropoff-area');
                         }
 
                         _super(item, container);
@@ -165,7 +166,7 @@ define( "org/forgerock/openam/ui/policy/ManageEnvironmentsView", [
 
             });
 
-            this.$el.find("ol#pickUpItem").sortable({
+            this.$el.find("ol#pickup-item").sortable({
                 group: self.element + ' rule-creation-group',
                 drop: false
             });
@@ -189,7 +190,7 @@ define( "org/forgerock/openam/ui/policy/ManageEnvironmentsView", [
         onClear: function(e) {
             if(e) { e.preventDefault();}
             // TODO : need to acutally delete the object, not just the DOM object
-            this.$el.find('#pickUpItem').empty();
+            this.$el.find('#pickup-item').empty();
             this.setInactive(this.buttons.clearBtn, true);
             this.setInactive(this.buttons.addOperator, false);
             this.setInactive(this.buttons.addEnvironment, false);
@@ -199,10 +200,10 @@ define( "org/forgerock/openam/ui/policy/ManageEnvironmentsView", [
         addOperator: function(e) {
             e.preventDefault();
             // TODO : need to acutally delete the object, not just the DOM object
-            this.$el.find('#pickUpItem').empty();
+            this.$el.find('#pickup-item').empty();
 
             var operatorRules = new OperatorRulesView();
-            operatorRules.render(this.data, null, this.$el.find('#pickUpItem'));
+            operatorRules.render(this.data, null, this.$el.find('#pickup-item'));
 
             this.setInactive(this.buttons.clearBtn, false);
             this.setInactive(this.buttons.addOperator, true);
@@ -212,8 +213,8 @@ define( "org/forgerock/openam/ui/policy/ManageEnvironmentsView", [
         addEnvironment: function(e) {
             e.preventDefault();
             // TODO : need to acutally delete the object, not just the DOM object
-            this.$el.find('#pickUpItem').empty();
-            //editEnvironment.newListItem();
+            this.$el.find('#pickup-item').empty();
+            editEnvironment.newListItem();
             this.setInactive(this.buttons.clearBtn, false);
             this.setInactive(this.buttons.addOperator, false);
             this.setInactive(this.buttons.addEnvironment, true);

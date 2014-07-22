@@ -41,14 +41,11 @@ define("org/forgerock/openam/ui/policy/AddNewResourceView", [
         },
 
         render: function (args, callback) {
+            // TODO: resources dropdown in the Add New section needs to be populated from the list of available resource patterns that comes with selected application type
             _.extend(this.data, args);
 
             this.parentRender(function () {
                 this.$newResource = this.$el.find('.resource-url-part');
-
-                if (callback) {
-                    callback();
-                }
             });
         },
 
@@ -56,8 +53,9 @@ define("org/forgerock/openam/ui/policy/AddNewResourceView", [
          * Adds new resource based on a predefined template.
          */
         addResource: function () {
+            //TODO: not ready. probably, there will be multiple inputs, using class then
             var newResource = this.$newResource.val(),
-                resources = this.data.entity.resources,
+                resources = this.data.app.resources,
                 duplicate = _.find(resources, function (res) {
                     return res === newResource;
                 });

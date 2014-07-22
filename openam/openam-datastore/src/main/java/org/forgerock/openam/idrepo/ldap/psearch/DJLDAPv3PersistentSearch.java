@@ -11,7 +11,7 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2013-2014 ForgeRock AS
+ * Copyright 2013 ForgeRock AS
  */
 package org.forgerock.openam.idrepo.ldap.psearch;
 
@@ -25,12 +25,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import static org.forgerock.openam.idrepo.ldap.LDAPConstants.*;
-import org.forgerock.openam.idrepo.ldap.IdentityMovedOrRenamedListener;
 import org.forgerock.openam.ldap.LDAPUtils;
 import org.forgerock.openam.utils.IOUtils;
 import org.forgerock.opendj.ldap.Attribute;
@@ -67,8 +65,6 @@ public class DJLDAPv3PersistentSearch {
     private static final Debug DEBUG = Debug.getInstance("PersistentSearch");
     private final ConnectionFactory factory;
     private final Map<IdRepoListener, Set<IdType>> listenerMap = new ConcurrentHashMap<IdRepoListener, Set<IdType>>(1);
-    private final Set<IdentityMovedOrRenamedListener> movedOrRenamedListenerSet =
-            new HashSet<IdentityMovedOrRenamedListener>(1);
     private final int retryInterval;
     private final DN pSearchBaseDN;
     private final Filter pSearchFilter;
@@ -81,7 +77,7 @@ public class DJLDAPv3PersistentSearch {
 
     private enum PersistentSearchMode {
 
-        STANDARD, AD, NONE
+        STANDARD, AD, NONE;
     }
 
     public DJLDAPv3PersistentSearch(Map<String, Set<String>> configMap, ConnectionFactory factory) {
@@ -139,30 +135,6 @@ public class DJLDAPv3PersistentSearch {
      */
     public boolean hasListeners() {
         return !listenerMap.isEmpty();
-    }
-
-    /**
-     * Adds an {@link IdentityMovedOrRenamedListener} object, which needs to be notified about persistent search results
-     * where the identity has been renamed or moved.
-     * The caller must ensure that calls to addMovedOrRenamedListener/removeMovedOrRenamedListener invocations are
-     * synchronized correctly.
-     *
-     * @param movedOrRenamedListener The {@link IdentityMovedOrRenamedListener} instance that needs to be notified about
-     *                               changes.
-     */
-    public void addMovedOrRenamedListener(IdentityMovedOrRenamedListener movedOrRenamedListener) {
-        movedOrRenamedListenerSet.add(movedOrRenamedListener);
-    }
-
-    /**
-     * Removes an {@link IdentityMovedOrRenamedListener} if it was registered to get persistent search notifications.
-     * The caller must ensure that calls to addMovedOrRenamedListener/removeMovedOrRenamedListener invocations are
-     * synchronized correctly.
-     *
-     * @param movedOrRenamedListener The {@link IdentityMovedOrRenamedListener} instance to remove from the listeners
-     */
-    public void removeMovedOrRenamedListener(IdentityMovedOrRenamedListener movedOrRenamedListener) {
-        movedOrRenamedListenerSet.remove(movedOrRenamedListener);
     }
 
     /**
@@ -265,7 +237,6 @@ public class DJLDAPv3PersistentSearch {
                 DEBUG.message("Processing persistent search response: " + entry.toString());
             }
             String dn = entry.getName().toString();
-            DN previousDn = null;
             int type = -1;
             switch (mode) {
                 case STANDARD: {
@@ -273,11 +244,7 @@ public class DJLDAPv3PersistentSearch {
                         EntryChangeNotificationResponseControl control = entry.getControl(
                                 EntryChangeNotificationResponseControl.DECODER, new DecodeOptions());
                         if (control != null) {
-                            PersistentSearchChangeType changeType = control.getChangeType();
-                            if (changeType.equals(PersistentSearchChangeType.MODIFY_DN)) {
-                                previousDn = control.getPreviousName();
-                            }
-                            type = changeType.intValue();
+                            type = control.getChangeType().intValue();
                         }
                     } catch (DecodeException de) {
                         DEBUG.warning("Unable to decode EntryChangeNotificationResponseControl", de);
@@ -322,12 +289,6 @@ public class DJLDAPv3PersistentSearch {
             }
 
             if (type != -1) {
-                if (previousDn != null) {
-                    for (IdentityMovedOrRenamedListener listener : movedOrRenamedListenerSet) {
-                            listener.identityMovedOrRenamed(previousDn);
-                    }
-                }
-
                 for (Map.Entry<IdRepoListener, Set<IdType>> listenerEntry : listenerMap.entrySet()) {
                     IdRepoListener listener = listenerEntry.getKey();
 

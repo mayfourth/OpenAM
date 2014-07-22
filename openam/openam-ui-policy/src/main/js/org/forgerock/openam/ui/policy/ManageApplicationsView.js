@@ -38,17 +38,13 @@ define("org/forgerock/openam/ui/policy/ManageApplicationsView", [
         template: "templates/policy/ManageApplicationsTemplate.html",
 
         render: function (args, callback) {
-            var self = this;
-
             this.parentRender(function () {
-                policyDelegate.getAllApplications().done(function (data) {
-                    self.listApplications(data, callback, self.$el.find('#manageApps'));
-                });
+                policyDelegate.getAllApplications(this.listApplications);
             });
         },
 
-        listApplications: function (data, callback, element) {
-            listView.render(data, callback, element, "templates/policy/ListApplicationsTemplate.html");
+        listApplications: function (data) {
+            listView.render(data, "#manageApps", "templates/policy/ListApplicationsTemplate.html");
         }
     });
 

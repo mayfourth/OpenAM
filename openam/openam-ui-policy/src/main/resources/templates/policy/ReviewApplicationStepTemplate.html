@@ -1,29 +1,28 @@
 <div class="column2">
     <div class="review-row">
-        <a href="">Name</a> <span id="reviewName">{{entity.name}}</span>
+        <a href="">Name</a> <span>{{app.name}}</span>
     </div>
     <div class="review-row">
-        <a href="">Realms</a> <span id="reviewRealm">{{entity.realm}}</span>
+        <a href="">Realms</a> <span>{{app.realm}}</span>
     </div>
     <div class="review-row">
-        <a href="">Description</a> <span id="reviewDescr">{{entity.description}}</span>
+        <a href="">Description</a> <span>{{app.description}}</span>
     </div>
     <div class="review-row">
-        <a href="">Application Type</a> <span id="reviewType">{{entity.applicationType}}</span>
+        <a href="">Application Type</a> <span>{{app.applicationType}}</span>
     </div>
     <div class="review-row">
-        <a href="">Resources</a> <span id="reviewRes">{{#each entity.resources}}{{this}}<br/>{{/each}}</span>
+        <a href="">Resources</a> <span>{{#each app.resources}} {{this}}<br/>{{/each}}</span>
     </div>
 </div>
 
 <div class="column2">
     <div class="review-row">
-        <a href="">Subject Conditions</a>
-        <span id="reviewSubj">{{#each entity.subjects}} {{this}}<br/> {{/each}} </span>
+        <a href="">Subject Conditions</a> <span> </span>
     </div>
     <div class="review-row">
         <a href="">Actions</a>
-        <span id="reviewActions">{{#each entity.actions}}
+        <span>{{#each app.actions}}
                 {{#if selected}}
                     {{action}}: {{#if value}} Allowed {{else}} Denied {{/if}}<br/>
                 {{/if}}
@@ -31,10 +30,9 @@
         </span>
     </div>
     <div class="review-row">
-        <a href="">Environment Conditions</a>
-        <span id="reviewEnv">{{#each entity.conditions}} {{this}}<br/> {{/each}} </span>
+        <a href="">Environment Conditions</a> <span> </span>
     </div>
     <div class="review-row">
-        <a href="">Override Rules</a> <span id="reviewEntComb">{{entity.entitlementCombiner}}: Allow</span>
+        <a href="">Override Rules</a> <span>Deny Override: Allow</span>
     </div>
 </div>

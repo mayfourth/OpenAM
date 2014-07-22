@@ -22,47 +22,47 @@
 package org.forgerock.openam.cts;
 
 import org.forgerock.openam.cts.api.fields.CoreTokenField;
-import org.forgerock.openam.cts.api.filter.TokenFilter;
 import org.forgerock.openam.cts.api.tokens.Token;
 import org.forgerock.openam.cts.exceptions.CoreTokenException;
 import org.forgerock.openam.cts.exceptions.DeleteFailedException;
-import org.forgerock.openam.cts.impl.query.PartialToken;
+import org.forgerock.openam.cts.impl.query.QueryFilter;
+import org.forgerock.opendj.ldap.Filter;
 
 import java.util.Collection;
 import java.util.Map;
 
 /**
- * Core Token Service Persistent Store is responsible for the storage and retrieval of Tokens
- * from a persistent store.
+ * Core Token Service Persistent Store is responsible for the storage and retrieval of
+ * Tokens from the persistent store.
  *
- * The Core Token Service is exposed through a series of CRUDL operations which require the
- * use of TokenAdapters to convert from objects to be stored into the expected Core Token
- * Service format. This allows the Tokens to be stored in a generic storage.
+ * The Core Token Service is exposed through a series of CRUDL operations which use TokenAdapters
+ * to convert from objects to be stored in the Core Token Service, to the Token format required
+ * for generic storage.
  *
- * The current main use cases for the CTS are:
+ * The Core Token Service is responsible for the storage mechanism behind the Session fail-over
+ * feature.
  *
- * - Session fail-over
- * - OAuth token storage
- * - SAML Federation token storage
- * - Forgotten Password
- *
- * The implementation of this interface must be thread safe as this service will often
- * be on a direct call path from the front end of the Server hosting OpenAM, and so
- * multiple calls to the service can occur at the same time from different calling threads.
+ * Persistence is currently provided by LDAP.
  *
  * @see org.forgerock.openam.cts.adapters.TokenAdapter
  * @see Token
+ *
+ * @author steve
+ * @author jeff.schenk@forgerock.com
+ * @author jason.lemay@forgerock.com
+ * @author robert.wapshott@forgerock.com
  */
 public interface CTSPersistentStore {
 
     /**
-     * Create a Token in the persistent store. If the Token already exists then this create
-     * may be ignored, or an error thrown to indicate this failure.
+     * Create a Token in the persistent store. If the Token already exists in the store then this
+     * function will throw a CoreTokenException. Instead it is recommended to use the update function.
      *
      * @see CTSPersistentStore#update(org.forgerock.openam.cts.api.tokens.Token)
      *
      * @param token Non null Token to create.
-     * @throws CoreTokenException If there was a non-recoverable error during the operation.
+     * @throws CoreTokenException If there was a non-recoverable error during the operation or if
+     * the Token already exists in the store.
      */
     void create(Token token) throws CoreTokenException;
 
@@ -105,11 +105,14 @@ public interface CTSPersistentStore {
      * @param tokenId The non null Token Id of the token to remove.
      * @throws CoreTokenException If there was a non-recoverable error during the operation.
      */
-    void delete(String tokenId) throws CoreTokenException;
+    void delete(String tokenId) throws DeleteFailedException;
 
     /**
      * Delete a collection of Tokens from the Token Store using a filter to narrow down the
      * Tokens to be deleted.
+     *
+     * Note: This operation is linear in its execution time so the more Tokens being deleted, the
+     * longer it will take.
      *
      * @param query Non null filters which will be combined logically using AND.
      *
@@ -117,37 +120,41 @@ public interface CTSPersistentStore {
      *
      * @throws DeleteFailedException If the delete failed for any reason.
      */
-    int delete(Map<CoreTokenField, Object> query) throws CoreTokenException;
+    int delete(Map<CoreTokenField, Object> query) throws DeleteFailedException;
 
     /**
-     * Performs a query against the persistent store using the provided TokenFilter.
+     * Perform a query based on a collection of queryable parameters.
      *
-     * The filter is assembled by the TokenFilterBuilder which provides the options on how
-     * to turn the query being performed.
+     * The query will be an AND query where each matching Token must match on all query parameters
+     * provided.
      *
-     * @see org.forgerock.openam.cts.api.filter.TokenFilter
-     * @see org.forgerock.openam.cts.api.filter.TokenFilterBuilder
-     *
-     * @param filter Non null filter.
-     * @return Non null, but maybe empty.
-     * @throws CoreTokenException If there was any error whilst performing the query.
+     * @param query A mapping of CoreTokenField keys to values.
+     * @return A non null, but possibly empty collection of Tokens.
+     * @throws CoreTokenException If there was a non-recoverable error during the operation.
      */
-    Collection<Token> query(TokenFilter filter) throws CoreTokenException;
+    Collection<Token> list(Map<CoreTokenField, Object> query) throws CoreTokenException;
 
     /**
-     * Performs a specialised Query whereby PartialTokens are returned. This is an optimisation
-     * which allows the caller to specify just the fields that are being returned.
+     * Performs a list operation against the Core Token Service with a predefined filter. This
+     * allows more complex filters to be constructed and is intended to be used with the
+     * QueryFilter fluent class.
      *
-     * As stated in the PartialToken class, this is not a full Token and should not be treated
-     * as one. Instead it is a way of getting specific access to parts of the Token data.
+     * @see QueryFilter
      *
-     * @see org.forgerock.openam.cts.api.filter.TokenFilter#addReturnAttribute(org.forgerock.openam.cts.api.fields.CoreTokenField)
-     * @see org.forgerock.openam.cts.api.filter.TokenFilterBuilder
-     * @see org.forgerock.openam.cts.impl.query.PartialToken
-     *
-     * @param tokenFilter Non null TokenFilter, with the return attributes defined.
-     * @throws CoreTokenException If there was any error whilst performing the query.
-     * @return Non null, but maybe empty.
+     * @param filter A non null OpenDJ LDAP Filter to use to control the results returned.
+     * @return A non null, but possible empty collection of Tokens.
+     * @throws CoreTokenException If there was an unrecoverable error.
      */
-    Collection<PartialToken> attributeQuery(TokenFilter tokenFilter) throws CoreTokenException;
+    Collection<Token> list(Filter filter) throws CoreTokenException;
+
+    /**
+     * Returns the expiration information of all sessions belonging to a user.
+     * The returned value will be a Map (sid->expiration_time).
+     *
+     * @param uuid User's universal unique ID.
+     * @return Map of all Session for the user
+     * @throws Exception if there is any problem with accessing the session
+     *                   repository.
+     */
+    Map<String, Long> getTokensByUUID(String uuid) throws CoreTokenException;
 }

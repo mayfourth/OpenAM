@@ -86,6 +86,9 @@ define("org/forgerock/openam/ui/policy/PolicyDelegate", [
     };
 
     obj.createApplication = function (data, successCallback, errorCallback) {
+        // TODO: this one is mandatory, hardcoded for now
+        data.entitlementCombiner = "com.sun.identity.entitlement.DenyOverride";
+
         return obj.serviceCall({
             url: "/applications/?_action=create",
             type: "POST",
@@ -99,33 +102,9 @@ define("org/forgerock/openam/ui/policy/PolicyDelegate", [
         });
     };
 
-    obj.getDecisionCombiners = function (successCallback, errorCallback) {
+    obj.getConditionTypes = function (successCallback, errorCallback) {
         return obj.serviceCall({
-            url: "/decisioncombiners/?_queryId=&_fields=title",
-            success: function (data) {
-                if (successCallback) {
-                    successCallback(data);
-                }
-            },
-            error: errorCallback
-        });
-    };
-
-    obj.getEnvironmentConditions = function (successCallback, errorCallback) {
-        return obj.serviceCall({
-            url: "/conditiontypes?_queryID=&_fields=title,logical",
-            success: function (data) {
-                if (successCallback) {
-                    successCallback(data);
-                }
-            },
-            error: errorCallback
-        });
-    };
-
-    obj.getSubjectConditions = function (successCallback, errorCallback) {
-        return obj.serviceCall({
-            url: "/subjecttypes?_queryID=&_fields=title,logical",
+            url: "/conditiontypes?_queryFilter=true",
             success: function (data) {
                 if (successCallback) {
                     successCallback(data);
@@ -140,47 +119,6 @@ define("org/forgerock/openam/ui/policy/PolicyDelegate", [
 
         return obj.serviceCall({
             url: "/policies?_queryFilter=" + filter,
-            success: function (data) {
-                if (successCallback) {
-                    successCallback(data);
-                }
-            },
-            error: errorCallback
-        });
-    };
-
-    obj.getPolicyByName = function (name, successCallback, errorCallback) {
-        return obj.serviceCall({
-            url: "/policies/" + name,
-            success: function (data) {
-                if (successCallback) {
-                    successCallback(data);
-                }
-            },
-            error: errorCallback
-        });
-    };
-
-    obj.updatePolicy = function (policyName, data, successCallback, errorCallback) {
-        return obj.serviceCall({
-            url: "/policies/" + policyName,
-            type: "PUT",
-            data: JSON.stringify(data),
-            success: function (data) {
-                if (successCallback) {
-                    successCallback(data);
-                }
-            },
-            error: errorCallback
-        });
-    };
-
-    obj.createPolicy = function (data, successCallback, errorCallback) {
-        return obj.serviceCall({
-            url: "/policies/" + data.name,
-            headers: { "If-None-Match": "*" },
-            type: "PUT",
-            data: JSON.stringify(data),
             success: function (data) {
                 if (successCallback) {
                     successCallback(data);

@@ -571,11 +571,6 @@
 
         <dependency>
             <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-auth-scripted-deviceprint</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-auth-httpbasic</artifactId>
         </dependency>
 

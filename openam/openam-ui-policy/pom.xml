@@ -48,8 +48,9 @@
             <classifier>www</classifier>
         </dependency>
         <dependency>
-            <groupId>org.mozilla</groupId>
-            <artifactId>rhino</artifactId>
+            <groupId>org.apache.servicemix.bundles</groupId>
+            <artifactId>org.apache.servicemix.bundles.rhino</artifactId>
+            <version>1.7R2_3</version>
         </dependency>
         <dependency>
             <groupId>org.forgerock.commons.ui.libs</groupId>
@@ -145,7 +146,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.build.directory}/test/libs</outputDirectory>
-                            <includeArtifactIds>sinon,qunit,jquery-sortable</includeArtifactIds>
+                            <includeArtifactIds>sinon,qunit</includeArtifactIds>
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>false</overWriteSnapshots>
                             <overWriteIfNewer>true</overWriteIfNewer>

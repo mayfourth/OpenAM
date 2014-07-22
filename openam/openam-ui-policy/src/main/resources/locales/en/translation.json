@@ -37,9 +37,7 @@
             },
             "PolicyMessages": {
                 "applicationCreated": "Application created successfully",
-                "applicationUpdated": "Application updated successfully",
-                "policyCreated": "Policy created successfully",
-                "policyUpdated": "Policy updated successfully"
+                "applicationUpdated": "Application updated successfully"
             }
         },
         "AppConfiguration" : {

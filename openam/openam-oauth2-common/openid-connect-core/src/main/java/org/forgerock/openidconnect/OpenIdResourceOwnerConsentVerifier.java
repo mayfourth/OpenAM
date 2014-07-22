@@ -16,7 +16,6 @@
 
 package org.forgerock.openidconnect;
 
-import org.forgerock.oauth2.core.OAuth2Constants;
 import org.forgerock.oauth2.core.OAuth2Request;
 import org.forgerock.oauth2.core.ResourceOwnerConsentVerifier;
 import org.forgerock.oauth2.core.exceptions.ResourceOwnerConsentRequiredException;
@@ -36,7 +35,7 @@ public class OpenIdResourceOwnerConsentVerifier implements ResourceOwnerConsentV
      * {@inheritDoc}
      */
     public boolean verify(boolean consentSaved, OAuth2Request request) throws ResourceOwnerConsentRequiredException {
-        final OpenIdPrompt prompt = new OpenIdPrompt(request.<String>getParameter(OAuth2Constants.Custom.PROMPT));
+        final OpenIdPrompt prompt = new OpenIdPrompt(request.<String>getParameter("prompt"));
 
         if (prompt.isNoPrompt() && !consentSaved) {
             throw new ResourceOwnerConsentRequiredException();

@@ -1,15 +1,15 @@
-<li class="operator clearfix" {{#if master}}id="first-rule"{{/if}} {{#unless master}}id="operator_{{itemID}}" tabindex="0"{{/unless}} >
-
-	<select>
-		{{#operators}}<option value="{{title}}">{{title}}</option>{{/operators}}
-	</select>
-	<span>any of the following</span>
+<li class="operator clearfix" {{#if master}}id="first-rule"{{/if}}  data-operator >
 	{{#unless master}}
-	<span class="item-button-panel">
-		<span class="icon-remove tooltips" tabindex="0">
+	<span class='item-button-panel'>
+		<span class="icon-remove tooltips">
 			<span>Deleting will also remove any objects</span>
 		</span>
 	</span>
 	{{/unless}}
-	<ol class="dropbox" {{#if master}}id="dropbox"{{/if}}></ol>
+	<span>Match</span>
+	<select>
+		{{#operators}}<option value="{{title}}">{{title}}</option>{{/operators}}
+	</select>
+	<span>of the following {{numChildren}}</span>
+	<ol class="dropbox" {{#if master}}id='dropbox'{{/if}}></ol>
 </li>

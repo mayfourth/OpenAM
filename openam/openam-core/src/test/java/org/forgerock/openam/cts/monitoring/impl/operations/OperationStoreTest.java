@@ -13,6 +13,7 @@
  *
  * Copyright 2013-2014 ForgeRock AS.
  */
+
 package org.forgerock.openam.cts.monitoring.impl.operations;
 
 import org.forgerock.openam.cts.CTSOperation;

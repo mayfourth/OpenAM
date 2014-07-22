@@ -81,11 +81,12 @@
         </dependency>
         <dependency>
             <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-http-client</artifactId>
+            <artifactId>openam-scripting</artifactId>
         </dependency>
         <dependency>
             <groupId>org.forgerock.openam</groupId>
-            <artifactId>openam-scripting</artifactId>
+            <artifactId>openam-http-client</artifactId>
+
         </dependency>
     </dependencies>
 </project>

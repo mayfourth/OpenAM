@@ -48,25 +48,21 @@ define("org/forgerock/openam/ui/policy/ActionsView", [
 
             this.parentRender(function () {
                 this.$toggleAll = this.$el.find('.toggle-all-actions');
-
-                if (callback) {
-                    callback();
-                }
             });
         },
 
         init: function () {
             var data = this.data,
-                entity = data.entity,
+                app = data.app,
                 availableActions,
                 selectedActions;
 
-            if (!entity.actions) {
-                entity.actions = [];
+            if (!app.actions) {
+                app.actions = [];
             }
 
-            availableActions = entity.availableActions;
-            selectedActions = entity.actions;
+            availableActions = data.typeActions[app.applicationType];
+            selectedActions = app.actions;
 
             if (!_.isEmpty(selectedActions)) {
                 _.each(availableActions, function (action) {
@@ -78,7 +74,7 @@ define("org/forgerock/openam/ui/policy/ActionsView", [
                 });
             }
 
-            entity.actions = availableActions;
+            app.actions = availableActions;
         },
 
         /**
@@ -87,7 +83,7 @@ define("org/forgerock/openam/ui/policy/ActionsView", [
         toggleAction: function (e) {
             var actionName = e.target.getAttribute('data-action-name');
 
-            _.find(this.data.entity.actions,function (action) {
+            _.find(this.data.app.actions,function (action) {
                 return action.action === actionName;
             }).selected = e.target.checked;
         },
@@ -99,7 +95,7 @@ define("org/forgerock/openam/ui/policy/ActionsView", [
             var value = e.target.value,
                 actionName = e.target.getAttribute('data-action-name');
 
-            _.find(this.data.entity.actions,function (action) {
+            _.find(this.data.app.actions,function (action) {
                 return action.action === actionName;
             }).value = value === 'Allow';
         },
@@ -109,7 +105,7 @@ define("org/forgerock/openam/ui/policy/ActionsView", [
          */
         toggleAllActions: function (e) {
             var checked = e.target.checked,
-                actions = this.data.entity.actions;
+                actions = this.data.app.actions;
 
             _.each(actions, function (action) {
                 action.selected = checked;

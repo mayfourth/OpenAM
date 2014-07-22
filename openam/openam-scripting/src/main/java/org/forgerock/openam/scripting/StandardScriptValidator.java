@@ -16,18 +16,19 @@
 
 package org.forgerock.openam.scripting;
 
-import java.util.ArrayList;
-import java.util.List;
-import javax.inject.Inject;
-import javax.script.Compilable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.forgerock.util.Reject;
 import org.mozilla.javascript.EvaluatorException;
+
+import javax.inject.Inject;
+import javax.script.Compilable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Validates scripts using the standard JSR 223 script engine framework.
@@ -47,7 +48,7 @@ public class StandardScriptValidator implements ScriptValidator {
      * @throws java.lang.NullPointerException if scriptEngineManager is not specified.
      */
     @Inject
-    public StandardScriptValidator(StandardScriptEngineManager scriptEngineManager) {
+    public StandardScriptValidator(ScriptEngineManager scriptEngineManager) {
         Reject.ifNull(scriptEngineManager);
         this.scriptEngineManager = scriptEngineManager;
     }

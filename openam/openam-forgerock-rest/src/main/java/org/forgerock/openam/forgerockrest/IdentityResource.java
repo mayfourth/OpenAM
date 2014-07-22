@@ -60,14 +60,10 @@ import javax.security.auth.callback.PasswordCallback;
 import org.apache.commons.lang.RandomStringUtils;
 import org.forgerock.guice.core.InjectorHolder;
 import org.forgerock.json.fluent.JsonValue;
-import static org.forgerock.json.fluent.JsonValue.field;
-import static org.forgerock.json.fluent.JsonValue.json;
-import static org.forgerock.json.fluent.JsonValue.object;
 import org.forgerock.json.fluent.JsonValueException;
 import org.forgerock.json.resource.ActionRequest;
 import org.forgerock.json.resource.BadRequestException;
 import org.forgerock.json.resource.CollectionResourceProvider;
-import org.forgerock.json.resource.ConflictException;
 import org.forgerock.json.resource.CreateRequest;
 import org.forgerock.json.resource.DeleteRequest;
 import org.forgerock.json.resource.ForbiddenException;
@@ -91,15 +87,17 @@ import org.forgerock.openam.cts.api.TokenType;
 import org.forgerock.openam.cts.api.fields.CoreTokenField;
 import org.forgerock.openam.cts.exceptions.CoreTokenException;
 import org.forgerock.openam.cts.exceptions.DeleteFailedException;
+
+import static org.forgerock.json.fluent.JsonValue.field;
+import static org.forgerock.json.fluent.JsonValue.json;
+import static org.forgerock.json.fluent.JsonValue.object;
 import static org.forgerock.openam.forgerockrest.RestUtils.getCookieFromServerContext;
 import static org.forgerock.openam.forgerockrest.RestUtils.isAdmin;
 import org.forgerock.openam.forgerockrest.utils.MailServerLoader;
 import org.forgerock.openam.rest.resource.RealmContext;
-import org.forgerock.openam.security.whitelist.ValidGotoUrlExtractor;
 import org.forgerock.openam.services.RestSecurity;
 import org.forgerock.openam.services.email.MailServer;
 import org.forgerock.openam.services.email.MailServerImpl;
-import org.forgerock.openam.shared.security.whitelist.RedirectUrlValidator;
 import org.forgerock.util.Reject;
 
 /**
@@ -115,10 +113,6 @@ public final class IdentityResource implements CollectionResourceProvider {
     public static final String USER_TYPE = "user";
     public static final String GROUP_TYPE = "group";
     public static final String AGENT_TYPE = "agent";
-
-
-    private final static RedirectUrlValidator<String> URL_VALIDATOR =
-            new RedirectUrlValidator<String>(ValidGotoUrlExtractor.getInstance());
 
     // TODO: filters, sorting, paged results.
 
@@ -139,7 +133,6 @@ public final class IdentityResource implements CollectionResourceProvider {
     final static String TOKEN_ID = "tokenId";
     final static String CONFIRMATION_ID = "confirmationId";
     final static String CURRENTPASSWORD = "currentpassword";
-    final static String USER_PASSWORD = "userpassword";
 
     private final MailServerLoader mailServerLoader;
 
@@ -419,41 +412,11 @@ public final class IdentityResource implements CollectionResourceProvider {
     }
 
     /**
-     * Validates the current goto against the list of allowed gotos, and returns either the allowed
-     * goto as sent in, or the server's default goto value.
-     *
+     * Will validate confirmationId is correct
      * @param context Current Server Context
      * @param request Request from client to confirm registration
      * @param handler Result handler
      */
-    private void validateGoto(final ServerContext context, final ActionRequest request,
-                                     final ResultHandler<JsonValue> handler) {
-
-        final JsonValue jVal = request.getContent();
-        JsonValue result = new JsonValue(new LinkedHashMap<String, Object>(1));
-
-        try {
-            SSOTokenManager mgr = SSOTokenManager.getInstance();
-            SSOToken ssoToken = mgr.createSSOToken(getCookieFromServerContext(context));
-
-            String gotoURL = URL_VALIDATOR.getRedirectUrl(ssoToken.getProperty(ISAuthConstants.ORGANIZATION),
-                    URL_VALIDATOR.getValueFromJson(jVal, RedirectUrlValidator.GOTO),
-                    ssoToken.getProperty("successURL"));
-
-            result.put("successURL", gotoURL);
-            handler.handleResult(result);
-        } catch (SSOException ssoe){
-            debug.message("IdentityResource.validateGoto(): Invalid SSOToken: " + ssoe.getMessage());
-            handler.handleError(ResourceException.getException(ResourceException.FORBIDDEN, ssoe.getMessage(), ssoe));
-        }
-    }
-
-        /**
-         * Will validate confirmationId is correct
-         * @param context Current Server Context
-         * @param request Request from client to confirm registration
-         * @param handler Result handler
-         */
     private void confirmRegistration(final ServerContext context, final ActionRequest request,
                                      final ResultHandler<JsonValue> handler, final String realm){
         final JsonValue jVal = request.getContent();
@@ -554,18 +517,16 @@ public final class IdentityResource implements CollectionResourceProvider {
         final String action = request.getAction();
         if (action.equalsIgnoreCase("idFromSession")) {
             idFromSession(context, request, handler);
-        } else if (action.equalsIgnoreCase("register")){
+        } else if(action.equalsIgnoreCase("register")){
             createRegistrationEmail(context,request, realm, restSecurity, handler);
-        } else if (action.equalsIgnoreCase("confirm")) {
+        } else if(action.equalsIgnoreCase("confirm")) {
             confirmRegistration(context, request, handler, realm);
-        } else if (action.equalsIgnoreCase("anonymousCreate")) {
+        } else if(action.equalsIgnoreCase("anonymousCreate")) {
             anonymousCreate(context, request, realm, handler);
-        } else if (action.equalsIgnoreCase("forgotPassword")) {
+        } else if(action.equalsIgnoreCase("forgotPassword")){
             generateNewPasswordEmail(context, request, realm, restSecurity, handler);
-        } else if (action.equalsIgnoreCase("forgotPasswordReset")) {
+        } else if(action.equalsIgnoreCase("forgotPasswordReset")){
             anonymousUpdate(context, request, realm, handler);
-        } else if (action.equalsIgnoreCase("validateGoto")) {
-            validateGoto(context, request, handler);
         } else { // for now this is the only case coming in, so fail if otherwise
             final ResourceException e =
                     new NotSupportedException("Actions are not supported for resource instances");
@@ -919,9 +880,9 @@ public final class IdentityResource implements CollectionResourceProvider {
             JsonValue value = request.getContent();
 
             try {
-                String userPassword = value.get(USER_PASSWORD).asString();
+                String userPassword = value.get("userpassword").asString();
                 if (userPassword == null || userPassword.isEmpty()) {
-                    throw new BadRequestException("'" + USER_PASSWORD + "' attribute not set in JSON content.");
+                    throw new BadRequestException("'userpassword' attribute not set in JSON content.");
                 }
 
                 String currentPassword = value.get(CURRENTPASSWORD).asString();
@@ -933,7 +894,8 @@ public final class IdentityResource implements CollectionResourceProvider {
                 Token admin = new Token();
                 admin.setId(getCookieFromServerContext(context));
                 IdentityDetails identityDetails = jsonValueToIdentityDetails(json(object(
-                        field(USER_PASSWORD, userPassword))), realm);
+                        field("username", value.get("username").asString()), field("userpassword", userPassword))),
+                        realm);
                 identityDetails.setName(resourceId);
                 idsvc.update(identityDetails, admin);
                 handler.handleResult(json(object()));
@@ -1068,7 +1030,7 @@ public final class IdentityResource implements CollectionResourceProvider {
         } catch (final DuplicateObject duplicateObject) {
             debug.error("IdentityResource.createInstance() :: Cannot CREATE " +
                     resourceId + ": Resource already exists!" + duplicateObject);
-            handler.handleError(new ConflictException("Resource already exists", duplicateObject));
+            handler.handleError(new NotFoundException("Resource already exists", duplicateObject));
         } catch (final TokenExpired tokenExpired) {
             debug.error("IdentityResource.createInstance() :: Cannot CREATE " +
                     resourceId + ":" + tokenExpired);

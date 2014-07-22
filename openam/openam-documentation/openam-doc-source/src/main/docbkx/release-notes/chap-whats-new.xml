@@ -177,46 +177,6 @@ Agreement (yes/no): [no]:</screen>
      xlink:show="new"><citetitle>Authorization</citetitle></link>.
    </para>
   </listitem>
-
-  <listitem>
-   <para>
-    <emphasis role="bold">Scripted Authentication Modules</emphasis>.
-    OpenAM now supports scripted authentication modules.
-    A scripted authentication module runs a script to perform authentication,
-    making it easier than ever before to develop custom authentication modules.
-   </para>
-
-   <para>
-    Scripted authentication modules
-    have access to the same data as other modules in the chain,
-    can access user profile data during authentication,
-    can make HTTP calls to external services,
-    and are sandboxed for more secure operation.
-    The scripts are stored in OpenAM configuration data,
-    and so transparently available across OpenAM Sites.
-    Server-side scripts can be written in either Groovy or JavaScript.
-   </para>
-
-   <para>
-    For details on writing authentication module scripts, see the
-    <citetitle>Developer Guide</citetitle> chapter,
-    <link
-     xlink:href="dev-guide#chap-scripted-auth-module"
-     xlink:role="http://docbook.org/xlink/role/olink"
-     xlink:show="new"
-    ><citetitle>Scripting Authentication</citetitle></link>.
-   </para>
-
-   <para>
-    For details on configuring scripted authentication modules, see the
-    <citetitle>Administration Guide</citetitle> section on
-    <link
-     xlink:href="admin-guide#scripted-module-conf-hints"
-     xlink:role="http://docbook.org/xlink/role/olink"
-     xlink:show="new"
-    ><citetitle>Hints For Scripted Authentication Modules</citetitle></link>.
-   </para>
-  </listitem>
  </itemizedlist>
 
  <itemizedlist>
@@ -286,31 +246,6 @@ Agreement (yes/no): [no]:</screen>
      You can set advanced server properties in OpenAM Console under
      Configuration > Servers and Sites > <replaceable>Server Name</replaceable> > Advanced.
      For production servers, leave this set to the default, <literal>true</literal>.
-    </para>
-  </listitem>
-
-  <listitem>
-    <para>
-     <emphasis role="bold">Whitelist for Custom Login URIs</emphasis>.
-     OpenAM now includes a property that specifies
-     a whitelist for custom login URIs
-     so that the CDCServlet and the Distributed Authentication UI (DAS)
-     can check login URI values against those in the whitelist
-     (<link
-       xlink:show="new"
-       xlink:href="https://bugster.forgerock.org/jira/browse/OPENAM-3918"
-      >OPENAM-3918</link>).
-    </para>
-
-    <para>
-     The property name is <literal>org.forgerock.openam.cdc.validLoginURIs</literal>.
-     For more information about this property,
-     see the <citetitle>Reference</citetitle> section on advanced properties,
-     <link
-      xlink:show="new"
-      xlink:href="reference#servers-advanced-configuration"
-      xlink:role="http://docbook.org/xlink/role/olink"
-     ><citetitle>Servers &gt; Advanced</citetitle></link>.
     </para>
   </listitem>
 
