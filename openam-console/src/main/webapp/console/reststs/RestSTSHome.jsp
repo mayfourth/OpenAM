@@ -17,7 +17,9 @@
 --%>
 
 
-<%@ page info="Home" language="java" %>
+
+
+<%@ page info="Services" language="java" %>
 <%@taglib uri="/WEB-INF/jato.tld" prefix="jato" %>
 <%@taglib uri="/WEB-INF/cc.tld" prefix="cc" %>
 <jato:useViewBean
@@ -30,16 +32,10 @@
     <cc:header name="hdrCommon" pageTitle="webconsole.title" bundleID="amConsole" copyrightYear="2004" fireDisplayEvents="true">
 
         <script language="javascript" src="../console/js/am.js"></script>
-        <script language="javascript">
-            function switchView(selectElmName) {
-                var frm = document.forms[0];
-                frm.elements['jato.defaultCommand'].value = "/btnShowMenu";
-                frm.submit();
-            }
-        </script>
 
-        <cc:form name="Home" method="post" defaultCommandChild="/btnSearch">
+        <cc:form name="Services" method="post" defaultCommandChild="/tblButtonAdd">
             <jato:hidden name="szCache" />
+
             <script language="javascript">
                 function confirmLogout() {
                     return confirm("<cc:text name="txtLogout" defaultValue="masthead.logoutMessage" bundleID="amConsole"/>");
@@ -47,25 +43,55 @@
             </script>
             <cc:primarymasthead name="mhCommon" bundleID="amConsole"  logoutOnClick="return confirmLogout();" locale="<%=((com.sun.identity.console.base.AMViewBeanBase)viewBean).getUserLocale()%>"/>
             <cc:breadcrumbs name="breadCrumb" bundleID="amConsole" />
-            <cc:tabs name="tabCommon" bundleID="amConsole" submitFormData="true" />
+
+            <cc:tabs name="tabCommon" bundleID="amConsole" />
 
             <table border="0" cellpadding="10" cellspacing="0" width="100%">
                 <tr>
                     <td>
-                        <cc:alertinline name="ialertCommon" bundleID="amConsole"
-                                        summary="message.information" detail="idrepo.missing.plugins" />
+                        <cc:alertinline name="ialertCommon" bundleID="amConsole" />
                     </td>
                 </tr>
             </table>
 
-            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+            <table border="0" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td>
+                    <td align="left">
                         <cc:breadcrumbs name="parentagepath" bundleID="amConsole" />
-                        <div class="BcmWhtDiv"><cc:text name="txtRoot" bundleID="amConsole" /></div>
+                        <div class="BcmWhtDiv">
+                            <cc:text name="txtRoot" bundleID="amConsole" />
+                        </div>
                     </td>
                 </tr>
             </table>
+
+            <%-- PAGE CONTENT --------------------------------------------------------- --%>
+            <cc:pagetitle
+                    name="pgtitle"
+                    bundleID="amConsole"
+                    pageTitleText="reststs.home.page.title"
+                    showPageTitleSeparator="true"
+                    viewMenuLabel=""
+                    pageTitleHelpMessage=""
+                    showPageButtonsTop="true"
+                    showPageButtonsBottom="false" />
+
+            <cc:spacer name="spacer" height="10" newline="true" />
+
+            <cc:actiontable
+                    name="tblSearch"
+                    title="reststs.home.instances.table.name"
+                    bundleID="amConsole"
+                    summary="reststs.home.instances.table.summary"
+                    empty="reststs.home.instances.table.empty.message"
+                    selectionType="multiple"
+                    showAdvancedSortingIcon="false"
+                    showLowerActions="false"
+                    showPaginationControls="false"
+                    showPaginationIcon="false"
+                    showSelectionIcons="true"
+                    showSelectionSortIcon="false"
+                    showSortingRow="false" />
         </cc:form>
 
     </cc:header>
