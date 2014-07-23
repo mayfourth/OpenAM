@@ -21,6 +21,7 @@ import com.iplanet.sso.SSOToken;
 import com.sun.identity.common.HttpURLConnectionManager;
 import com.sun.identity.console.base.model.AMConsoleException;
 import com.sun.identity.console.base.model.AMModelBase;
+import com.sun.identity.console.base.model.AMServiceProfileModelImpl;
 import com.sun.identity.console.base.model.AMSystemConfig;
 import com.sun.identity.security.AdminTokenAction;
 import com.sun.identity.sm.SMSException;
@@ -52,7 +53,7 @@ import static org.forgerock.json.fluent.JsonValue.object;
 /**
  * @see com.sun.identity.console.reststs.model.RestSTSModel
  */
-public class RestSTSModelImpl extends AMModelBase implements RestSTSModel {
+public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestSTSModel {
     /*
     Review TODO: perhaps the values below which match those defined in AMSTSConstants should be moved to a module
     shared between openam-sts and openam-console? Perhaps openam-shared?? Or should the values just be duplicated??
@@ -87,8 +88,8 @@ public class RestSTSModelImpl extends AMModelBase implements RestSTSModel {
 
     private static final String FORWARD_SLASH = "/";
 
-    public RestSTSModelImpl(HttpServletRequest req, Map map) {
-        super(req, map);
+    public RestSTSModelImpl(HttpServletRequest req, Map map) throws AMConsoleException {
+        super(req, REST_STS_SERVICE_NAME, map);
     }
 
     public Set<String> getPublishedInstances(String realm) throws AMConsoleException {

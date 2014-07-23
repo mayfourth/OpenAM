@@ -195,7 +195,7 @@
                  permissions="sunIdentityRepositoryService/1.0/application/agent"/>
             <tab id="19"
                  viewbean="com.sun.identity.console.reststs.RestSTSHomeViewBean"
-                 url="../reststs/Home"
+                 url="../reststs/RestSTSHome"
                  label="tab.configuration.reststs.label"
                  tooltip="tab.configuration.reststs.tooltip"
                  status="tab.configuration.reststs.status"
