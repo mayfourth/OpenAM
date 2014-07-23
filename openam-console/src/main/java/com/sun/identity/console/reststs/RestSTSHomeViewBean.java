@@ -47,15 +47,12 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
     Used to set a session attribute
      */
     public static final String INSTANCE_NAME = "instanceName";
-    private static final String CHILD_TBL_TILED_VIEW = "tableTiledView";
     private static final String TBL_SEARCH = "tblSearch";
     private static final String TBL_BUTTON_ADD = "tblButtonAdd";
     private static final String TBL_BUTTON_DELETE = "tblButtonDelete";
     private static final String TBL_COL_NAME = "tblColName";
     private static final String TBL_DATA_NAME = "tblDataName";
-//    private static final String TF_DATA_NAME = "tfDataName";
     private static final String TBL_COL_ACTION = "tblColAction";
-    private static final String TBL_DATA_ACTION_LABEL = "tblDataActionLabel";
     private static final String PAGETITLE = "pgtitle";
     static final String TBL_DATA_ACTION_HREF = "tblDataActionHref";
 
@@ -79,22 +76,12 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
         registerChild(TBL_SEARCH, CCActionTable.class);
         ptModel.registerChildren(this);
         tblModel.registerChildren(this);
-//        registerChild(CHILD_TBL_TILED_VIEW, RestSTSTiledView.class);
     }
 
     protected View createChild(String name) {
         View view;
 
-        /*if (name.equals(CHILD_TBL_TILED_VIEW)) {
-            view = new RestSTSTiledView(this, tblModel, name);
-        } else*/ if (name.equals(TBL_SEARCH)) {
-/*
-            RestSTSTiledView tView = (RestSTSTiledView)getChild(
-                    CHILD_TBL_TILED_VIEW);
-            CCActionTable child = new CCActionTable(this, tblModel, name);
-            child.setTiledView(tView);
-            view = child;
-*/
+        if (name.equals(TBL_SEARCH)) {
             view = new CCActionTable(this, tblModel, name);
         } else if (name.equals(PAGETITLE)) {
             view = new CCPageTitle(this, ptModel, name);
@@ -177,8 +164,6 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
 
                 tblModel.setValue(TBL_DATA_NAME, instanceName);
                 tblModel.setValue(TBL_DATA_ACTION_HREF, instanceName);
-//                tblModel.setValue(TBL_DATA_ACTION_LABEL,
-//                        "table.services.action.edit");
             }
             szCache.setValue((Serializable)publishedInstances);
         } else {
@@ -192,8 +177,8 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
      * @param event Request Invocation Event.
      */
     public void handleTblButtonAddRequest(RequestInvocationEvent event) {
-        RestSecurityTokenServiceViewBean vb = (RestSecurityTokenServiceViewBean)getViewBean(
-                RestSecurityTokenServiceViewBean.class);
+        RestSTSAddViewBean vb = (RestSTSAddViewBean)getViewBean(
+                RestSTSAddViewBean.class);
         unlockPageTrail();
         passPgSessionMap(vb);
         vb.forwardTo(getRequestContext());
@@ -209,8 +194,8 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
      * @param instanceName name of the Rest STS instance to be edited
      */
     public void handleTblDataActionHrefRequest(String instanceName) {
-        RestSecurityTokenServiceViewBean vb = (RestSecurityTokenServiceViewBean)getViewBean(
-                RestSecurityTokenServiceViewBean.class);
+        RestSTSAddViewBean vb = (RestSTSAddViewBean)getViewBean(
+                RestSTSAddViewBean.class);
         setPageSessionAttribute(INSTANCE_NAME, instanceName);
         // set save vb to return to this view after selecting back
         // button in services edit viewbean.

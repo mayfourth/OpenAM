@@ -84,8 +84,6 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
 
     private static final String DEPLOYMENT_REALM = "deployment-realm";
 
-    private static final String REST_STS_SERVICE_NAME = "RestSecurityTokenService";
-
     private static final String FORWARD_SLASH = "/";
 
     public RestSTSModelImpl(HttpServletRequest req, Map map) throws AMConsoleException {
