@@ -101,7 +101,7 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
         super.beginDisplay(event);
         resetButtonState(TBL_BUTTON_DELETE);
         setRestSTSInstanceNamesInTable();
-        setPageTitle(getModel(), "reststs.home.page.title");
+        setPageTitle(getModel(), "rest.sts.home.page.title");
     }
 
     protected AMModel getModelInternal() {
@@ -127,13 +127,13 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
                 getClass().getClassLoader().getResourceAsStream(
                         "com/sun/identity/console/tblRestSTSInstances.xml"));
         tblModel.setTitleLabel("label.items");
-        tblModel.setActionValue(TBL_BUTTON_ADD, "reststs.home.instances.table.button.new");
+        tblModel.setActionValue(TBL_BUTTON_ADD, "rest.sts.home.instances.table.button.new");
         tblModel.setActionValue(TBL_BUTTON_DELETE,
-                "reststs.home.instances.table.button.delete");
+                "rest.sts.home.instances.table.button.delete");
         tblModel.setActionValue(TBL_COL_NAME,
-                "reststs.home.instances.table.column.name");
+                "rest.sts.home.instances.table.column.name");
         tblModel.setActionValue(TBL_COL_ACTION,
-                "reststs.home.instances.table.action.column.name");
+                "rest.sts.home.instances.table.action.column.name");
     }
 
     private void setRestSTSInstanceNamesInTable() {
@@ -177,8 +177,7 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
      * @param event Request Invocation Event.
      */
     public void handleTblButtonAddRequest(RequestInvocationEvent event) {
-        RestSTSAddViewBean vb = (RestSTSAddViewBean)getViewBean(
-                RestSTSAddViewBean.class);
+        RestSTSAddViewBean vb = (RestSTSAddViewBean)getViewBean(RestSTSAddViewBean.class);
         unlockPageTrail();
         passPgSessionMap(vb);
         vb.forwardTo(getRequestContext());
@@ -191,16 +190,14 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
      * The update should be differentiated, so that I can do a POST with an id, which will serve to update the previously-published
      * instance (delete followed by a create).
      *
-     * @param instanceName name of the Rest STS instance to be edited
      */
-    public void handleTblDataActionHrefRequest(String instanceName) {
-        RestSTSAddViewBean vb = (RestSTSAddViewBean)getViewBean(
-                RestSTSAddViewBean.class);
+    public void handleTblDataActionHrefRequest(RequestInvocationEvent event) {
+        RestSTSEditViewBean vb = (RestSTSEditViewBean)getViewBean(
+                RestSTSEditViewBean.class);
+        String instanceName = hexToString((String)getDisplayFieldValue(
+                TBL_DATA_ACTION_HREF));
         setPageSessionAttribute(INSTANCE_NAME, instanceName);
-        // set save vb to return to this view after selecting back
-        // button in services edit viewbean.
-        setPageSessionAttribute(
-                AMAdminConstants.SAVE_VB_NAME, getClass().getName());
+        setPageSessionAttribute(AMAdminConstants.SAVE_VB_NAME, getClass().getName());
         unlockPageTrail();
         passPgSessionMap(vb);
         vb.forwardTo(getRequestContext());
@@ -225,10 +222,10 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
 
             if (selected.length == 1) {
                 setInlineAlertMessage(CCAlert.TYPE_INFO, "message.information",
-                        "reststs.home.instance.deleted");
+                        "rest.sts.home.instance.deleted");
             } else {
                 setInlineAlertMessage(CCAlert.TYPE_INFO, "message.information",
-                        "reststs.home.instances.deleted");
+                        "rest.sts.home.instances.deleted");
             }
         } catch (AMConsoleException e) {
             setInlineAlertMessage(CCAlert.TYPE_ERROR, "message.error",

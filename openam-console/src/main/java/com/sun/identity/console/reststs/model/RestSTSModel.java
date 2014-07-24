@@ -32,5 +32,8 @@ public interface RestSTSModel extends AMModel {
     Set<String> getPublishedInstances(String realm) throws AMConsoleException;
     void deleteInstances(String realm, Set<String> instanceNames) throws AMConsoleException;
     RestSTSModelResponse createInstance(Map<String, Set<String>> configurationState, String realm) throws AMConsoleException;
+    RestSTSModelResponse updateInstance(Map<String, Set<String>> configurationState, String realm, String instanceName)
+            throws AMConsoleException;
+    Map<String, Set<String>> getInstanceState(String realm, String instanceName) throws AMConsoleException;
     RestSTSModelResponse validateConfigurationState(Map<String, Set<String>> configurationState);
 }

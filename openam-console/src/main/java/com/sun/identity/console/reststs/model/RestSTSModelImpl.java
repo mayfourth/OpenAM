@@ -20,7 +20,6 @@ import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
 import com.sun.identity.common.HttpURLConnectionManager;
 import com.sun.identity.console.base.model.AMConsoleException;
-import com.sun.identity.console.base.model.AMModelBase;
 import com.sun.identity.console.base.model.AMServiceProfileModelImpl;
 import com.sun.identity.console.base.model.AMSystemConfig;
 import com.sun.identity.security.AdminTokenAction;
@@ -52,6 +51,9 @@ import static org.forgerock.json.fluent.JsonValue.object;
 
 /**
  * @see com.sun.identity.console.reststs.model.RestSTSModel
+ * This class extends the AMServiceProfileModelImpl because this class provides functionality for reading values corresponding
+ * to propertySheets.
+ *
  */
 public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestSTSModel {
     /*
@@ -128,6 +130,32 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         try {
             return invokeRestSTSPublishService(invocationJson.toString());
         } catch (IOException e) {
+            throw new AMConsoleException(e);
+        }
+    }
+
+    public RestSTSModelResponse updateInstance(Map<String, Set<String>> configurationState, String realm, String instanceName) throws AMConsoleException {
+        return RestSTSModelResponse.success("Instance " + instanceName + " in realm " + realm  + " updated.");
+        //TODO: proper implementation, when rest sts publish service updated.
+    }
+
+    public Map<String, Set<String>> getInstanceState(String realm, String instanceName) throws AMConsoleException {
+        try {
+            ServiceConfig baseService = new ServiceConfigManager(REST_STS_SERVICE_NAME,
+                    getAdminToken()).getOrganizationConfig(realm, null);
+            if (baseService != null) {
+                ServiceConfig serviceConfig = baseService.getSubConfig(instanceName);
+                if (serviceConfig != null) {
+                    return serviceConfig.getAttributes();
+                } else {
+                    return Collections.EMPTY_MAP;
+                }
+            } else {
+                return Collections.EMPTY_MAP;
+            }
+        } catch (SMSException e) {
+            throw new AMConsoleException(e);
+        } catch (SSOException e) {
             throw new AMConsoleException(e);
         }
     }
