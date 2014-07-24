@@ -33,7 +33,7 @@
 
         <script language="javascript" src="../console/js/am.js"></script>
 
-        <cc:form name="Services" method="post" defaultCommandChild="/tblButtonAdd">
+        <cc:form name="RestSTSHome" method="post" defaultCommandChild="/tblButtonAdd">
             <jato:hidden name="szCache" />
 
             <script language="javascript">
@@ -90,6 +90,7 @@
                     showPaginationControls="false"
                     showPaginationIcon="false"
                     showSelectionIcons="true"
+                    selectionJavascript="toggleTblButtonState('RestSTSHome', 'RestSTSHome.tblSearch', 'tblButton', 'RestSTSHome.tblButtonDelete', this)"
                     showSelectionSortIcon="false"
                     showSortingRow="false" />
         </cc:form>
