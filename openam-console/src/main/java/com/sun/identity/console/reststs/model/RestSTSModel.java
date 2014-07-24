@@ -27,8 +27,6 @@ import java.util.Set;
  * instances.
  */
 public interface RestSTSModel extends AMModel {
-    public static final String REST_STS_SERVICE_NAME = "RestSecurityTokenService";
-
     Set<String> getPublishedInstances(String realm) throws AMConsoleException;
     void deleteInstances(String realm, Set<String> instanceNames) throws AMConsoleException;
     RestSTSModelResponse createInstance(Map<String, Set<String>> configurationState, String realm) throws AMConsoleException;

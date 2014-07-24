@@ -19,6 +19,7 @@ package com.sun.identity.console.reststs.model;
 import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
 import com.sun.identity.common.HttpURLConnectionManager;
+import com.sun.identity.console.base.model.AMAdminConstants;
 import com.sun.identity.console.base.model.AMConsoleException;
 import com.sun.identity.console.base.model.AMServiceProfileModelImpl;
 import com.sun.identity.console.base.model.AMSystemConfig;
@@ -89,12 +90,12 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
     private static final String FORWARD_SLASH = "/";
 
     public RestSTSModelImpl(HttpServletRequest req, Map map) throws AMConsoleException {
-        super(req, REST_STS_SERVICE_NAME, map);
+        super(req, AMAdminConstants.REST_STS_SERVICE, map);
     }
 
     public Set<String> getPublishedInstances(String realm) throws AMConsoleException {
         try {
-            ServiceConfig baseService = new ServiceConfigManager(REST_STS_SERVICE_NAME,
+            ServiceConfig baseService = new ServiceConfigManager(AMAdminConstants.REST_STS_SERVICE,
                     getAdminToken()).getOrganizationConfig(realm, null);
             if (baseService != null) {
                 return baseService.getSubConfigNames();
@@ -141,7 +142,7 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
 
     public Map<String, Set<String>> getInstanceState(String realm, String instanceName) throws AMConsoleException {
         try {
-            ServiceConfig baseService = new ServiceConfigManager(REST_STS_SERVICE_NAME,
+            ServiceConfig baseService = new ServiceConfigManager(AMAdminConstants.REST_STS_SERVICE,
                     getAdminToken()).getOrganizationConfig(realm, null);
             if (baseService != null) {
                 ServiceConfig serviceConfig = baseService.getSubConfig(instanceName);

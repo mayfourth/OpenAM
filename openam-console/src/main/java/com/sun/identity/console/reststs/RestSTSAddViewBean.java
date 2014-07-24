@@ -35,7 +35,7 @@ public class RestSTSAddViewBean extends AMServiceProfileViewBeanBase {
     public static final String PAGE_MODIFIED = "pageModified";
 
     public RestSTSAddViewBean() {
-        super("RestSTSAdd", DEFAULT_DISPLAY_URL, RestSTSModel.REST_STS_SERVICE_NAME);
+        super("RestSTSAdd", DEFAULT_DISPLAY_URL, AMAdminConstants.REST_STS_SERVICE);
     }
 
     protected void initialize() {
