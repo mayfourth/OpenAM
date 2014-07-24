@@ -82,6 +82,8 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
         View view;
 
         if (name.equals(TBL_SEARCH)) {
+            SerializedField szCache = (SerializedField)getChild(SZ_CACHE);
+            populateTableModel((Set)szCache.getSerializedObj());
             view = new CCActionTable(this, tblModel, name);
         } else if (name.equals(PAGETITLE)) {
             view = new CCPageTitle(this, ptModel, name);
@@ -153,7 +155,7 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
         tblModel.clearAll();
         SerializedField szCache = (SerializedField)getChild(SZ_CACHE);
 
-        if (!publishedInstances.isEmpty()) {
+        if ((publishedInstances != null) && !publishedInstances.isEmpty()) {
             boolean firstEntry = true;
             for (String instanceName : publishedInstances) {
                 if (firstEntry) {

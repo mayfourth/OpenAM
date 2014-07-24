@@ -102,12 +102,11 @@ public class RestSTSEditViewBean extends AMPrimaryMastHeadViewBean {
     protected void createPageTitleModel() {
         ptModel = new CCPageTitleModel(
                 getClass().getClassLoader().getResourceAsStream(
-                        "com/sun/identity/console/threeBtnsPageTitle.xml"));
+                        "com/sun/identity/console/twoBtnsPageTitle.xml"));
 
         ptModel.setPageTitleText("rest.sts.edit.page.title");
         ptModel.setValue("button1", "button.save");
-        ptModel.setValue("button2", "button.reset");
-        ptModel.setValue("button3", "button.back");
+        ptModel.setValue("button2", "button.back");
     }
 
     protected void createPropertyModel() {
@@ -198,7 +197,7 @@ public class RestSTSEditViewBean extends AMPrimaryMastHeadViewBean {
         return values;
     }
 
-    public void handleButton3Request(RequestInvocationEvent event)
+    public void handleButton2Request(RequestInvocationEvent event)
             throws ModelControlException, AMConsoleException {
         removePageSessionAttribute(PAGE_MODIFIED);
         AMViewBeanBase vb = getPreviousPage();
@@ -222,5 +221,4 @@ public class RestSTSEditViewBean extends AMPrimaryMastHeadViewBean {
             return (AMViewBeanBase) getViewBean(RestSTSHomeViewBean.class);
         }
     }
-
 }
