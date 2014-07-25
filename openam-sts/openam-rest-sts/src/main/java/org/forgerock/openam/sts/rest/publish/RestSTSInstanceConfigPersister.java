@@ -81,10 +81,10 @@ public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersiste
 
         } catch (SMSException e) {
             throw new STSPublishException(ResourceException.INTERNAL_ERROR,
-                    "Exception caught persisting RestSTSInstanceConfig instance: " + e, e);
+                    "Exception caught persisting RestSTSInstanceConfig instance " + stsInstanceId + "Exception: " + e, e);
         } catch (SSOException e) {
             throw new STSPublishException(ResourceException.INTERNAL_ERROR,
-                    "Exception caught persisting RestSTSInstanceConfig instance: " + e, e);
+                    "Exception caught persisting RestSTSInstanceConfig instance" + stsInstanceId + "Exception: " + e, e);
         }
     }
 
@@ -203,6 +203,24 @@ public class RestSTSInstanceConfigPersister implements STSInstanceConfigPersiste
             }
         }
         return instances;
+    }
+
+    public boolean isInstancePresent(String stsId, String realm) throws STSPublishException {
+        try {
+            ServiceConfig baseService = new ServiceConfigManager(AMSTSConstants.REST_STS_SERVICE_NAME,
+                    getAdminToken()).getOrganizationConfig(realm, null);
+            if (baseService != null) {
+                return baseService.getSubConfig(stsId) != null;
+            } else {
+                return false;
+            }
+        } catch (SSOException e) {
+            throw new STSPublishException(ResourceException.NOT_FOUND,
+                    "Exception caught reading RestSTSInstanceConfig instance " + stsId + " from SMS: " + e, e);
+        } catch (SMSException e) {
+            throw new STSPublishException(ResourceException.NOT_FOUND,
+                    "Exception caught reading RestSTSInstanceConfig instance " + stsId + "from SMS: " + e, e);
+        }
     }
 
     private Set<String> getAllRealmNames() throws STSPublishException {
