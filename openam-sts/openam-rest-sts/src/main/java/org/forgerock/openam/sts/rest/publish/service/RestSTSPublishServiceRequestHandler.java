@@ -167,13 +167,10 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
         }
     }
 
-     /**
+     /*
       * A PUT to the url composed of the publish endpont + the sts instance id with a payload corresponding to a
       * RestSTSInstanceId (wrapped in invocation context information) will result in republishing the existing instance
       * (which is a delete followed by a create).
-       * @param context
-      * @param request
-      * @param handler
       */
     public void handleUpdate(ServerContext context, UpdateRequest request, ResultHandler<Resource> handler) {
         String stsId = request.getResourceName();
@@ -185,49 +182,68 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
         try {
             publishedToSMS = publisher.isInstancePersistedInSMS(stsId, realm);
         } catch (STSPublishException e) {
+            logger.error("In RestSTSPublishServiceRequestHandler#handleUpdate, exception caught determining whether " +
+                    "instance persisted in SMS. Instance not updated. Exception: " + e, e);
             handler.handleError(e);
             return;
         }
         final boolean publishedToCrest = publisher.isInstanceExposedInCrest(stsId);
 
-        if (publishedToCrest) {
-            if (publishedToSMS) {
-                //This is a valid branch for a valid update invocation
-                RestSTSInstanceConfig instanceConfig;
-                try {
-                    instanceConfig = marshalInstanceConfigFromInvocation(request.getContent());
-                } catch (BadRequestException e) {
-                    handler.handleError(e);
-                    return;
-                }
-                Injector instanceInjector;
-                try {
-                    instanceInjector = createInjector(instanceConfig);
-                } catch (ResourceException e) {
-                    handler.handleError(e);
-                    return;
-                }
-                try {
-                    publisher.removeInstance(stsId, realm);
-                } catch (STSPublishException e) {
-                    handler.handleError(e);
-                }
-                try {
-                    publishInstance(instanceConfig, instanceInjector, handler);
-                } catch (ResourceException e) {
-                    handler.handleError(e);
-                }
-            } else {
-                //instance in crest, but not in SMS - error condition - log
+        if (publishedToSMS) {
+            if (!publishedToCrest) {
+                /*
+                Entering this branch would seem to be an error condition. It could possibly happen in a site deployment,
+                where a rest sts instance is published to a different server than the current server, and the registered
+                ServiceListener was not called when the ldap replication created the service entry on the current server.
+                I will log a warning, and still publish the instance, just for robustness.
+                 */
+                logger.warn("The rest sts instance " + stsId + " in realm " + realm + " is present in the SMS, but " +
+                        "has not been hung off of the CREST router. This is an illegal state. The instance will be" +
+                        " republished.");
+            }
+            RestSTSInstanceConfig instanceConfig;
+            try {
+                instanceConfig = marshalInstanceConfigFromInvocation(request.getContent());
+            } catch (BadRequestException e) {
+                logger.error("In RestSTSPublishServiceRequestHandler#handleUpdate, exception caught marshalling " +
+                        "invocation state to RestSTSInstanceConfig. Instance not updated. The state: "
+                        + request.getContent() + "Exception: " + e, e);
+                handler.handleError(e);
+                return;
+            }
+            Injector instanceInjector;
+            try {
+                instanceInjector = createInjector(instanceConfig);
+            } catch (ResourceException e) {
+                logger.error("In RestSTSPublishServiceRequestHandler#handleUpdate, exception caught creating an " +
+                        "Injector using the RestSTSInstanceConfig. The instance: "+ instanceConfig.toJson() +
+                        "; Exception: " + e, e);
+                handler.handleError(e);
+                return;
+            }
+            try {
+                publisher.removeInstance(stsId, realm);
+            } catch (STSPublishException e) {
+                logger.error("In RestSTSPublishServiceRequestHandler#handleUpdate, exception caught removing " +
+                        "rest sts instance " + instanceConfig.getDeploymentSubPath() + ". This means instance is" +
+                        "in indeterminate state, and has not been updated. The instance config: " +  instanceConfig
+                        + "; Exception: " + e, e);
+                handler.handleError(e);
+            }
+            try {
+                publishInstance(instanceConfig, instanceInjector, handler);
+                logger.info("Rest STS instance " + instanceConfig.getDeploymentSubPath() + " updated to state " +
+                    instanceConfig.toJson());
+            } catch (ResourceException e) {
+                logger.error("In RestSTSPublishServiceRequestHandler#handleUpdate, exception caught publishing " +
+                        "rest sts instance " + instanceConfig.getDeploymentSubPath() + ". This means instance is" +
+                        "in indeterminate state, having been removed, but not successfully published with updated " +
+                        "state. The instance config: " +  instanceConfig + "; Exception: " + e, e);
+                handler.handleError(e);
             }
         } else {
-            if (publishedToSMS) {
-                //instance not in Crest, but in SMS - this could be a valid combination, if the Rest STS instance was
-                //published to another server in a site deployment. But log a warning.
-            } else {
-                //404 - realm and id not found anywhere
-                handler.handleError(new NotFoundException("No rest sts instance with id " + stsId + " in realm " + realm));
-            }
+            //404 - realm and id not found in SMS
+            handler.handleError(new NotFoundException("No rest sts instance with id " + stsId + " in realm " + realm));
         }
     }
 
@@ -287,10 +303,9 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
 
     private void publishInstance(RestSTSInstanceConfig instanceConfig, Injector instanceInjector,
                                  ResultHandler<Resource> handler) throws ResourceException {
-        String urlElement = null;
         try {
             boolean republish = false;
-            urlElement =
+            final String urlElement =
                     publisher.publishInstance(instanceConfig, instanceInjector.getInstance(RestSTS.class), republish);
             if (logger.isDebugEnabled()) {
                 logger.debug("rest sts instance successfully published at " + urlElement);
@@ -299,11 +314,11 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
                     Integer.toString(instanceConfig.hashCode()), json(object(field(RESULT, SUCCESS),
                     field(AMSTSConstants.SUCCESSFUL_REST_STS_PUBLISH_URL_ELEMENT, urlElement)))));
         } catch (STSPublishException e) {
-            String message = "Exception caught publishing instance: at url " + urlElement + ". Exception" + e;
+            String message = "Exception caught publishing instance: " + instanceConfig.getDeploymentSubPath() + ". Exception" + e;
             logger.error(message, e);
             throw e;
         } catch (Exception e) {
-            String message = "Exception caught publishing instance: at url " + urlElement + ". Exception" + e;
+            String message = "Exception caught publishing instance: " + instanceConfig.getDeploymentSubPath() + ". Exception" + e;
             logger.error(message, e);
             throw new InternalServerErrorException(message, e);
         }
