@@ -109,10 +109,10 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         }
     }
 
-    public void deleteInstances(String realm, Set<String> instanceNames) throws AMConsoleException {
+    public void deleteInstances(Set<String> instanceNames) throws AMConsoleException {
         for (String instanceName : instanceNames) {
             try {
-                RestSTSModelResponse response = deleteInstance(realm, instanceName);
+                RestSTSModelResponse response = deleteInstance(instanceName);
                 if (!response.isSuccessful()) {
                     throw new AMConsoleException(response.getMessage());
                 }
@@ -129,15 +129,23 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
                 field(REST_STS_PUBLISH_INVOCATION_CONTEXT, REST_STS_PUBLISH_INVOCATION_CONTEXT_VIEW_BEAN),
                 field(REST_STS_PUBLISH_INSTANCE_STATE, propertiesMap)));
         try {
-            return invokeRestSTSPublishService(invocationJson.toString());
+            return invokeRestSTSInstancePublish(invocationJson.toString());
         } catch (IOException e) {
             throw new AMConsoleException(e);
         }
     }
 
     public RestSTSModelResponse updateInstance(Map<String, Set<String>> configurationState, String realm, String instanceName) throws AMConsoleException {
-        return RestSTSModelResponse.success("Instance " + instanceName + " in realm " + realm  + " updated.");
-        //TODO: proper implementation, when rest sts publish service updated.
+        addProgrammaticConfigurationState(configurationState, realm);
+        JsonValue propertiesMap = new JsonValue(marshalSetValuesToListValues(configurationState));
+        JsonValue invocationJson = json(object(
+                field(REST_STS_PUBLISH_INVOCATION_CONTEXT, REST_STS_PUBLISH_INVOCATION_CONTEXT_VIEW_BEAN),
+                field(REST_STS_PUBLISH_INSTANCE_STATE, propertiesMap)));
+        try {
+            return invokeRestSTSInstanceUpdate(invocationJson.toString(), instanceName);
+        } catch (IOException e) {
+            throw new AMConsoleException(e);
+        }
     }
 
     public Map<String, Set<String>> getInstanceState(String realm, String instanceName) throws AMConsoleException {
@@ -196,23 +204,6 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         configurationState.put(DEPLOYMENT_REALM, deploymentRealmSet);
     }
 
-    private RestSTSModelResponse invokeRestSTSPublishService(String invocationPayload) throws IOException {
-        URL url = new URL(getRestSTSInstanceCreationUrl());
-        HttpURLConnection connection = HttpURLConnectionManager.getConnection(url);
-        connection.setDoOutput(true);
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/json");
-        OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
-        writer.write(invocationPayload);
-        writer.close();
-
-        if (connection.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
-            return RestSTSModelResponse.success(getSuccessMessage(connection));
-        } else {
-            return RestSTSModelResponse.failure(getErrorMessage(connection));
-        }
-    }
-
     private String getSuccessMessage(HttpURLConnection connection) throws IOException {
         return readInputStream(connection.getInputStream());
     }
@@ -248,17 +239,16 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
             }
         }
     }
-    private String getRestSTSInstanceDeletionUrl(String realm, String instanceId) {
+    private String getRestSTSInstanceDeletionUrl(String instanceId) {
         String processedInstanceId = instanceId;
         if (processedInstanceId.startsWith(FORWARD_SLASH)) {
             processedInstanceId = processedInstanceId.substring(1);
         }
+        return getRestSTSPublishEndpointUrl() + FORWARD_SLASH + processedInstanceId;
+    }
 
-        if ("/".equals(realm)) {
-            return getRestSTSPublishEndpointUrl() + FORWARD_SLASH + processedInstanceId;
-        } else {
-            return getRestSTSPublishEndpointUrl() + FORWARD_SLASH + realm + FORWARD_SLASH + processedInstanceId;
-        }
+    private String getRestSTSInstanceUpdateUrl(String instanceId) {
+        return getRestSTSInstanceDeletionUrl(instanceId);
     }
 
     private String getRestSTSInstanceCreationUrl() {
@@ -297,8 +287,25 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         return AccessController.doPrivileged(AdminTokenAction.getInstance());
     }
 
-    private RestSTSModelResponse deleteInstance(String realm, String instanceId) throws IOException {
-        return invokeRestSTSInstanceDeletion(getRestSTSInstanceDeletionUrl(realm, instanceId));
+    private RestSTSModelResponse deleteInstance(String instanceId) throws IOException {
+        return invokeRestSTSInstanceDeletion(getRestSTSInstanceDeletionUrl(instanceId));
+    }
+
+    private RestSTSModelResponse invokeRestSTSInstancePublish(String invocationPayload) throws IOException {
+        URL url = new URL(getRestSTSInstanceCreationUrl());
+        HttpURLConnection connection = HttpURLConnectionManager.getConnection(url);
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
+        writer.write(invocationPayload);
+        writer.close();
+
+        if (connection.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
+            return RestSTSModelResponse.success(getSuccessMessage(connection));
+        } else {
+            return RestSTSModelResponse.failure(getErrorMessage(connection));
+        }
     }
 
     private RestSTSModelResponse invokeRestSTSInstanceDeletion(String deletionUrl) throws IOException {
@@ -308,6 +315,23 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         connection.setRequestMethod("DELETE");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.connect();
+
+        if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+            return RestSTSModelResponse.success(getSuccessMessage(connection));
+        } else {
+            return RestSTSModelResponse.failure(getErrorMessage(connection));
+        }
+    }
+
+    private RestSTSModelResponse invokeRestSTSInstanceUpdate(String invocationPayload, String instanceId) throws IOException {
+        URL url = new URL(getRestSTSInstanceUpdateUrl(instanceId));
+        HttpURLConnection connection = HttpURLConnectionManager.getConnection(url);
+        connection.setDoOutput(true);
+        connection.setRequestMethod("PUT");
+        connection.setRequestProperty("Content-Type", "application/json");
+        OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
+        writer.write(invocationPayload);
+        writer.close();
 
         if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
             return RestSTSModelResponse.success(getSuccessMessage(connection));

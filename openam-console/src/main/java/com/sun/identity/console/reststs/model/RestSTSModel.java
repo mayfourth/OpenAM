@@ -28,7 +28,7 @@ import java.util.Set;
  */
 public interface RestSTSModel extends AMModel {
     Set<String> getPublishedInstances(String realm) throws AMConsoleException;
-    void deleteInstances(String realm, Set<String> instanceNames) throws AMConsoleException;
+    void deleteInstances(Set<String> instanceNames) throws AMConsoleException;
     RestSTSModelResponse createInstance(Map<String, Set<String>> configurationState, String realm) throws AMConsoleException;
     RestSTSModelResponse updateInstance(Map<String, Set<String>> configurationState, String realm, String instanceName)
             throws AMConsoleException;

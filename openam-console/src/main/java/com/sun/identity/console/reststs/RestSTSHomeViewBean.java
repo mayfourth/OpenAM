@@ -219,8 +219,7 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
 
         try {
             RestSTSModel model = (RestSTSModel)getModel();
-            String curRealm = (String)getPageSessionAttribute(AMAdminConstants.CURRENT_REALM);
-            model.deleteInstances(curRealm, instanceNames);
+            model.deleteInstances(instanceNames);
 
             if (selected.length == 1) {
                 setInlineAlertMessage(CCAlert.TYPE_INFO, "message.information",
