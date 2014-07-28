@@ -64,6 +64,7 @@ import org.forgerock.json.fluent.JsonValueException;
 import org.forgerock.json.resource.ActionRequest;
 import org.forgerock.json.resource.BadRequestException;
 import org.forgerock.json.resource.CollectionResourceProvider;
+import org.forgerock.json.resource.ConflictException;
 import org.forgerock.json.resource.CreateRequest;
 import org.forgerock.json.resource.DeleteRequest;
 import org.forgerock.json.resource.ForbiddenException;
@@ -133,6 +134,7 @@ public final class IdentityResource implements CollectionResourceProvider {
     final static String TOKEN_ID = "tokenId";
     final static String CONFIRMATION_ID = "confirmationId";
     final static String CURRENTPASSWORD = "currentpassword";
+    final static String USER_PASSWORD = "userpassword";
 
     private final MailServerLoader mailServerLoader;
 
@@ -880,9 +882,9 @@ public final class IdentityResource implements CollectionResourceProvider {
             JsonValue value = request.getContent();
 
             try {
-                String userPassword = value.get("userpassword").asString();
+                String userPassword = value.get(USER_PASSWORD).asString();
                 if (userPassword == null || userPassword.isEmpty()) {
-                    throw new BadRequestException("'userpassword' attribute not set in JSON content.");
+                    throw new BadRequestException("'" + USER_PASSWORD + "' attribute not set in JSON content.");
                 }
 
                 String currentPassword = value.get(CURRENTPASSWORD).asString();
@@ -894,8 +896,7 @@ public final class IdentityResource implements CollectionResourceProvider {
                 Token admin = new Token();
                 admin.setId(getCookieFromServerContext(context));
                 IdentityDetails identityDetails = jsonValueToIdentityDetails(json(object(
-                        field("username", value.get("username").asString()), field("userpassword", userPassword))),
-                        realm);
+                        field(USER_PASSWORD, userPassword))), realm);
                 identityDetails.setName(resourceId);
                 idsvc.update(identityDetails, admin);
                 handler.handleResult(json(object()));
@@ -1030,7 +1031,7 @@ public final class IdentityResource implements CollectionResourceProvider {
         } catch (final DuplicateObject duplicateObject) {
             debug.error("IdentityResource.createInstance() :: Cannot CREATE " +
                     resourceId + ": Resource already exists!" + duplicateObject);
-            handler.handleError(new NotFoundException("Resource already exists", duplicateObject));
+            handler.handleError(new ConflictException("Resource already exists", duplicateObject));
         } catch (final TokenExpired tokenExpired) {
             debug.error("IdentityResource.createInstance() :: Cannot CREATE " +
                     resourceId + ":" + tokenExpired);
