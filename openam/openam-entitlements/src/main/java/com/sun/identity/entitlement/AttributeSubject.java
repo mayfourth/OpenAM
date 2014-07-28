@@ -26,6 +26,9 @@
  */
 package com.sun.identity.entitlement;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,40 +36,54 @@ import java.util.Map;
 import java.util.Set;
 import javax.security.auth.Subject;
 
-public class AttributeSubject extends EntitlementSubjectImpl {
+public class AttributeSubject implements SubjectImplementation {
+    private String value;
+    private String id;
+    private boolean exclusive;
+
     /**
-     * Constructor.
+     * Constructor
+     * @param id Id of the attribute
+     * @param value Value of the attribute
      */
-    public AttributeSubject() {
-        super();
+    public AttributeSubject(String id, String value) {
+        this.value = value;
+        this.id = id;
     }
 
     /**
-     * Constructor.
+     * Returns attribute value.
      *
-     * @param name attribute name
-     * @param value attibute value
-     */
-    public AttributeSubject(String name, String value) {
-        super(name, value);
-    }
-
-    /**
-     * Returns attibute value.
-     *
-     * @return attibute value
+     * @return attribute value
      */
     public String getValue() {
-        return getPSubjectName();
+        return value;
     }
 
     /**
-     * Sets attibute value.
+     * Sets attribute value.
      *
-     * @param value attibute value
+     * @param value attribute value
      */
     public void setValue(String value) {
-        setPSubjectName(value);
+        this.value = value;
+    }
+
+    /**
+     * Sets the Identifier.
+     *
+     * @param id Identifier.
+     */
+    public void setID(String id) {
+        this.id = id;
+    }
+
+    /**
+     * Returns the Identifier.
+     * @return Identifier.
+     */
+    public String getID() {
+        return id;
     }
 
     /**
@@ -104,6 +121,63 @@ public class AttributeSubject extends EntitlementSubjectImpl {
     }
 
     /**
+     * Sets state of the object
+     * @param state State of the object encoded as string
+     */
+    public void setState(String state) {
+        try {
+            JSONObject jo = new JSONObject(state);
+            id = jo.has("id") ? jo.optString("id") : null;
+            value = jo.has("value") ?
+                    jo.optString("value") : null;
+            exclusive = jo.has("exclusive") ?
+                    Boolean.parseBoolean(jo.optString("exclusive")) : false;
+        } catch (JSONException e) {
+            PrivilegeManager.debug.error("AttributeSubject.setState", e);
+        }
+    }
+
+    /**
+     * Returns state of the object.
+     *
+     * @return state of the object encoded as string.
+     */
+    public String getState() {
+        return toString();
+    }
+
+    /**
+     * Returns JSONObject mapping of the object.
+     *
+     * @return JSONObject mapping  of the object.
+     */
+    public JSONObject toJSONObject() throws JSONException {
+        JSONObject jo = new JSONObject();
+        jo.put("id", id);
+        jo.put("value", value);
+        if (exclusive) {
+            jo.put("exclusive", exclusive);
+        }
+        return jo;
+    }
+
+    /**
+     * Returns string representation of the object.
+     *
+     * @return string representation of the object.
+     */
+    @Override
+    public String toString() {
+        String s = null;
+        try {
+            s = toJSONObject().toString(2);
+        } catch (JSONException e) {
+            PrivilegeManager.debug.error("EntitlementSubjectImpl.toString", e);
+        }
+        return s;
+    }
+
+    /**
      * Returns search index attributes.
      *
      * @return search index attributes.
@@ -113,13 +187,13 @@ public class AttributeSubject extends EntitlementSubjectImpl {
         Set<String> set = new HashSet<String>();
         set.add(getValue());
         map.put(SubjectAttributesCollector.NAMESPACE_ATTR + getID(), set);
-        
+
         return map;
     }
 
     /**
      * Returns required attribute names.
-     * 
+     *
      * @return required attribute names.
      */
     public Set<String> getRequiredAttributeNames() {
@@ -135,5 +209,45 @@ public class AttributeSubject extends EntitlementSubjectImpl {
      */
     public boolean isIdentity() {
         return true;
+    }
+
+    /**
+     * Returns <code>true</code> for exclusive.
+     *
+     * @return <code>true</code> for exclusive.
+     */
+    public boolean isExclusive() {
+        return exclusive;
+    }
+
+    /**
+     * Sets exclusive.
+     *
+     * @param flag <code>true</code> for exclusive.
+     */
+    public void setExclusive(boolean flag) {
+        exclusive = flag;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AttributeSubject that = (AttributeSubject) o;
+
+        if (exclusive != that.exclusive) return false;
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (value != null ? !value.equals(that.value) : that.value != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = value != null ? value.hashCode() : 0;
+        result = 31 * result + (id != null ? id.hashCode() : 0);
+        result = 31 * result + (exclusive ? 1 : 0);
+        return result;
     }
 }

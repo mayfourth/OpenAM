@@ -31,7 +31,6 @@ import org.forgerock.http.client.request.HttpClientRequestFactory;
 import org.forgerock.openam.authentication.modules.scripted.http.JavaScriptHttpClient;
 import org.forgerock.openam.scripting.ScriptEvaluator;
 import org.forgerock.openam.scripting.ScriptObject;
-import org.forgerock.openam.scripting.StandardScriptEvaluator;
 import org.forgerock.openam.scripting.SupportedScriptingLanguage;
 
 import javax.script.Bindings;
@@ -78,6 +77,13 @@ public class Scripted extends AMLoginModule {
     public static final String CLIENT_SCRIPT_OUTPUT_DATA_VARIABLE_NAME = "clientScriptOutputData";
     public static final String REQUEST_DATA_VARIABLE_NAME = "requestData";
 
+    /**
+     * Loaded on module startup to ensure the configuration listener is enabled. This ensures that configuration
+     * changes that affect script execution are propagated to the script framework.
+     */
+    private static final ScriptedAuthConfigurator CONFIGURATOR =
+            InjectorHolder.getInstance(ScriptedAuthConfigurator.class);
+
     private String userName;
     private String clientSideScript;
     private boolean clientSideScriptEnabled;
@@ -103,6 +109,9 @@ public class Scripted extends AMLoginModule {
 
         userName = (String) sharedState.get(getUserKey());
         moduleConfiguration = options;
+
+        // Ensure that configurator is registered (will do nothing if already initialised).
+        CONFIGURATOR.registerServiceListener();
 
         clientSideScript = getClientSideScript();
         scriptEvaluator = getScriptEvaluator();
@@ -192,16 +201,7 @@ public class Scripted extends AMLoginModule {
     }
 
     private ScriptEvaluator getScriptEvaluator() {
-        final StandardScriptEvaluator scriptEvaluator = InjectorHolder.getInstance(StandardScriptEvaluator.class);
-        scriptEvaluator.getEngineManager().configureTimeout(getServerTimeout());
-
-        try {
-            StandardScriptEvaluator.configureThreadPool(getCoreThreadSize(), getMaxThreadSize());
-        } catch (IllegalStateException ise) {
-            //we ignore this, but written explicitly for your knowledge
-        }
-
-        return scriptEvaluator;
+        return InjectorHolder.getInstance(ScriptEvaluator.class);
     }
 
     private RestletHttpClient getHttpClient() {
