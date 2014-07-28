@@ -27,7 +27,7 @@ import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.forgerock.util.Reject;
-import sun.org.mozilla.javascript.internal.EvaluatorException;
+import org.mozilla.javascript.EvaluatorException;
 
 /**
  * Validates scripts using the standard JSR 223 script engine framework.
@@ -47,7 +47,7 @@ public class StandardScriptValidator implements ScriptValidator {
      * @throws java.lang.NullPointerException if scriptEngineManager is not specified.
      */
     @Inject
-    public StandardScriptValidator(ScriptEngineManager scriptEngineManager) {
+    public StandardScriptValidator(StandardScriptEngineManager scriptEngineManager) {
         Reject.ifNull(scriptEngineManager);
         this.scriptEngineManager = scriptEngineManager;
     }
