@@ -187,11 +187,6 @@ public class RestSTSHomeViewBean extends RealmPropertiesBase {
 
     /**
      * Forwards request to ViewBean to edit Rest STS instance
-     *
-     * TODO: do I need  a ViewBean specific for editing, or can the create/edit be differentiated by some PageSessionAttribute?
-     * The update should be differentiated, so that I can do a POST with an id, which will serve to update the previously-published
-     * instance (delete followed by a create).
-     *
      */
     public void handleTblDataActionHrefRequest(RequestInvocationEvent event) {
         RestSTSEditViewBean vb = (RestSTSEditViewBean)getViewBean(

@@ -28,6 +28,7 @@ import com.sun.identity.sm.SMSException;
 import com.sun.identity.sm.ServiceConfig;
 import com.sun.identity.sm.ServiceConfigManager;
 import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.openam.shared.sts.SharedSTSConstants;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
@@ -57,38 +58,6 @@ import static org.forgerock.json.fluent.JsonValue.object;
  *
  */
 public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestSTSModel {
-    /*
-    Review TODO: perhaps the values below which match those defined in AMSTSConstants should be moved to a module
-    shared between openam-sts and openam-console? Perhaps openam-shared?? Or should the values just be duplicated??
-     */
-
-    /*
-    This field matches that defined in the AMSTSConstants. I cannot introduce a dependency on the rest-sts in the
-    openam-console module, so this value must be duplicate here.
-     */
-    private static final String REST_STS_PUBLISH_INVOCATION_CONTEXT = "invocation_context";
-
-    /*
-    This field matches that defined in the AMSTSConstants. I cannot introduce a dependency on the rest-sts in the
-    openam-console module, so this value must be duplicate here.
-     */
-    private static final String REST_STS_PUBLISH_INVOCATION_CONTEXT_VIEW_BEAN = "invocation_context_view_bean";
-
-    /*
-    This field matches that defined in the AMSTSConstants. I cannot introduce a dependency on the rest-sts in the
-    openam-console module, so this value must be duplicate here.
-     */
-    private static final String REST_STS_PUBLISH_INSTANCE_STATE = "instance_state";
-
-    /*
-    This String must match the string defined in STSInstanceConfig.AM_DEPLOYMENT_URL.
-     */
-    private static final String AM_DEPLOYMENT_URL = "am-deployment-url";
-
-    private static final String DEPLOYMENT_REALM = "deployment-realm";
-
-    private static final String FORWARD_SLASH = "/";
-
     public RestSTSModelImpl(HttpServletRequest req, Map map) throws AMConsoleException {
         super(req, AMAdminConstants.REST_STS_SERVICE, map);
     }
@@ -124,10 +93,7 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
 
     public RestSTSModelResponse createInstance(Map<String, Set<String>> configurationState, String realm) throws AMConsoleException {
         addProgrammaticConfigurationState(configurationState, realm);
-        JsonValue propertiesMap = new JsonValue(marshalSetValuesToListValues(configurationState));
-        JsonValue invocationJson = json(object(
-                field(REST_STS_PUBLISH_INVOCATION_CONTEXT, REST_STS_PUBLISH_INVOCATION_CONTEXT_VIEW_BEAN),
-                field(REST_STS_PUBLISH_INSTANCE_STATE, propertiesMap)));
+        JsonValue invocationJson = createInstanceInvocationState(configurationState);
         try {
             return invokeRestSTSInstancePublish(invocationJson.toString());
         } catch (IOException e) {
@@ -137,10 +103,7 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
 
     public RestSTSModelResponse updateInstance(Map<String, Set<String>> configurationState, String realm, String instanceName) throws AMConsoleException {
         addProgrammaticConfigurationState(configurationState, realm);
-        JsonValue propertiesMap = new JsonValue(marshalSetValuesToListValues(configurationState));
-        JsonValue invocationJson = json(object(
-                field(REST_STS_PUBLISH_INVOCATION_CONTEXT, REST_STS_PUBLISH_INVOCATION_CONTEXT_VIEW_BEAN),
-                field(REST_STS_PUBLISH_INSTANCE_STATE, propertiesMap)));
+        JsonValue invocationJson = createInstanceInvocationState(configurationState);
         try {
             return invokeRestSTSInstanceUpdate(invocationJson.toString(), instanceName);
         } catch (IOException e) {
@@ -170,24 +133,43 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
     }
 
     public RestSTSModelResponse validateConfigurationState(Map<String, Set<String>> configurationState) {
-        //TODO - I18N of messages, and statics for model fields.
-        if (isNullOrEmpty(configurationState.get("saml2-token-lifetime-seconds"))) {
-            return RestSTSModelResponse.failure("Saml2 token lifetime must be specified");
+        if (isNullOrEmpty(configurationState.get(SharedSTSConstants.SAML2_TOKEN_LIFETIME))) {
+            return RestSTSModelResponse.failure(getLocalizedString("rest.sts.validation.token.lifetime.message"));
         }
 
-        if (isNullOrEmpty(configurationState.get("deployment-url-element"))) {
-            return RestSTSModelResponse.failure("Deyployment Url element must be specified.");
+        if (isNullOrEmpty(configurationState.get(SharedSTSConstants.DEPLOYMENT_URL_ELEMENT))) {
+            return RestSTSModelResponse.failure(getLocalizedString("rest.sts.validation.deployment.url.message"));
         } else {
-            String urlElement = configurationState.get("deployment-url-element").iterator().next();
-            if (urlElement.contains("/")) {
-                return RestSTSModelResponse.failure("Deployment Url element can neither start, end, nor contain, the '/' character.");
+            String urlElement = configurationState.get(SharedSTSConstants.DEPLOYMENT_URL_ELEMENT).iterator().next();
+            if (urlElement.contains(SharedSTSConstants.FORWARD_SLASH)) {
+                return RestSTSModelResponse.failure(getLocalizedString("rest.sts.validation.deployment.url.content.message"));
             }
         }
 
-        if (isNullOrEmpty(configurationState.get("issuer-name"))) {
-            return RestSTSModelResponse.failure("Issuer name must be specified.");
+        if (isNullOrEmpty(configurationState.get(SharedSTSConstants.ISSUER_NAME))) {
+            return RestSTSModelResponse.failure(getLocalizedString("rest.sts.validation.issuername.message"));
         }
-        //keystore state - perhaps open it?? at least has to be specified
+
+        if (isNullOrEmpty(configurationState.get(SharedSTSConstants.KEYSTORE_FILE_NAME))) {
+            return RestSTSModelResponse.failure(getLocalizedString("rest.sts.validation.keystore.filename.message"));
+        }
+        if (isNullOrEmpty(configurationState.get(SharedSTSConstants.KEYSTORE_PASSWORD))) {
+            return RestSTSModelResponse.failure(getLocalizedString("rest.sts.validation.keystore.password.message"));
+        }
+        if ("true".equalsIgnoreCase(configurationState.get(SharedSTSConstants.SAML2_SIGN_ASSERTION).iterator().next())) {
+            if (isNullOrEmpty(configurationState.get(SharedSTSConstants.SIGNATURE_KEY_ALIAS))) {
+                return RestSTSModelResponse.failure(getLocalizedString("rest.sts.validation.keystore.signature.keyalias.message"));
+            }
+            if (isNullOrEmpty(configurationState.get(SharedSTSConstants.SIGNATURE_KEY_PASSWORD))) {
+                return RestSTSModelResponse.failure(getLocalizedString("rest.sts.validation.keystore.signature.keypassword.message"));
+            }
+        }
+        if (isNullOrEmpty(configurationState.get(SharedSTSConstants.ENCRYPTION_KEY_ALIAS))) {
+            return RestSTSModelResponse.failure(getLocalizedString("rest.sts.validation.keystore.encryption.keyalias.message"));
+        }
+        if (isNullOrEmpty(configurationState.get(SharedSTSConstants.ENCRYPTION_KEY_PASSWORD))) {
+            return RestSTSModelResponse.failure(getLocalizedString("rest.sts.validation.keystore.encryption.keypassword.message"));
+        }
         return RestSTSModelResponse.success();
     }
 
@@ -197,25 +179,20 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
     private void addProgrammaticConfigurationState(Map<String, Set<String>> configurationState, String realm) {
         Set<String> deploymentUrlSet = new HashSet<String>();
         deploymentUrlSet.add(getAMDeploymentUrl());
-        configurationState.put(AM_DEPLOYMENT_URL, deploymentUrlSet);
+        configurationState.put(SharedSTSConstants.AM_DEPLOYMENT_URL, deploymentUrlSet);
 
         Set<String> deploymentRealmSet = new HashSet<String>();
         deploymentRealmSet.add(realm);
-        configurationState.put(DEPLOYMENT_REALM, deploymentRealmSet);
+        configurationState.put(SharedSTSConstants.DEPLOYMENT_REALM, deploymentRealmSet);
     }
 
-    private String getSuccessMessage(HttpURLConnection connection) throws IOException {
-        return readInputStream(connection.getInputStream());
+    private JsonValue createInstanceInvocationState(Map<String, Set<String>> configurationState) {
+        JsonValue propertiesMap = new JsonValue(marshalSetValuesToListValues(configurationState));
+        return json(object(
+                field(SharedSTSConstants.REST_STS_PUBLISH_INVOCATION_CONTEXT, SharedSTSConstants.REST_STS_PUBLISH_INVOCATION_CONTEXT_VIEW_BEAN),
+                field(SharedSTSConstants.REST_STS_PUBLISH_INSTANCE_STATE, propertiesMap)));
     }
 
-    private String getErrorMessage(HttpURLConnection connection) throws IOException {
-        //TODO: not sure I should get content of input or error stream
-        if (connection.getErrorStream() != null) {
-            return readInputStream(connection.getErrorStream());
-        } else {
-            return readInputStream(connection.getInputStream());
-        }
-    }
 
     private String readInputStream(InputStream inputStream) throws IOException {
         if (inputStream == null) {
@@ -241,10 +218,10 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
     }
     private String getRestSTSInstanceDeletionUrl(String instanceId) {
         String processedInstanceId = instanceId;
-        if (processedInstanceId.startsWith(FORWARD_SLASH)) {
+        if (processedInstanceId.startsWith(SharedSTSConstants.FORWARD_SLASH)) {
             processedInstanceId = processedInstanceId.substring(1);
         }
-        return getRestSTSPublishEndpointUrl() + FORWARD_SLASH + processedInstanceId;
+        return getRestSTSPublishEndpointUrl() + SharedSTSConstants.FORWARD_SLASH + processedInstanceId;
     }
 
     private String getRestSTSInstanceUpdateUrl(String instanceId) {
@@ -252,12 +229,11 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
     }
 
     private String getRestSTSInstanceCreationUrl() {
-        //TODO: define static for this - or a commons property class - available in openam-shared??
-        return getRestSTSPublishEndpointUrl() + "?_action=create";
+        return getRestSTSPublishEndpointUrl() + SharedSTSConstants.REST_PUBLISH_SERVICE_CREATE_ACTION_URL_ELEMENT;
     }
 
     private String getRestSTSPublishEndpointUrl() {
-        return getAMDeploymentUrl() + "/rest-sts-publish/publish";
+        return getAMDeploymentUrl() + SharedSTSConstants.REST_PUBLISH_SERVICE_URL_ELEMENT;
     }
 
     private String getAMDeploymentUrl() {
@@ -296,15 +272,15 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         HttpURLConnection connection = HttpURLConnectionManager.getConnection(url);
         connection.setDoOutput(true);
         connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty(SharedSTSConstants.CONTENT_TYPE, SharedSTSConstants.APPLICATION_JSON);
         OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
         writer.write(invocationPayload);
         writer.close();
 
         if (connection.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
-            return RestSTSModelResponse.success(getSuccessMessage(connection));
+            return RestSTSModelResponse.success(readInputStream(connection.getInputStream()));
         } else {
-            return RestSTSModelResponse.failure(getErrorMessage(connection));
+            return RestSTSModelResponse.failure(readInputStream(connection.getInputStream()));
         }
     }
 
@@ -313,13 +289,13 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         HttpURLConnection connection = HttpURLConnectionManager.getConnection(url);
         connection.setDoOutput(true);
         connection.setRequestMethod("DELETE");
-        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty(SharedSTSConstants.CONTENT_TYPE, SharedSTSConstants.APPLICATION_JSON);
         connection.connect();
 
         if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-            return RestSTSModelResponse.success(getSuccessMessage(connection));
+            return RestSTSModelResponse.success(readInputStream(connection.getInputStream()));
         } else {
-            return RestSTSModelResponse.failure(getErrorMessage(connection));
+            return RestSTSModelResponse.failure(readInputStream(connection.getInputStream()));
         }
     }
 
@@ -328,15 +304,15 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         HttpURLConnection connection = HttpURLConnectionManager.getConnection(url);
         connection.setDoOutput(true);
         connection.setRequestMethod("PUT");
-        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty(SharedSTSConstants.CONTENT_TYPE, SharedSTSConstants.APPLICATION_JSON);
         OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
         writer.write(invocationPayload);
         writer.close();
 
         if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-            return RestSTSModelResponse.success(getSuccessMessage(connection));
+            return RestSTSModelResponse.success(readInputStream(connection.getInputStream()));
         } else {
-            return RestSTSModelResponse.failure(getErrorMessage(connection));
+            return RestSTSModelResponse.failure(readInputStream(connection.getInputStream()));
         }
     }
 }

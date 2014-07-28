@@ -98,7 +98,8 @@ public class STSKeyProviderImpl implements STSKeyProvider {
             return CryptoFactory.getInstance(getEncryptionProperties());
         } catch (WSSecurityException e) {
             throw new TokenCreationException(ResourceException.INTERNAL_ERROR,
-                    "Exception caught initializing the CryptoFactory: " + e);
+                    "Exception caught initializing the CryptoFactory: " + e + "; Encryption properties: "
+                            + getEncryptionProperties());
         }
     }
 

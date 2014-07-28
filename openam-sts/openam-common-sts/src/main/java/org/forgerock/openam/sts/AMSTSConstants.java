@@ -16,6 +16,8 @@
 
 package org.forgerock.openam.sts;
 
+import org.forgerock.openam.shared.sts.SharedSTSConstants;
+
 import javax.xml.namespace.QName;
 
 public class AMSTSConstants {
@@ -74,9 +76,9 @@ public class AMSTSConstants {
     /*
     The following values are used by the AMTokenValidator.
      */
-    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String CONTENT_TYPE = SharedSTSConstants.CONTENT_TYPE;
     public static final String ACCEPT = "Accept";
-    public static final String APPLICATION_JSON = "application/json";
+    public static final String APPLICATION_JSON = SharedSTSConstants.APPLICATION_JSON;
     public static final String COOKIE = "Cookie";
     public static final String EQUALS = "=";
 
@@ -204,7 +206,7 @@ public class AMSTSConstants {
 
     public static final String ROOT_REALM = "/";
 
-    public static final String FORWARD_SLASH = "/";
+    public static final String FORWARD_SLASH = SharedSTSConstants.FORWARD_SLASH;
     /*
     Used for marshalling between byte[] and string representations. Does not seem to be defined anywhere in the pre 1.7 JDK.
      */
@@ -307,13 +309,13 @@ public class AMSTSConstants {
     class, and the RestSecurityTokenServiceViewBean, which will publish with state harvested from the ViewBean property
      sheet, and will thus be in the format of Map<String, Set<String>>.
      */
-    public static final String REST_STS_PUBLISH_INVOCATION_CONTEXT = "invocation_context";
+    public static final String REST_STS_PUBLISH_INVOCATION_CONTEXT = SharedSTSConstants.REST_STS_PUBLISH_INVOCATION_CONTEXT;
 
     /*
     Used  as the value for the REST_STS_PUBLISH_INVOCATION_CONTEXT key for invocations to the rest sts publish service
     issued by the RestSecurityTokenServiceViewBean.
      */
-    public static final String REST_STS_PUBLISH_INVOCATION_CONTEXT_VIEW_BEAN = "invocation_context_view_bean";
+    public static final String REST_STS_PUBLISH_INVOCATION_CONTEXT_VIEW_BEAN = SharedSTSConstants.REST_STS_PUBLISH_INVOCATION_CONTEXT_VIEW_BEAN;
 
     /*
     Used as the value for the REST_STS_PUBLISH_INVOCATION_CONTEXT key for invocations to the rest sts publish service
@@ -325,6 +327,6 @@ public class AMSTSConstants {
     Used as the key to the JsonValue corresponding to a wrapped Map<String, Set<String>> or the output of
     RestSTSInstanceConfig#toJson(), depending upon the invocation context.
      */
-    public static final String REST_STS_PUBLISH_INSTANCE_STATE = "instance_state";
+    public static final String REST_STS_PUBLISH_INSTANCE_STATE = SharedSTSConstants.REST_STS_PUBLISH_INSTANCE_STATE;
 
 }
