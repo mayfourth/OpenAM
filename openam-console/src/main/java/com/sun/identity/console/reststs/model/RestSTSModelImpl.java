@@ -170,6 +170,11 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         if (isNullOrEmpty(configurationState.get(SharedSTSConstants.ENCRYPTION_KEY_PASSWORD))) {
             return RestSTSModelResponse.failure(getLocalizedString("rest.sts.validation.keystore.encryption.keypassword.message"));
         }
+
+        if (isNullOrEmpty(configurationState.get(SharedSTSConstants.SUPPORTED_TOKEN_TRANSFORMS))) {
+            return RestSTSModelResponse.failure(getLocalizedString("rest.sts.validation.tokentransforms.message"));
+        }
+
         return RestSTSModelResponse.success();
     }
 
@@ -193,6 +198,17 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
                 field(SharedSTSConstants.REST_STS_PUBLISH_INSTANCE_STATE, propertiesMap)));
     }
 
+    private String getSuccessMessage(HttpURLConnection connection) throws IOException {
+        return readInputStream(connection.getInputStream());
+    }
+
+    private String getErrorMessage(HttpURLConnection connection) throws IOException {
+        if (connection.getErrorStream() != null) {
+            return readInputStream(connection.getErrorStream());
+        } else {
+            return readInputStream(connection.getInputStream());
+        }
+    }
 
     private String readInputStream(InputStream inputStream) throws IOException {
         if (inputStream == null) {
@@ -278,9 +294,9 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         writer.close();
 
         if (connection.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
-            return RestSTSModelResponse.success(readInputStream(connection.getInputStream()));
+            return RestSTSModelResponse.success(getSuccessMessage(connection));
         } else {
-            return RestSTSModelResponse.failure(readInputStream(connection.getInputStream()));
+            return RestSTSModelResponse.failure(getErrorMessage(connection));
         }
     }
 
@@ -293,9 +309,9 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         connection.connect();
 
         if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-            return RestSTSModelResponse.success(readInputStream(connection.getInputStream()));
+            return RestSTSModelResponse.success(getSuccessMessage(connection));
         } else {
-            return RestSTSModelResponse.failure(readInputStream(connection.getInputStream()));
+            return RestSTSModelResponse.failure(getErrorMessage(connection));
         }
     }
 
@@ -310,9 +326,9 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         writer.close();
 
         if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-            return RestSTSModelResponse.success(readInputStream(connection.getInputStream()));
+            return RestSTSModelResponse.success(getSuccessMessage(connection));
         } else {
-            return RestSTSModelResponse.failure(readInputStream(connection.getInputStream()));
+            return RestSTSModelResponse.failure(getErrorMessage(connection));
         }
     }
 }

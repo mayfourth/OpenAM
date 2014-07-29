@@ -93,7 +93,7 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         String deploymentSubPath = normalizeDeploymentSubPath(instanceConfig.getDeploymentSubPath());
 
         if (publishedRoutes.containsKey(deploymentSubPath)) {
-            throw new STSPublishException(ResourceException.BAD_REQUEST, "A rest-sts instance at sub-path " +
+            throw new STSPublishException(ResourceException.CONFLICT, "A rest-sts instance at sub-path " +
                     deploymentSubPath + " has already been published.");
         }
         Route route = router.addRoute(deploymentSubPath, new RestSTSService(restSTSInstance, logger));

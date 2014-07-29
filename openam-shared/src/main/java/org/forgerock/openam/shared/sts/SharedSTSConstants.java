@@ -79,6 +79,12 @@ public class SharedSTSConstants {
     public static final String ISSUER_NAME = "issuer-name";
 
     /*
+    This field referenced in RestSTSInstanceConfig.SUPPORTED_TOKEN_TRANSLATIONS. It is the name of the key of the json field referencing
+    the set of token transformations, which also matches the name of the AttributeSchema element defined in restSTS.xml
+     */
+    public static final String SUPPORTED_TOKEN_TRANSFORMS = "supported-token-transforms";
+
+    /*
     The next 6 fields are referenced by the KeystoreConfig class. They define the names of the key of the json fields referencing
     keystore configuration state, which also matches the name of the related AttributeSchema elements defined in restSTS.xml
      */

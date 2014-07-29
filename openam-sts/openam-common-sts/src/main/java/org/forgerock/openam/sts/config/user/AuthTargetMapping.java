@@ -19,6 +19,7 @@ package org.forgerock.openam.sts.config.user;
 
 import org.apache.ws.security.message.token.UsernameToken;
 import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.MapMarshallUtils;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.token.model.OpenIdConnectIdToken;
@@ -55,8 +56,6 @@ public class AuthTargetMapping {
     private static final String AUTH_INDEX_TYPE = "mapping-auth-index-type";
     private static final String AUTH_INDEX_VALUE = "mapping-auth-index-value";
     private static final String CONTEXT = "mapping-context";
-    private static final String SEMICOLON = ";";
-    private static final String EQUALS = "=";
     private static final String COMMA = ",";
     //public visibility as referenced from RestDeploymentConfig-need to leak reference as these constants correspond
     //to AttributeSchema names in restSTS.xml.
@@ -176,15 +175,15 @@ public class AuthTargetMapping {
         Method called in the context of marshalling to a Map<String,Object>, necessary for SMS persistence.
          */
         public String toSmsString() {
-            StringBuilder valueBuilder = new StringBuilder(authIndexType).append(SEMICOLON).append(authIndexValue);
+            StringBuilder valueBuilder = new StringBuilder(authIndexType).append(AMSTSConstants.BAR).append(authIndexValue);
             if (context != null) {
-                valueBuilder.append(SEMICOLON);
+                valueBuilder.append(AMSTSConstants.BAR);
                 int count = 0;
                 for (Map.Entry<String, String> entry : context.entrySet()) {
                     if (count > 0) {
                         valueBuilder.append(COMMA);
                     }
-                    valueBuilder.append(entry.getKey()).append(EQUALS).append(entry.getValue());
+                    valueBuilder.append(entry.getKey()).append(AMSTSConstants.EQUALS).append(entry.getValue());
                     count++;
                 }
             }
@@ -206,7 +205,7 @@ public class AuthTargetMapping {
         be predictable.
          */
         static AuthTarget fromSmsString(String stringAuthTarget) {
-            StringTokenizer topLevelTokenizer = new StringTokenizer(stringAuthTarget, SEMICOLON);
+            StringTokenizer topLevelTokenizer = new StringTokenizer(stringAuthTarget, AMSTSConstants.BAR);
             String authIndexType = topLevelTokenizer.nextToken();
             String authIndexValue = topLevelTokenizer.nextToken();
             if (topLevelTokenizer.hasMoreTokens()) {
@@ -214,7 +213,7 @@ public class AuthTargetMapping {
                 String contextToken = topLevelTokenizer.nextToken();
                 StringTokenizer contextTokenizer = new StringTokenizer(contextToken, COMMA);
                 while (contextTokenizer.hasMoreTokens()) {
-                    StringTokenizer entryTokenizer = new StringTokenizer(contextTokenizer.nextToken(), EQUALS);
+                    StringTokenizer entryTokenizer = new StringTokenizer(contextTokenizer.nextToken(), AMSTSConstants.EQUALS);
                     contextMap.put(entryTokenizer.nextToken(), entryTokenizer.nextToken());
                 }
                 return new AuthTarget(authIndexType, authIndexValue, contextMap);
@@ -286,7 +285,7 @@ public class AuthTargetMapping {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         for (Map.Entry<Class<?>, AuthTarget> entry : mappings.entrySet()) {
-            builder.append(entry.getKey().getName()).append(SEMICOLON).append(entry.getValue().toString()).append('\n');
+            builder.append(entry.getKey().getName()).append(AMSTSConstants.BAR).append(entry.getValue().toString()).append('\n');
         }
         return builder.toString();
     }
@@ -335,7 +334,7 @@ public class AuthTargetMapping {
         attributes.put(AUTH_TARGET_MAPPINGS, values);
         for (Map.Entry<Class<?>, AuthTarget> entry : mappings.entrySet()) {
             try {
-                values.add(mapClassToTokenType(Class.forName(entry.getKey().getName())) + SEMICOLON + entry.getValue().toSmsString());
+                values.add(mapClassToTokenType(Class.forName(entry.getKey().getName())) + AMSTSConstants.BAR + entry.getValue().toSmsString());
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException("In AuthTargetMapping#marshalToAttributeMap, Could not find class " +
                         "corresponding to TokenType string " + entry.getKey().getName());
@@ -349,8 +348,8 @@ public class AuthTargetMapping {
         if (authTargetMappings != null) {
             AuthTargetMappingBuilder builder = AuthTargetMapping.builder();
             for (String entry : authTargetMappings) {
-                TokenType tokenType = TokenType.valueOf(entry.substring(0, entry.indexOf(SEMICOLON)));
-                AuthTarget authTarget = AuthTarget.fromSmsString(entry.substring(entry.indexOf(SEMICOLON) + 1));
+                TokenType tokenType = TokenType.valueOf(entry.substring(0, entry.indexOf(AMSTSConstants.BAR)));
+                AuthTarget authTarget = AuthTarget.fromSmsString(entry.substring(entry.indexOf(AMSTSConstants.BAR) + 1));
                 builder.addMapping(tokenType, authTarget.getAuthIndexType(),
                         authTarget.getAuthIndexValue(), authTarget.getContext());
             }

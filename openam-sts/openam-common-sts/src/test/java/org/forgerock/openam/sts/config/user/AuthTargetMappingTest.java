@@ -40,8 +40,8 @@ public class AuthTargetMappingTest {
     private static final String USERNAME = "username";
     private static final String X509 = "X509";
 
-    private static final String MAP_ENTRY_ONE = "USERNAME;service;ldapService";
-    private static final String MAP_ENTRY_TWO = "OPENIDCONNECT;module;oidc;oidc_id_token_auth_target_header_key=oidc_id_token";
+    private static final String MAP_ENTRY_ONE = "USERNAME|service|ldapService";
+    private static final String MAP_ENTRY_TWO = "OPENIDCONNECT|module|oidc|oidc_id_token_auth_target_header_key=oidc_id_token";
     @Test
     public void testEquals() {
         AuthTargetMapping mapping1 = AuthTargetMapping

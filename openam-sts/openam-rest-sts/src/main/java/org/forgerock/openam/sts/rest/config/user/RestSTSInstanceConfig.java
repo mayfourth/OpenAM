@@ -17,6 +17,7 @@
 package org.forgerock.openam.sts.rest.config.user;
 
 import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.openam.shared.sts.SharedSTSConstants;
 import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.MapMarshallUtils;
 import org.forgerock.openam.sts.TokenType;
@@ -93,7 +94,7 @@ public class RestSTSInstanceConfig extends STSInstanceConfig {
     SMS persistence.
      */
     private static final String DEPLOYMENT_CONFIG = "deployment-config";
-    private static final String SUPPORTED_TOKEN_TRANSLATIONS = "supported-token-transforms";
+    private static final String SUPPORTED_TOKEN_TRANSLATIONS = SharedSTSConstants.SUPPORTED_TOKEN_TRANSFORMS;
 
     private RestSTSInstanceConfig(RestSTSInstanceConfigBuilderBase<?> builder) {
         super(builder);

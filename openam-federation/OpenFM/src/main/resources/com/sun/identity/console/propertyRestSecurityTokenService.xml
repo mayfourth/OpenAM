@@ -17,9 +17,6 @@
 -->
 
 <!DOCTYPE propertysheet SYSTEM "propertysheet.dtd">
-<!--
-TODO: what does the autoSubmit attribute do? Does it mean that the attribute is not set if no value is specified?
--->
 <propertysheet>
     <section name="General" defaultValue="rest.sts.general.section.title">
         <property>
@@ -37,12 +34,12 @@ TODO: what does the autoSubmit attribute do? Does it mean that the attribute is 
                    labelFor="supported-token-transforms"/>
             <cc name="supported-token-transforms"
                 tagclass="com.sun.web.ui.taglib.html.CCSelectableListTag">
-                <option label="rest.sts.tranform.unt.saml2.true" value="USERNAME;SAML2;true"/>
-                <option label="rest.sts.tranform.unt.saml2.false" value="USERNAME;SAML2;false"/>
-                <option label="rest.sts.tranform.oidc.saml2.true" value="OPENIDCONNECT;SAML2;true"/>
-                <option label="rest.sts.tranform.oidc.saml2.false" value="OPENIDCONNECT;SAML2;false"/>
-                <option label="rest.sts.tranform.openam.saml2.true" value="OPENAM;SAML2;true"/>
-                <option label="rest.sts.tranform.openam.saml2.false" value="OPENAM;SAML2;false"/>
+                <option label="rest.sts.tranform.unt.saml2.true" value="USERNAME|SAML2|true"/>
+                <option label="rest.sts.tranform.unt.saml2.false" value="USERNAME|SAML2|false"/>
+                <option label="rest.sts.tranform.oidc.saml2.true" value="OPENIDCONNECT|SAML2|true"/>
+                <option label="rest.sts.tranform.oidc.saml2.false" value="OPENIDCONNECT|SAML2|false"/>
+                <option label="rest.sts.tranform.openam.saml2.true" value="OPENAM|SAML2|true"/>
+                <option label="rest.sts.tranform.openam.saml2.false" value="OPENAM|SAML2|false"/>
                 <attribute name="multiple" value="true" />
             </cc>
             <fieldhelp name="helpTokenTransforms" defaultValue="rest.sts.tokentransforms.help" />
@@ -133,9 +130,6 @@ TODO: what does the autoSubmit attribute do? Does it mean that the attribute is 
     </section>
 
     <section name="SAML2" defaultValue="rest.sts.saml2.section.title">
-        <!--
-        TODO: probably want specific option set here
-        -->
         <property>
             <label name="lblSAML2NameIdFormat"
                    defaultValue="rest.sts.saml2.NameIdFormat"

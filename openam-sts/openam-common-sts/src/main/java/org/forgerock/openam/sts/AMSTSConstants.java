@@ -81,7 +81,7 @@ public class AMSTSConstants {
     public static final String APPLICATION_JSON = SharedSTSConstants.APPLICATION_JSON;
     public static final String COOKIE = "Cookie";
     public static final String EQUALS = "=";
-
+    public static final String BAR = "|";
     /*
     This constant defines the name of the OpenAM token, currently used in token validation requests;
      */
