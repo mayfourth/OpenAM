@@ -90,7 +90,7 @@ public class STSKeyProviderImpl implements STSKeyProvider {
             return crypto.getPrivateKey(keyAlias, keyPassword);
         } catch (WSSecurityException e) {
             throw new TokenCreationException(ResourceException.INTERNAL_ERROR, "Exception pulling private key from " +
-                    "crypto for alias " + keyAlias);
+                    "crypto for alias " + keyAlias + "; Exception: " + e, e);
         }
     }
 
