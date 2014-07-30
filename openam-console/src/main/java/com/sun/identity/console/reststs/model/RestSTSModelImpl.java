@@ -17,32 +17,28 @@
 package com.sun.identity.console.reststs.model;
 
 import com.iplanet.sso.SSOException;
-import com.iplanet.sso.SSOToken;
 import com.sun.identity.common.HttpURLConnectionManager;
 import com.sun.identity.console.base.model.AMAdminConstants;
 import com.sun.identity.console.base.model.AMConsoleException;
 import com.sun.identity.console.base.model.AMServiceProfileModelImpl;
 import com.sun.identity.console.base.model.AMSystemConfig;
-import com.sun.identity.security.AdminTokenAction;
 import com.sun.identity.sm.SMSException;
 import com.sun.identity.sm.ServiceConfig;
 import com.sun.identity.sm.ServiceConfigManager;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.openam.shared.sts.SharedSTSConstants;
+import org.forgerock.openam.utils.CollectionUtils;
+import org.forgerock.openam.utils.IOUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -182,13 +178,8 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
     Add the url corresponding to the am deployment, and the realm, as this information does not have to be solicited from the user.
      */
     private void addProgrammaticConfigurationState(Map<String, Set<String>> configurationState, String realm) {
-        Set<String> deploymentUrlSet = new HashSet<String>();
-        deploymentUrlSet.add(getAMDeploymentUrl());
-        configurationState.put(SharedSTSConstants.AM_DEPLOYMENT_URL, deploymentUrlSet);
-
-        Set<String> deploymentRealmSet = new HashSet<String>();
-        deploymentRealmSet.add(realm);
-        configurationState.put(SharedSTSConstants.DEPLOYMENT_REALM, deploymentRealmSet);
+        configurationState.put(SharedSTSConstants.AM_DEPLOYMENT_URL, CollectionUtils.asSet(getAMDeploymentUrl()));
+        configurationState.put(SharedSTSConstants.DEPLOYMENT_REALM, CollectionUtils.asSet(realm));
     }
 
     private JsonValue createInstanceInvocationState(Map<String, Set<String>> configurationState) {
@@ -214,22 +205,7 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
         if (inputStream == null) {
             return "Empty error stream";
         } else {
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-            StringBuilder stringBuilder = new StringBuilder();
-            try {
-                String str;
-                while ((str = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(str);
-                }
-                return stringBuilder.toString();
-            } finally {
-                try {
-                    bufferedReader.close();
-                } catch (IOException ioe) {
-                    debug.warning("Exception closing BufferedReader in finally block in RestSecurityTokenViewBean#readInputStream: "
-                            + ioe.getMessage(), ioe);
-                }
-            }
+            return IOUtils.readStream(inputStream);
         }
     }
     private String getRestSTSInstanceDeletionUrl(String instanceId) {
@@ -264,7 +240,7 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
     private Map<String, List<String>> marshalSetValuesToListValues(Map<String, Set<String>> smsMap) {
         Map<String, List<String>> listMap = new HashMap<String, List<String>>();
         for (Map.Entry<String, Set<String>> entry : smsMap.entrySet()) {
-            ArrayList<String> list = new ArrayList<String>(entry.getValue().size());
+            List<String> list = new ArrayList<String>(entry.getValue().size());
             list.addAll(entry.getValue());
             listMap.put(entry.getKey(), list);
         }
