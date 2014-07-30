@@ -65,7 +65,7 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
     public Set<String> getPublishedInstances(String realm) throws AMConsoleException {
         try {
             ServiceConfig baseService = new ServiceConfigManager(AMAdminConstants.REST_STS_SERVICE,
-                    getAdminToken()).getOrganizationConfig(realm, null);
+                    getUserSSOToken()).getOrganizationConfig(realm, null);
             if (baseService != null) {
                 return baseService.getSubConfigNames();
             } else {
@@ -114,7 +114,7 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
     public Map<String, Set<String>> getInstanceState(String realm, String instanceName) throws AMConsoleException {
         try {
             ServiceConfig baseService = new ServiceConfigManager(AMAdminConstants.REST_STS_SERVICE,
-                    getAdminToken()).getOrganizationConfig(realm, null);
+                    getUserSSOToken()).getOrganizationConfig(realm, null);
             if (baseService != null) {
                 ServiceConfig serviceConfig = baseService.getSubConfig(instanceName);
                 if (serviceConfig != null) {
@@ -273,10 +273,6 @@ public class RestSTSModelImpl extends AMServiceProfileModelImpl implements RestS
 
     private boolean isNullOrEmpty(Set<String> set) {
         return ((set == null) || set.isEmpty());
-    }
-
-    private SSOToken getAdminToken()  {
-        return AccessController.doPrivileged(AdminTokenAction.getInstance());
     }
 
     private RestSTSModelResponse deleteInstance(String instanceId) throws IOException {
