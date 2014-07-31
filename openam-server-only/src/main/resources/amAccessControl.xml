@@ -247,6 +247,18 @@
         <actionhandler name="button1,button2" />
     </viewbean>
 
+    <!-- Rest STS -->
+    <viewbean view="RestSecurityTokenService" modify="RestSecurityTokenService" classname="com.sun.identity.console.reststs.RestSTSHomeViewBean">
+        <actionhandler name="tblButtonAdd,tblButtonDelete" />
+        <table name="tblSearch" />
+    </viewbean>
+    <viewbean view="RestSecurityTokenService" modify="RestSecurityTokenService" classname="com.sun.identity.console.reststs.RestSTSAddViewBean">
+        <actionhandler name="button1,button2,button3" />
+    </viewbean>
+    <viewbean view="RestSecurityTokenService" modify="RestSecurityTokenService" classname="com.sun.identity.console.reststs.RestSTSEditViewBean">
+        <actionhandler name="button1,button2" />
+    </viewbean>
+
     <neednodealwith classname="com.sun.identity.console.user.UMChangeUserPasswordViewBean" />
     <neednodealwith classname="com.sun.identity.console.idm.EndUserViewBean" />
     <neednodealwith classname="com.sun.identity.console.user.UMUserPasswordResetOptionsViewBean" />
@@ -345,9 +357,6 @@
     <viewbean view="*" modify="*" classname="com.sun.identity.console.service.MAPDuplicationDeviceViewBean" />
     <viewbean view="*" modify="*" classname="com.sun.identity.console.service.G11NSupportedCharsetsAddViewBean" />
     <viewbean view="*" modify="*" classname="com.sun.identity.console.service.G11NCharsetAliasAddViewBean" />
-    <viewbean view="*" modify="*" classname="com.sun.identity.console.reststs.RestSTSAddViewBean" />
-    <viewbean view="*" modify="*" classname="com.sun.identity.console.reststs.RestSTSHomeViewBean" />
-    <viewbean view="*" modify="*" classname="com.sun.identity.console.reststs.RestSTSEditViewBean" />
     <viewbean view="*" modify="*" classname="com.sun.identity.console.session.SMProfileViewBean" />
     <viewbean view="*" modify="*" classname="com.sun.identity.console.delegation.DelegationViewBean" />
     <viewbean view="*" modify="*" classname="com.sun.identity.console.delegation.DelegationPropertiesViewBean" />

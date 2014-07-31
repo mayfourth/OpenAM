@@ -331,10 +331,7 @@ public class RestSTSInstanceConfig extends STSInstanceConfig {
                         "corresponding to key " + key + " is not a list. The value: " + value);
             } else {
                 List<String> stringList = value.asList(String.class);
-                Set<String> stringSet = new HashSet<String>(stringList.size());
-                for (String entry : stringList) {
-                    stringSet.add(entry);
-                }
+                Set<String> stringSet = new HashSet<String>(stringList);
                 smsMap.put(key, stringSet);
             }
         }

@@ -81,7 +81,7 @@ public class AMSTSConstants {
     public static final String APPLICATION_JSON = SharedSTSConstants.APPLICATION_JSON;
     public static final String COOKIE = "Cookie";
     public static final String EQUALS = "=";
-    public static final String BAR = "|";
+    public static final String PIPE = "|";
     /*
     This constant defines the name of the OpenAM token, currently used in token validation requests;
      */
@@ -297,6 +297,7 @@ public class AMSTSConstants {
      */
     public static final String REST_STS_SERVICE_NAME = "RestSecurityTokenService";
 
+    public static final String REST_STS_SERVICE_VERSION = "1.0";
     /*
     The name of the json field corresponding to the deployment path of a successfully-published Rest STS instance.
      */

@@ -17,7 +17,6 @@
 package org.forgerock.openam.sts.config.user;
 
 import org.forgerock.json.fluent.JsonValue;
-import org.forgerock.openam.shared.sts.SharedSTSConstants;
 import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.MapMarshallUtils;
 import org.forgerock.util.Reject;
@@ -30,6 +29,7 @@ import java.util.Set;
 import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
 import static org.forgerock.json.fluent.JsonValue.object;
+import static org.forgerock.openam.shared.sts.SharedSTSConstants.*;
 
 /**
  * The classes in this package define the objects which must be populated in order to create a fully-configured
@@ -82,18 +82,6 @@ public class KeystoreConfig {
             return new KeystoreConfig(this);
         }
     }
-
-    /*
-    Define the names of fields to aid in json marshalling. Note that these names match the names of the AttributeSchema
-    entries in restSTS.xml, as this aids in marshalling an instance of this class into the attribute map needed for
-    SMS persistence.
-     */
-    private static final String KEYSTORE_FILE_NAME = SharedSTSConstants.KEYSTORE_FILE_NAME;
-    private static final String KEYSTORE_PASSWORD = SharedSTSConstants.KEYSTORE_PASSWORD;
-    private static final String SIGNATURE_KEY_ALIAS = SharedSTSConstants.SIGNATURE_KEY_ALIAS;
-    private static final String ENCRYPTION_KEY_ALIAS = SharedSTSConstants.ENCRYPTION_KEY_ALIAS;
-    private static final String SIGNATURE_KEY_PASSWORD = SharedSTSConstants.SIGNATURE_KEY_PASSWORD;
-    private static final String ENCRYPTION_KEY_PASSWORD = SharedSTSConstants.ENCRYPTION_KEY_PASSWORD;
 
     private final String keystoreFileName;
     private final byte[] keystorePassword;

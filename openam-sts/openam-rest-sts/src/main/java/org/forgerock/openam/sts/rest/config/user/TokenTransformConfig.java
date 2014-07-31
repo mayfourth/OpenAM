@@ -36,7 +36,7 @@ public class TokenTransformConfig {
     /*
     Must be same as the delimiter used in the supported-token-transforms AttributeSchema defined in restSTS.xml.
      */
-    private static final String DELIMETER = AMSTSConstants.BAR;
+    private static final String DELIMETER = AMSTSConstants.PIPE;
     private final TokenType inputTokenType;
     private final TokenType outputTokenType;
     private final boolean invalidateInterimOpenAMSession;

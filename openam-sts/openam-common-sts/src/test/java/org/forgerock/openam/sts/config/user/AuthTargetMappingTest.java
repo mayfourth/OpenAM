@@ -34,7 +34,7 @@ import java.util.Set;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
+import static org.fest.assertions.Assertions.assertThat;
 
 public class AuthTargetMappingTest {
     private static final String USERNAME = "username";
@@ -232,7 +232,7 @@ public class AuthTargetMappingTest {
         Map<String, Set<String>> reconstitutedMap = authTargetMapping.marshalToAttributeMap();
         Set<String> reconstitutedMappings = reconstitutedMap.get(AuthTargetMapping.AUTH_TARGET_MAPPINGS);
         for (String entry : mappings) {
-            assertTrue(reconstitutedMappings.contains(entry));
+            assertThat(reconstitutedMappings).contains(entry);
         }
     }
 

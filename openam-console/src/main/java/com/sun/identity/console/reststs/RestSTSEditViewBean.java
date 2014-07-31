@@ -39,6 +39,7 @@ import com.sun.web.ui.view.alert.CCAlert;
 import com.sun.web.ui.view.pagetitle.CCPageTitle;
 
 import javax.servlet.http.HttpServletRequest;
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Set;
 
@@ -124,7 +125,7 @@ public class RestSTSEditViewBean extends AMPrimaryMastHeadViewBean {
         final String currentRealm = (String)getPageSessionAttribute(AMAdminConstants.CURRENT_REALM);
             if (!submitCycle) {
                 RestSTSModel model = (RestSTSModel)getModel();
-                Map map = null;
+                Map map;
                 try {
                     map = model.getInstanceState(currentRealm, instanceName);
                 } catch (AMConsoleException e) {
@@ -134,7 +135,8 @@ public class RestSTSEditViewBean extends AMPrimaryMastHeadViewBean {
                     AMPropertySheet ps = (AMPropertySheet)getChild(PROPERTY_ATTRIBUTE);
                     ps.setAttributeValues(map, getModel());
                 } else {
-                    setInlineAlertMessage(CCAlert.TYPE_ERROR, "message.error", "No state corresponding to id " + instanceName); //TODO I18N
+                    setInlineAlertMessage(CCAlert.TYPE_ERROR, "message.error",
+                            MessageFormat.format(model.getLocalizedString("rest.sts.view.no.instance.message"), instanceName));
                 }
             }
     }
@@ -157,7 +159,7 @@ public class RestSTSEditViewBean extends AMPrimaryMastHeadViewBean {
      */
     public void handleButton1Request(RequestInvocationEvent event) throws ModelControlException {
         submitCycle = true;
-        Map<String, Set<String>> configurationState = (Map<String, Set<String>>)getAttributeSettings();
+        Map<String, Set<String>> configurationState = getAttributeSettings();
         RestSTSModel model = (RestSTSModel)getModel();
         RestSTSModelResponse validationResponse = model.validateConfigurationState(configurationState);
         if (validationResponse.isSuccessful()) {
@@ -171,7 +173,7 @@ public class RestSTSEditViewBean extends AMPrimaryMastHeadViewBean {
                     setInlineAlertMessage(CCAlert.TYPE_ERROR, "message.error", creationResponse.getMessage());
                 }
             } catch (AMConsoleException e) {
-                e.printStackTrace();
+                throw new ModelControlException(e);
             }
         } else {
             setInlineAlertMessage(CCAlert.TYPE_ERROR, "message.error", validationResponse.getMessage());
@@ -182,8 +184,8 @@ public class RestSTSEditViewBean extends AMPrimaryMastHeadViewBean {
     /*
     Returns a map of all settings, including those not changed from the default values in the model.
      */
-    private Map getAttributeSettings() throws ModelControlException {
-        Map values = null;
+    private Map<String, Set<String>> getAttributeSettings() throws ModelControlException {
+        Map<String, Set<String>> values = null;
         AMServiceProfileModel model = (AMServiceProfileModel)getModel();
 
         if (model != null) {

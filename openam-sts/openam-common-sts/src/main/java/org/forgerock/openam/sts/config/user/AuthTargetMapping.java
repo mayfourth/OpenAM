@@ -175,9 +175,9 @@ public class AuthTargetMapping {
         Method called in the context of marshalling to a Map<String,Object>, necessary for SMS persistence.
          */
         public String toSmsString() {
-            StringBuilder valueBuilder = new StringBuilder(authIndexType).append(AMSTSConstants.BAR).append(authIndexValue);
+            StringBuilder valueBuilder = new StringBuilder(authIndexType).append(AMSTSConstants.PIPE).append(authIndexValue);
             if (context != null) {
-                valueBuilder.append(AMSTSConstants.BAR);
+                valueBuilder.append(AMSTSConstants.PIPE);
                 int count = 0;
                 for (Map.Entry<String, String> entry : context.entrySet()) {
                     if (count > 0) {
@@ -205,7 +205,7 @@ public class AuthTargetMapping {
         be predictable.
          */
         static AuthTarget fromSmsString(String stringAuthTarget) {
-            StringTokenizer topLevelTokenizer = new StringTokenizer(stringAuthTarget, AMSTSConstants.BAR);
+            StringTokenizer topLevelTokenizer = new StringTokenizer(stringAuthTarget, AMSTSConstants.PIPE);
             String authIndexType = topLevelTokenizer.nextToken();
             String authIndexValue = topLevelTokenizer.nextToken();
             if (topLevelTokenizer.hasMoreTokens()) {
@@ -285,7 +285,7 @@ public class AuthTargetMapping {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         for (Map.Entry<Class<?>, AuthTarget> entry : mappings.entrySet()) {
-            builder.append(entry.getKey().getName()).append(AMSTSConstants.BAR).append(entry.getValue().toString()).append('\n');
+            builder.append(entry.getKey().getName()).append(AMSTSConstants.PIPE).append(entry.getValue().toString()).append('\n');
         }
         return builder.toString();
     }
@@ -334,7 +334,7 @@ public class AuthTargetMapping {
         attributes.put(AUTH_TARGET_MAPPINGS, values);
         for (Map.Entry<Class<?>, AuthTarget> entry : mappings.entrySet()) {
             try {
-                values.add(mapClassToTokenType(Class.forName(entry.getKey().getName())) + AMSTSConstants.BAR + entry.getValue().toSmsString());
+                values.add(mapClassToTokenType(Class.forName(entry.getKey().getName())) + AMSTSConstants.PIPE + entry.getValue().toSmsString());
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException("In AuthTargetMapping#marshalToAttributeMap, Could not find class " +
                         "corresponding to TokenType string " + entry.getKey().getName());
@@ -348,8 +348,8 @@ public class AuthTargetMapping {
         if (authTargetMappings != null) {
             AuthTargetMappingBuilder builder = AuthTargetMapping.builder();
             for (String entry : authTargetMappings) {
-                TokenType tokenType = TokenType.valueOf(entry.substring(0, entry.indexOf(AMSTSConstants.BAR)));
-                AuthTarget authTarget = AuthTarget.fromSmsString(entry.substring(entry.indexOf(AMSTSConstants.BAR) + 1));
+                TokenType tokenType = TokenType.valueOf(entry.substring(0, entry.indexOf(AMSTSConstants.PIPE)));
+                AuthTarget authTarget = AuthTarget.fromSmsString(entry.substring(entry.indexOf(AMSTSConstants.PIPE) + 1));
                 builder.addMapping(tokenType, authTarget.getAuthIndexType(),
                         authTarget.getAuthIndexValue(), authTarget.getContext());
             }

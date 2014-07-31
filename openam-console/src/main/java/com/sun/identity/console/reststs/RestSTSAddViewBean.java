@@ -108,7 +108,7 @@ public class RestSTSAddViewBean extends AMServiceProfileViewBeanBase {
                     setInlineAlertMessage(CCAlert.TYPE_ERROR, "message.error", creationResponse.getMessage());
                 }
             } catch (AMConsoleException e) {
-                e.printStackTrace();
+                throw new ModelControlException(e);
             }
         } else {
             setInlineAlertMessage(CCAlert.TYPE_ERROR, "message.error", validationResponse.getMessage());
