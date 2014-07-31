@@ -18,7 +18,10 @@ package org.forgerock.openam.sts.tokengeneration.saml2;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
+import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
+import com.google.inject.name.Names;
+import com.sun.identity.sm.ServiceListener;
 import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.config.user.AuthTargetMapping;
@@ -27,9 +30,12 @@ import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.config.user.KeystoreConfig;
 import org.forgerock.openam.sts.config.user.SAML2Config;
 import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
+import org.forgerock.openam.sts.rest.ServiceListenerRegistration;
+import org.forgerock.openam.sts.rest.ServiceListenerRegistrationImpl;
 import org.forgerock.openam.sts.rest.config.user.RestDeploymentConfig;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.forgerock.openam.sts.rest.publish.RestSTSInstanceConfigPersister;
+import org.forgerock.openam.sts.tokengeneration.config.TokenGenerationModule;
 import org.forgerock.openam.sts.tokengeneration.saml2.xmlsig.STSKeyProviderFactory;
 import org.forgerock.openam.sts.tokengeneration.saml2.xmlsig.STSKeyProviderFactoryImpl;
 import org.slf4j.Logger;
@@ -68,6 +74,11 @@ public class RestSTSInstanceStateProviderTest {
             bind(RestSTSInstanceStateFactory.class).toInstance(mockRestSTSInstanceStateFactory);
             bind(STSKeyProviderFactory.class).to(STSKeyProviderFactoryImpl.class);
             bind(RestSTSInstanceStateProvider.class);
+            bind(ServiceListenerRegistration.class).toInstance(mock(ServiceListenerRegistrationImpl.class));
+            bind(ServiceListener.class).annotatedWith(Names.named(TokenGenerationModule.REST_STS_INSTANCE_STATE_LISTENER))
+                    .to(RestSTSInstanceStateServiceListener.class);
+            bind(new TypeLiteral<STSInstanceStateProvider<RestSTSInstanceState>>(){})
+                    .to(RestSTSInstanceStateProvider.class).in(Scopes.SINGLETON);
         }
     }
 
