@@ -2,7 +2,6 @@ package org.forgerock.openam.sts.tokengeneration.saml2;
 
 import com.sun.identity.sm.ServiceListener;
 import org.forgerock.openam.sts.AMSTSConstants;
-import org.slf4j.Logger;
 
 import javax.inject.Inject;
 
@@ -13,20 +12,18 @@ import javax.inject.Inject;
  */
 public class RestSTSInstanceStateServiceListener implements ServiceListener {
     private final STSInstanceStateProvider<RestSTSInstanceState> instanceStateProvider;
-    private final Logger logger;
 
     @Inject
-    RestSTSInstanceStateServiceListener(STSInstanceStateProvider<RestSTSInstanceState> instanceStateProvider, Logger logger) {
+    RestSTSInstanceStateServiceListener(STSInstanceStateProvider<RestSTSInstanceState> instanceStateProvider) {
         this.instanceStateProvider = instanceStateProvider;
-        this.logger = logger;
     }
 
     public void schemaChanged(String serviceName, String version) {
-
+        //do nothing - these updates not relevant
     }
 
     public void globalConfigChanged(String serviceName, String version, String groupName, String serviceComponent, int type) {
-
+        //do nothing - these updates not relevant
     }
 
     /*
@@ -46,14 +43,12 @@ public class RestSTSInstanceStateServiceListener implements ServiceListener {
             }
             instanceStateProvider.invalidateCachedEntry(serviceComponent);
         }
-        logger.debug("OrganizationConfigChange for serviceName " + serviceName + " version " + version + " orgName " +
-                orgName + " groupName " + groupName + " serviceComponent " + serviceComponent + " type " + type);
     }
 
     /*
     When a rest-sts instance is 'updated', it is really a delete followed by an add. So I will simply listen for the delete,
     as that will invalidate cache entries as part of the update cycle, and have the added benefit of preventing my cache
-    from growing too large in case many rest-sts instances are updated, but very few actually invoked.
+    from growing too large in case many rest-sts instances are updated, but very few actually invoked after the update.
      */
     private boolean restSTSInstanceTargetedByDelete(String serviceName, String version, int type) {
         return AMSTSConstants.REST_STS_SERVICE_NAME.equals(serviceName) &&

@@ -60,7 +60,8 @@ public class RestSTSInstanceStateProvider implements STSInstanceStateProvider<Re
         try {
             serviceListenerRegistration.registerServiceListener(AMSTSConstants.REST_STS_SERVICE_NAME,
                     AMSTSConstants.REST_STS_SERVICE_VERSION, serviceListener);
-            logger.debug("successfully added ServiceListener for service " + AMSTSConstants.REST_STS_SERVICE_NAME);
+            logger.debug("In RestSTSInstanceStateProvider ctor, successfully added ServiceListener for service "
+                    + AMSTSConstants.REST_STS_SERVICE_NAME);
         } catch (STSInitializationException e) {
             final String message = "Exception caught registering ServiceListener in the RestSTSInstanceStatePersister: " + e;
             logger.error(message, e);

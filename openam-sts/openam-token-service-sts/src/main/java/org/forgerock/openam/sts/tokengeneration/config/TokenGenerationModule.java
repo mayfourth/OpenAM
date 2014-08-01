@@ -93,7 +93,7 @@ public class TokenGenerationModule extends AbstractModule {
         the appropriate cache entries.
          */
         bind(ServiceListener.class).annotatedWith(Names.named(REST_STS_INSTANCE_STATE_LISTENER))
-                .to(RestSTSInstanceStateServiceListener.class);
+                .to(RestSTSInstanceStateServiceListener.class).in(Scopes.SINGLETON);
     }
 
     @Provides

@@ -19,19 +19,25 @@ package org.forgerock.openam.sts.rest.publish;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.sun.identity.setup.AMSetupServlet;
+import com.sun.identity.sm.ServiceListener;
 import org.forgerock.json.resource.ResourceException;
 import org.forgerock.json.resource.Route;
 import org.forgerock.json.resource.Router;
 import org.forgerock.openam.sts.AMSTSConstants;
+import org.forgerock.openam.sts.AMSTSRuntimeException;
+import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
 import org.forgerock.openam.sts.rest.RestSTS;
+import org.forgerock.openam.sts.rest.ServiceListenerRegistration;
 import org.forgerock.openam.sts.rest.config.RestSTSInstanceModule;
+import org.forgerock.openam.sts.rest.config.RestSTSModule;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.forgerock.openam.sts.rest.service.RestSTSService;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,11 +62,25 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
     private final Logger logger;
 
     @Inject
-    RestSTSInstancePublisherImpl(Router router, STSInstanceConfigPersister<RestSTSInstanceConfig> persistentStore, Logger logger) {
+    RestSTSInstancePublisherImpl(Router router,
+                                 STSInstanceConfigPersister<RestSTSInstanceConfig> persistentStore,
+                                 ServiceListenerRegistration serviceListenerRegistration,
+                                 @Named(RestSTSModule.REST_STS_PUBLISH_LISTENER)ServiceListener serviceListener,
+                                 Logger logger) {
         this.router = router;
         this.persistentStore = persistentStore;
         publishedRoutes = new HashMap<String, Route>();
         this.logger = logger;
+        try {
+            serviceListenerRegistration.registerServiceListener(AMSTSConstants.REST_STS_SERVICE_NAME,
+                    AMSTSConstants.REST_STS_SERVICE_VERSION, serviceListener);
+            logger.debug("In RestSTSInstancePublisherImpl ctor, successfully added ServiceListener for service "
+                    + AMSTSConstants.REST_STS_SERVICE_NAME);
+        } catch (STSInitializationException e) {
+            final String message = "Exception caught registering ServiceListener in the RestSTSInstancePublisherImpl: " + e;
+            logger.error(message, e);
+            throw new AMSTSRuntimeException(ResourceException.INTERNAL_ERROR, message, e);
+        }
     }
 
     /**
