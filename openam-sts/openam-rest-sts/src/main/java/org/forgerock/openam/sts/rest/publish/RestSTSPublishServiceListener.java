@@ -135,8 +135,8 @@ public class RestSTSPublishServiceListener implements ServiceListener {
     private boolean restSTSInstanceCreatedInSiteDeployment(String serviceName, String version, int type) {
         return AMSTSConstants.REST_STS_SERVICE_NAME.equals(serviceName) &&
                 AMSTSConstants.REST_STS_SERVICE_VERSION.equals(version) &&
-                (ServiceListener.ADDED == type) /* &&
-                SessionService.getSessionService().isSiteEnabled()*/; //TODO: is there a better way to check?
+                (ServiceListener.ADDED == type)  &&
+                SessionService.getSessionService().isSiteEnabled();
     }
 
     private Injector createInjector(RestSTSInstanceConfig instanceConfig) throws ResourceException {
