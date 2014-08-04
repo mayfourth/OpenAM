@@ -78,8 +78,8 @@ public class RestSTSPublishServiceListener implements ServiceListener {
     and thus needs to be hung off of the CREST router in the current deployment.
      */
     public void organizationConfigChanged(String serviceName, String version, String orgName, String groupName, String serviceComponent, int type) {
+        final String logIdentifier = "RestSTSPublishServiceListener#organizationConfigChanged";
         if (restSTSInstanceCreatedInSiteDeployment(serviceName, version, type)) {
-            final String logIdentifier = "RestSTSPublishServiceListener#organizationConfigChanged";
             /*
             It seems the serviceComponent is the full realm path, and always includes a '/' at the beginning, to represent
             the root realm. This value needs to be stripped-off, as the cache uses the rest-sts id, which is normalized to
@@ -115,6 +115,23 @@ public class RestSTSPublishServiceListener implements ServiceListener {
                             "\nThis means this instance will not be hung off of the CREST router. Exception: " + e);
                 }
             }
+        } else if (restSTSInstanceDeletedInSiteDeployment(serviceName, version, type)) {
+            /*
+            It seems the serviceComponent is the full realm path, and always includes a '/' at the beginning, to represent
+            the root realm. This value needs to be stripped-off, as the cache uses the rest-sts id, which is normalized to
+            remove any leading/trailing '/' characters.
+             */
+            String normalizedServiceComponent = stripLeadingForwardSlash(serviceComponent);
+            String realm = DNMapper.orgNameToRealmName(orgName);
+            boolean removeOnlyFromRouter = true;
+            try {
+                instancePublisher.removeInstance(normalizedServiceComponent, realm, removeOnlyFromRouter);
+                logger.info(logIdentifier + ": Removed rest-sts instance " + normalizedServiceComponent +
+                        " from CREST router in site deployment following the deletion of this rest-sts instance on " +
+                        "another site server.");
+            } catch (STSPublishException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -128,14 +145,19 @@ public class RestSTSPublishServiceListener implements ServiceListener {
         return unstripped;
     }
 
-    /*
-    Checks to see if the RestSecurityTokenService is targeted by the event, whether it pertains to an instance add, and
-    whether we are in a site deployment.
-     */
     private boolean restSTSInstanceCreatedInSiteDeployment(String serviceName, String version, int type) {
+        return (ServiceListener.ADDED == type)  &&
+                restSTSServiceTargetedInSiteDeployment(serviceName, version);
+    }
+
+    private boolean restSTSInstanceDeletedInSiteDeployment(String serviceName, String version, int type) {
+        return (ServiceListener.REMOVED == type)  &&
+                restSTSServiceTargetedInSiteDeployment(serviceName, version);
+    }
+
+    private boolean restSTSServiceTargetedInSiteDeployment(String serviceName, String version) {
         return AMSTSConstants.REST_STS_SERVICE_NAME.equals(serviceName) &&
                 AMSTSConstants.REST_STS_SERVICE_VERSION.equals(version) &&
-                (ServiceListener.ADDED == type)  &&
                 SessionService.getSessionService().isSiteEnabled();
     }
 

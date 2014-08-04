@@ -60,6 +60,7 @@ import static org.forgerock.json.fluent.JsonValue.object;
   * rest sts publish service.
  */
 class RestSTSPublishServiceRequestHandler implements RequestHandler {
+    private static final boolean REMOVE_ONLY_FROM_ROUTER = true;
     private static final String PUBLISHED_INSTANCES = "published_instances";
     private static final String RESULT = "result";
     private static final String SUCCESS = "success";
@@ -114,7 +115,7 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
         String stsId = request.getResourceName();
         String realm = getRealmFromResourceName(request.getResourceName());
         try {
-            publisher.removeInstance(stsId, realm);
+            publisher.removeInstance(stsId, realm, !REMOVE_ONLY_FROM_ROUTER);
             if (logger.isDebugEnabled()) {
                 logger.debug("rest sts instance " + stsId + " successfully removed from realm " + realm);
             }
@@ -222,7 +223,7 @@ class RestSTSPublishServiceRequestHandler implements RequestHandler {
                 return;
             }
             try {
-                publisher.removeInstance(stsId, realm);
+                publisher.removeInstance(stsId, realm, !REMOVE_ONLY_FROM_ROUTER);
             } catch (STSPublishException e) {
                 logger.error("In RestSTSPublishServiceRequestHandler#handleUpdate, exception caught removing " +
                         "rest sts instance " + instanceConfig.getDeploymentSubPath() + ". This means instance is" +

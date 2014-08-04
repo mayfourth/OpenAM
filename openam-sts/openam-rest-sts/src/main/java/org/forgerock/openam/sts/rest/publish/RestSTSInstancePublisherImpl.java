@@ -59,6 +59,8 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
     private final Router router;
     private final STSInstanceConfigPersister<RestSTSInstanceConfig> persistentStore;
     private final Map<String, Route> publishedRoutes;
+    private final ServiceListenerRegistration serviceListenerRegistration;
+    private final ServiceListener serviceListener;
     private final Logger logger;
 
     @Inject
@@ -69,18 +71,10 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
                                  Logger logger) {
         this.router = router;
         this.persistentStore = persistentStore;
+        this.serviceListenerRegistration = serviceListenerRegistration;
+        this.serviceListener = serviceListener;
         publishedRoutes = new HashMap<String, Route>();
         this.logger = logger;
-        try {
-            serviceListenerRegistration.registerServiceListener(AMSTSConstants.REST_STS_SERVICE_NAME,
-                    AMSTSConstants.REST_STS_SERVICE_VERSION, serviceListener);
-            logger.debug("In RestSTSInstancePublisherImpl ctor, successfully added ServiceListener for service "
-                    + AMSTSConstants.REST_STS_SERVICE_NAME);
-        } catch (STSInitializationException e) {
-            final String message = "Exception caught registering ServiceListener in the RestSTSInstancePublisherImpl: " + e;
-            logger.error(message, e);
-            throw new AMSTSRuntimeException(ResourceException.INTERNAL_ERROR, message, e);
-        }
     }
 
     /**
@@ -112,7 +106,7 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
          */
         String deploymentSubPath = normalizeDeploymentSubPath(instanceConfig.getDeploymentSubPath());
 
-        if (publishedRoutes.containsKey(deploymentSubPath)) {
+        if (publishedRoutes.containsKey(normalizeDeploymentSubPathForRouteCache(deploymentSubPath))) {
             throw new STSPublishException(ResourceException.CONFLICT, "A rest-sts instance at sub-path " +
                     deploymentSubPath + " has already been published.");
         }
@@ -120,7 +114,7 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         /*
         Need to persist the published Route instance as it is necessary for router removal.
          */
-        publishedRoutes.put(deploymentSubPath, route);
+        publishedRoutes.put(normalizeDeploymentSubPathForRouteCache(deploymentSubPath), route);
         /*
         If this is a republish (i.e. re-constitute previously-published Rest STS instances following OpenAM restart),
         then the RestSTSInsanceConfig does not need to be persisted, as it was obtained from the SMS via a GET
@@ -140,16 +134,21 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
      * @param stsId the path, relative to the base rest-sts service, to the to-be-removed service. Note that this path
      *              includes the realm.
      * @param realm The realm of the STS instance
+     * @param removeOnlyFromRouter Set to true when called by a ServiceListener in a site deployment to remove a rest-sts instance, deleted
+     *                             on another server, and thus removed from the SMS, but requiring removal from the CREST router.
+     *                             Set to false in all other cases.
      * @throws org.forgerock.openam.sts.STSPublishException if the entry in the SMS could not be removed, or if no
      * Route entry could be found in the Map corresponding to a previously-published instance.
      */
-    public synchronized void removeInstance(String stsId, String realm) throws STSPublishException {
-        Route route = publishedRoutes.remove(stsId);
+    public synchronized void removeInstance(String stsId, String realm, boolean removeOnlyFromRouter) throws STSPublishException {
+        Route route = publishedRoutes.remove(normalizeDeploymentSubPathForRouteCache(stsId));
         if (route == null) {
             throw new STSPublishException(ResourceException.NOT_FOUND, "No previously published STS instance with id "
                     + stsId + " in realm " + realm + " found!");
         }
-        persistentStore.removeSTSInstance(stsId, realm);
+        if (!removeOnlyFromRouter) {
+            persistentStore.removeSTSInstance(stsId, realm);
+        }
         router.removeRoute(route);
     }
 
@@ -193,11 +192,25 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
     }
 
     public boolean isInstanceExposedInCrest(String stsId) {
-        return publishedRoutes.get(normalizeDeploymentSubPath(stsId)) != null;
+        return publishedRoutes.get(normalizeDeploymentSubPathForRouteCache(normalizeDeploymentSubPath(stsId))) != null;
     }
 
     public boolean isInstancePersistedInSMS(String stsId, String realm) throws STSPublishException {
-        return persistentStore.isInstancePresent(stsId, realm);
+        return persistentStore.isInstancePresent(normalizeDeploymentSubPath(stsId), realm);
+    }
+
+    public void registerServiceListener() {
+        try {
+            serviceListenerRegistration.registerServiceListener(AMSTSConstants.REST_STS_SERVICE_NAME,
+                    AMSTSConstants.REST_STS_SERVICE_VERSION, serviceListener);
+            logger.debug("In RestSTSInstancePublisherImpl ctor, successfully added ServiceListener for service "
+                    + AMSTSConstants.REST_STS_SERVICE_NAME);
+        } catch (STSInitializationException e) {
+            final String message = "Exception caught registering ServiceListener in " +
+                    "RestSTSInstancePublisherImpl#registerServiceListener. This means that rest-sts-instances published " +
+                    "to other site instances will not be propagated to the rest-sts-instnace CREST router on this server." + e;
+            logger.error(message, e);
+        }
     }
 
     private String normalizeDeploymentSubPath(String deploymentSubPath) {
@@ -211,4 +224,17 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         return deploymentSubPath;
     }
 
+    /*
+    In a site deployment, the RestSTSPublishServiceListener will need to listen for rest-sts instance deletion events,
+    and remove the rest-sts instance from the CREST router on all site servers other than the site server where the instance
+    was actually deleted. But the serviceComponent identifying the subconfig entry corresponding to the rest-sts-instance state,
+    passed to ServiceListener#organizationConfigChanged, is always lower-case. Thus, when a rest-sts instance is deleted in
+    a site deployment, and the RestSTSPublishServiceListener is called, it needs to be able to remove the route by referencing
+    a lower-case rest-identifier. This method insures that all cached routes are cached with a lower-case id. Note that this
+    does mean that multiple rest-sts instances with the same deploymentUrl except for the casing, cannot be published to the
+    same realm.
+     */
+    private String normalizeDeploymentSubPathForRouteCache(String deploymentSubPath) {
+        return deploymentSubPath.toLowerCase();
+    }
 }
