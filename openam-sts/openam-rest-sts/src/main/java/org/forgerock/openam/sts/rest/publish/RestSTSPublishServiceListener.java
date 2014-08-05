@@ -18,7 +18,6 @@ package org.forgerock.openam.sts.rest.publish;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.iplanet.dpro.session.service.SessionService;
 import com.sun.identity.sm.DNMapper;
 import com.sun.identity.sm.ServiceListener;
 import org.forgerock.json.resource.InternalServerErrorException;
@@ -85,17 +84,17 @@ public class RestSTSPublishServiceListener implements ServiceListener {
         remove any leading/trailing '/' characters.
          */
         String normalizedServiceComponent = stripLeadingForwardSlash(serviceComponent);
-        if (restSTSInstanceCreatedInSiteDeployment(serviceName, version, type)) {
-            String realm = DNMapper.orgNameToRealmName(orgName);
-            RestSTSInstanceConfig createdInstance;
-            try {
-                createdInstance = restSTSInstanceConfigStore.getSTSInstanceConfig(normalizedServiceComponent, realm);
-            } catch (STSPublishException e) {
-                logger.error(logIdentifier + ":could not obtain newly created rest-sts instance " + serviceComponent + " from SMS. " +
-                        "This means this instance will not be hung off of the CREST router. Exception: " + e);
-                return;
-            }
-            if (!instancePublisher.isInstanceExposedInCrest(createdInstance.getDeploymentSubPath())) {
+        if (restSTSInstanceCreated(serviceName, version, type)) {
+            if (!instancePublisher.isInstanceExposedInCrest(normalizedServiceComponent)) {
+                String realm = DNMapper.orgNameToRealmName(orgName);
+                RestSTSInstanceConfig createdInstance;
+                try {
+                    createdInstance = restSTSInstanceConfigStore.getSTSInstanceConfig(normalizedServiceComponent, realm);
+                } catch (STSPublishException e) {
+                    logger.error(logIdentifier + ":could not obtain newly created rest-sts instance " + serviceComponent + " from SMS. " +
+                            "This means this instance will not be hung off of the CREST router. Exception: " + e);
+                    return;
+                }
                 Injector instanceInjector;
                 try {
                     instanceInjector = createInjector(createdInstance);
@@ -115,7 +114,7 @@ public class RestSTSPublishServiceListener implements ServiceListener {
                             "\nThis means this instance will not be hung off of the CREST router. Exception: " + e);
                 }
             }
-        } else if (restSTSInstanceDeletedInSiteDeployment(serviceName, version, type)) {
+        } else if (restSTSInstanceDeleted(serviceName, version, type)) {
             /*
             Check to see if this instance still remains in the CREST router. This could occur if:
             1. we are in a multi-server environment, and the rest-sts instance was deleted on another server
@@ -148,20 +147,19 @@ public class RestSTSPublishServiceListener implements ServiceListener {
         return unstripped;
     }
 
-    private boolean restSTSInstanceCreatedInSiteDeployment(String serviceName, String version, int type) {
+    private boolean restSTSInstanceCreated(String serviceName, String version, int type) {
         return (ServiceListener.ADDED == type)  &&
-                restSTSServiceTargetedInSiteDeployment(serviceName, version);
+                restSTSServiceTargeted(serviceName, version);
     }
 
-    private boolean restSTSInstanceDeletedInSiteDeployment(String serviceName, String version, int type) {
+    private boolean restSTSInstanceDeleted(String serviceName, String version, int type) {
         return (ServiceListener.REMOVED == type)  &&
-                restSTSServiceTargetedInSiteDeployment(serviceName, version);
+                restSTSServiceTargeted(serviceName, version);
     }
 
-    private boolean restSTSServiceTargetedInSiteDeployment(String serviceName, String version) {
+    private boolean restSTSServiceTargeted(String serviceName, String version) {
         return AMSTSConstants.REST_STS_SERVICE_NAME.equals(serviceName) &&
-                AMSTSConstants.REST_STS_SERVICE_VERSION.equals(version) &&
-                SessionService.getSessionService().isSiteEnabled();
+                AMSTSConstants.REST_STS_SERVICE_VERSION.equals(version);
     }
 
     private Injector createInjector(RestSTSInstanceConfig instanceConfig) throws ResourceException {
