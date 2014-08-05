@@ -23,7 +23,7 @@ import org.forgerock.openam.sts.AMSTSRuntimeException;
 import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.TokenCreationException;
-import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
+import org.forgerock.openam.sts.publish.STSInstanceConfigStore;
 import org.forgerock.openam.sts.rest.ServiceListenerRegistration;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.forgerock.openam.sts.tokengeneration.config.TokenGenerationModule;
@@ -40,18 +40,18 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RestSTSInstanceStateProvider implements STSInstanceStateProvider<RestSTSInstanceState> {
     private final ConcurrentHashMap<String, RestSTSInstanceState> cachedRestInstanceConfigState;
-    private final STSInstanceConfigPersister<RestSTSInstanceConfig> restStsInstanceConfigPersister;
+    private final STSInstanceConfigStore<RestSTSInstanceConfig> restStsInstanceConfigStore;
     private final RestSTSInstanceStateFactory instanceStateFactory;
     private final Logger logger;
 
     @Inject
-    RestSTSInstanceStateProvider(STSInstanceConfigPersister<RestSTSInstanceConfig> restStsInstancePersister,
+    RestSTSInstanceStateProvider(STSInstanceConfigStore<RestSTSInstanceConfig> restStsInstanceStore,
                                  RestSTSInstanceStateFactory instanceStateFactory,
                                  ServiceListenerRegistration serviceListenerRegistration,
                                  @Named(TokenGenerationModule.REST_STS_INSTANCE_STATE_LISTENER)ServiceListener serviceListener,
                                  Logger logger) {
         cachedRestInstanceConfigState = new ConcurrentHashMap<String, RestSTSInstanceState>();
-        this.restStsInstanceConfigPersister = restStsInstancePersister;
+        this.restStsInstanceConfigStore = restStsInstanceStore;
         this.instanceStateFactory = instanceStateFactory;
         this.logger = logger;
         /*
@@ -97,6 +97,6 @@ public class RestSTSInstanceStateProvider implements STSInstanceStateProvider<Re
 
     private RestSTSInstanceState createSTSInstanceState(String instanceId, String realm) throws TokenCreationException, STSPublishException {
         logger.debug("Creating STSInstanceState for instanceId: " + instanceId);
-        return instanceStateFactory.createRestSTSInstanceState(restStsInstanceConfigPersister.getSTSInstanceConfig(instanceId, realm));
+        return instanceStateFactory.createRestSTSInstanceState(restStsInstanceConfigStore.getSTSInstanceConfig(instanceId, realm));
     }
 }

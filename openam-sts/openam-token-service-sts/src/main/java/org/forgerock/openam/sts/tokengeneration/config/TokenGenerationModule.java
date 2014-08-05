@@ -26,12 +26,12 @@ import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.MapMarshaller;
 import org.forgerock.openam.sts.XMLUtilities;
 import org.forgerock.openam.sts.XMLUtilitiesImpl;
-import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
+import org.forgerock.openam.sts.publish.STSInstanceConfigStore;
 import org.forgerock.openam.sts.rest.ServiceListenerRegistration;
 import org.forgerock.openam.sts.rest.ServiceListenerRegistrationImpl;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.forgerock.openam.sts.rest.marshal.RestSTSInstanceConfigMapMarshaller;
-import org.forgerock.openam.sts.rest.publish.RestSTSInstanceConfigPersister;
+import org.forgerock.openam.sts.rest.publish.RestSTSInstanceConfigStore;
 import org.forgerock.openam.sts.tokengeneration.saml2.RestSTSInstanceState;
 import org.forgerock.openam.sts.tokengeneration.saml2.RestSTSInstanceStateFactory;
 import org.forgerock.openam.sts.tokengeneration.saml2.RestSTSInstanceStateFactoryImpl;
@@ -69,7 +69,7 @@ public class TokenGenerationModule extends AbstractModule {
         Once the TokenGenerationService gets called by the SOAP STS, I will need to bind a
         STSInstanceConfigPersister<SoapSTSInstanceConfig> class.
          */
-        bind(new TypeLiteral<STSInstanceConfigPersister<RestSTSInstanceConfig>>(){}).to(RestSTSInstanceConfigPersister.class)
+        bind(new TypeLiteral<STSInstanceConfigStore<RestSTSInstanceConfig>>(){}).to(RestSTSInstanceConfigStore.class)
                 .in(Scopes.SINGLETON);
         bind(new TypeLiteral<MapMarshaller<RestSTSInstanceConfig>>() {}).to(RestSTSInstanceConfigMapMarshaller.class);
 

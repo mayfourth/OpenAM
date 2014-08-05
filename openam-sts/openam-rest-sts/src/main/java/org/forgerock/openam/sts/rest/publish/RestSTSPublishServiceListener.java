@@ -25,7 +25,7 @@ import org.forgerock.json.resource.InternalServerErrorException;
 import org.forgerock.json.resource.ResourceException;
 import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.STSPublishException;
-import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
+import org.forgerock.openam.sts.publish.STSInstanceConfigStore;
 import org.forgerock.openam.sts.rest.RestSTS;
 import org.forgerock.openam.sts.rest.config.RestSTSInstanceModule;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
@@ -51,15 +51,15 @@ public class RestSTSPublishServiceListener implements ServiceListener {
      */
     private static final boolean REPUBLISH_INSTANCE = true;
     private final RestSTSInstancePublisher instancePublisher;
-    STSInstanceConfigPersister<RestSTSInstanceConfig> restSTSInstanceConfigPersister;
+    STSInstanceConfigStore<RestSTSInstanceConfig> restSTSInstanceConfigStore;
     private final Logger logger;
 
     @Inject
     RestSTSPublishServiceListener(RestSTSInstancePublisher instancePublisher,
-                                  STSInstanceConfigPersister<RestSTSInstanceConfig> restSTSInstanceConfigPersister,
+                                  STSInstanceConfigStore<RestSTSInstanceConfig> restSTSInstanceConfigStore,
                                   Logger logger) {
         this.instancePublisher = instancePublisher;
-        this.restSTSInstanceConfigPersister = restSTSInstanceConfigPersister;
+        this.restSTSInstanceConfigStore = restSTSInstanceConfigStore;
         this.logger = logger;
     }
 
@@ -89,7 +89,7 @@ public class RestSTSPublishServiceListener implements ServiceListener {
             String realm = DNMapper.orgNameToRealmName(orgName);
             RestSTSInstanceConfig createdInstance;
             try {
-                createdInstance = restSTSInstanceConfigPersister.getSTSInstanceConfig(normalizedServiceComponent, realm);
+                createdInstance = restSTSInstanceConfigStore.getSTSInstanceConfig(normalizedServiceComponent, realm);
             } catch (STSPublishException e) {
                 logger.error(logIdentifier + ":could not obtain newly created rest-sts instance " + serviceComponent + " from SMS. " +
                         "This means this instance will not be hung off of the CREST router. Exception: " + e);

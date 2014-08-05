@@ -29,12 +29,12 @@ import org.forgerock.json.resource.Resources;
 import org.forgerock.json.resource.Router;
 import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.MapMarshaller;
-import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
+import org.forgerock.openam.sts.publish.STSInstanceConfigStore;
 import org.forgerock.openam.sts.rest.ServiceListenerRegistration;
 import org.forgerock.openam.sts.rest.ServiceListenerRegistrationImpl;
 import org.forgerock.openam.sts.rest.config.user.RestSTSInstanceConfig;
 import org.forgerock.openam.sts.rest.marshal.RestSTSInstanceConfigMapMarshaller;
-import org.forgerock.openam.sts.rest.publish.RestSTSInstanceConfigPersister;
+import org.forgerock.openam.sts.rest.publish.RestSTSInstanceConfigStore;
 import org.forgerock.openam.sts.rest.publish.RestSTSInstancePublisher;
 import org.forgerock.openam.sts.rest.publish.RestSTSInstancePublisherImpl;
 import org.forgerock.openam.sts.rest.publish.RestSTSPublishServiceListener;
@@ -63,7 +63,7 @@ public class RestSTSModule extends AbstractModule {
         which is necessary for SMS persistence.
          */
         bind(new TypeLiteral<MapMarshaller<RestSTSInstanceConfig>>(){}).to(RestSTSInstanceConfigMapMarshaller.class).in(Scopes.SINGLETON);
-        bind(new TypeLiteral<STSInstanceConfigPersister<RestSTSInstanceConfig>>(){}).to(RestSTSInstanceConfigPersister.class).in(Scopes.SINGLETON);
+        bind(new TypeLiteral<STSInstanceConfigStore<RestSTSInstanceConfig>>(){}).to(RestSTSInstanceConfigStore.class).in(Scopes.SINGLETON);
 
         /*
         Bind the class which encapsulates ServiceListener registration so that the RestSTSInstancePublisherImpl can

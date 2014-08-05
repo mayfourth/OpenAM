@@ -26,7 +26,7 @@ import org.forgerock.json.resource.Router;
 import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.STSPublishException;
-import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
+import org.forgerock.openam.sts.publish.STSInstanceConfigStore;
 import org.forgerock.openam.sts.rest.RestSTS;
 import org.forgerock.openam.sts.rest.ServiceListenerRegistration;
 import org.forgerock.openam.sts.rest.config.RestSTSInstanceModule;
@@ -56,7 +56,7 @@ import java.util.Map;
  */
 public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
     private final Router router;
-    private final STSInstanceConfigPersister<RestSTSInstanceConfig> persistentStore;
+    private final STSInstanceConfigStore<RestSTSInstanceConfig> persistentStore;
     private final Map<String, Route> publishedRoutes;
     private final ServiceListenerRegistration serviceListenerRegistration;
     private final ServiceListener serviceListener;
@@ -64,7 +64,7 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
 
     @Inject
     RestSTSInstancePublisherImpl(Router router,
-                                 STSInstanceConfigPersister<RestSTSInstanceConfig> persistentStore,
+                                 STSInstanceConfigStore<RestSTSInstanceConfig> persistentStore,
                                  ServiceListenerRegistration serviceListenerRegistration,
                                  @Named(RestSTSModule.REST_STS_PUBLISH_LISTENER)ServiceListener serviceListener,
                                  Logger logger) {
