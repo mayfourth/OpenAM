@@ -33,6 +33,7 @@ import com.sun.identity.console.base.model.AMPropertySheetModel;
 import com.sun.identity.console.reststs.model.RestSTSModel;
 import com.sun.identity.console.reststs.model.RestSTSModelImpl;
 import com.sun.identity.console.reststs.model.RestSTSModelResponse;
+import com.sun.identity.shared.datastruct.CollectionHelper;
 import com.sun.web.ui.model.CCPageTitleModel;
 import com.sun.web.ui.view.alert.CCAlert;
 import com.sun.web.ui.view.pagetitle.CCPageTitle;
@@ -232,16 +233,16 @@ public class RestSTSEditViewBean extends AMPrimaryMastHeadViewBean {
         if (configurationState == null) {
             return;
         }
-        Set<String> passwordSet = configurationState.get(SharedSTSConstants.KEYSTORE_PASSWORD);
-        if ((passwordSet != null) && AMPropertySheetModel.passwordRandom.equals(passwordSet.iterator().next())) {
+        String password = CollectionHelper.getMapAttr(configurationState, SharedSTSConstants.KEYSTORE_PASSWORD);
+        if (AMPropertySheetModel.passwordRandom.equals(password)) {
             configurationState.remove(SharedSTSConstants.KEYSTORE_PASSWORD);
         }
-        passwordSet = configurationState.get(SharedSTSConstants.SIGNATURE_KEY_PASSWORD);
-        if ((passwordSet != null) && AMPropertySheetModel.passwordRandom.equals(passwordSet.iterator().next())) {
+        password = CollectionHelper.getMapAttr(configurationState, SharedSTSConstants.SIGNATURE_KEY_PASSWORD);
+        if (AMPropertySheetModel.passwordRandom.equals(password)) {
             configurationState.remove(SharedSTSConstants.SIGNATURE_KEY_PASSWORD);
         }
-        passwordSet = configurationState.get(SharedSTSConstants.ENCRYPTION_KEY_PASSWORD);
-        if ((passwordSet != null) && AMPropertySheetModel.passwordRandom.equals(passwordSet.iterator().next())) {
+        password = CollectionHelper.getMapAttr(configurationState, SharedSTSConstants.ENCRYPTION_KEY_PASSWORD);
+        if (AMPropertySheetModel.passwordRandom.equals(password)) {
             configurationState.remove(SharedSTSConstants.ENCRYPTION_KEY_PASSWORD);
         }
     }

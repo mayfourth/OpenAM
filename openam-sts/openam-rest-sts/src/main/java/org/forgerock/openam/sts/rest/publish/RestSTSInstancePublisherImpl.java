@@ -24,7 +24,6 @@ import org.forgerock.json.resource.ResourceException;
 import org.forgerock.json.resource.Route;
 import org.forgerock.json.resource.Router;
 import org.forgerock.openam.sts.AMSTSConstants;
-import org.forgerock.openam.sts.AMSTSRuntimeException;
 import org.forgerock.openam.sts.STSInitializationException;
 import org.forgerock.openam.sts.STSPublishException;
 import org.forgerock.openam.sts.publish.STSInstanceConfigPersister;
@@ -199,6 +198,17 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
         return persistentStore.isInstancePresent(normalizeDeploymentSubPath(stsId), realm);
     }
 
+    /*
+    This method is called by the RestSTSInstanceRepublishServlet, but only if AMSetupServlet.isCurrentConfigurationValid() -
+    i.e. not during installation. The registerServiceListener method requires the Admin SSO token, which is not available
+    during installation. The problem with this approach is that the ServiceListener will not be registered immediately after
+    installation - it will require an OpenAM restart for the registration to occur. The only way I could get around this
+    would be to check if ServiceListener registration has occurred in some of the methods above - but even then, in a
+    site deployment, if another instance is targeted to publish/remove rest-sts instances, the ServiceListener will not
+    be registered, which is precisely the case in which the ServiceListener should be registered. It does appear that
+    customers are encouraged to restart OpenAM following installation, so given that there is no good solution, I will
+    leave things as they are, until a good solution presents itself. TODO
+     */
     public void registerServiceListener() {
         try {
             serviceListenerRegistration.registerServiceListener(AMSTSConstants.REST_STS_SERVICE_NAME,

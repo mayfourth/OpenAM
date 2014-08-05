@@ -79,13 +79,13 @@ public class RestSTSPublishServiceListener implements ServiceListener {
      */
     public void organizationConfigChanged(String serviceName, String version, String orgName, String groupName, String serviceComponent, int type) {
         final String logIdentifier = "RestSTSPublishServiceListener#organizationConfigChanged";
+        /*
+        It seems the serviceComponent is the full realm path, and always includes a '/' at the beginning, to represent
+        the root realm. This value needs to be stripped-off, as the cache uses the rest-sts id, which is normalized to
+        remove any leading/trailing '/' characters.
+         */
+        String normalizedServiceComponent = stripLeadingForwardSlash(serviceComponent);
         if (restSTSInstanceCreatedInSiteDeployment(serviceName, version, type)) {
-            /*
-            It seems the serviceComponent is the full realm path, and always includes a '/' at the beginning, to represent
-            the root realm. This value needs to be stripped-off, as the cache uses the rest-sts id, which is normalized to
-            remove any leading/trailing '/' characters.
-             */
-            String normalizedServiceComponent = stripLeadingForwardSlash(serviceComponent);
             String realm = DNMapper.orgNameToRealmName(orgName);
             RestSTSInstanceConfig createdInstance;
             try {
@@ -117,20 +117,23 @@ public class RestSTSPublishServiceListener implements ServiceListener {
             }
         } else if (restSTSInstanceDeletedInSiteDeployment(serviceName, version, type)) {
             /*
-            It seems the serviceComponent is the full realm path, and always includes a '/' at the beginning, to represent
-            the root realm. This value needs to be stripped-off, as the cache uses the rest-sts id, which is normalized to
-            remove any leading/trailing '/' characters.
+            Check to see if this instance still remains in the CREST router. This could occur if:
+            1. we are in a multi-server environment, and the rest-sts instance was deleted on another server
+            2. somebody just nuked the realm containing published rest-sts instances.
              */
-            String normalizedServiceComponent = stripLeadingForwardSlash(serviceComponent);
-            String realm = DNMapper.orgNameToRealmName(orgName);
-            boolean removeOnlyFromRouter = true;
-            try {
-                instancePublisher.removeInstance(normalizedServiceComponent, realm, removeOnlyFromRouter);
-                logger.info(logIdentifier + ": Removed rest-sts instance " + normalizedServiceComponent +
-                        " from CREST router in site deployment following the deletion of this rest-sts instance on " +
-                        "another site server.");
-            } catch (STSPublishException e) {
-                e.printStackTrace();
+            if (instancePublisher.isInstanceExposedInCrest(normalizedServiceComponent)) {
+                String realm = DNMapper.orgNameToRealmName(orgName);
+                boolean removeOnlyFromRouter = true;
+                try {
+                    instancePublisher.removeInstance(normalizedServiceComponent, realm, removeOnlyFromRouter);
+                    logger.info(logIdentifier + ": Removed rest-sts instance " + normalizedServiceComponent +
+                            " from CREST router in site deployment following the deletion of this rest-sts instance on " +
+                            "another site server.");
+                } catch (STSPublishException e) {
+                    logger.error(logIdentifier + ": Could not remove rest-sts instance " + normalizedServiceComponent +
+                            " from CREST router in site deployment following the deletion of this rest-sts instance on " +
+                            "another site server. Exception: " + e, e);
+                }
             }
         }
     }
