@@ -208,6 +208,10 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
     be registered, which is precisely the case in which the ServiceListener should be registered. It does appear that
     customers are encouraged to restart OpenAM following installation, so given that there is no good solution, I will
     leave things as they are, until a good solution presents itself. TODO
+    A possible solution: see AMSetupServlet.registerListeners, and the com.sun.identity.setup.SetupListener file in
+    resources/META-INF.services under openam-core. The SubRealmObserver is specified here, and this class registers
+    a ServiceListener, so it must be that the Admin SSO Token is available at this juncture, which would seem to be
+    the solution to my problem.
      */
     public void registerServiceListener() {
         try {
