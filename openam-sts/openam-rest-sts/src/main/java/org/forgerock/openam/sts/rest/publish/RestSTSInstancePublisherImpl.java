@@ -145,10 +145,10 @@ public class RestSTSInstancePublisherImpl implements RestSTSInstancePublisher {
             throw new STSPublishException(ResourceException.NOT_FOUND, "No previously published STS instance with id "
                     + stsId + " in realm " + realm + " found!");
         }
+        router.removeRoute(route);
         if (!removeOnlyFromRouter) {
             persistentStore.removeSTSInstance(stsId, realm);
         }
-        router.removeRoute(route);
     }
 
     public List<RestSTSInstanceConfig> getPublishedInstances() throws STSPublishException{
