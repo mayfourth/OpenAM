@@ -313,7 +313,8 @@ define("org/forgerock/openam/ui/user/login/RESTLoginView", [
         var result = "",
             cb = this,
             prompt,
-            options;
+            options,
+            hideButton;
 
         prompt = _.find(cb.output, function (o) { return o.name === "prompt"; });
         if (prompt && prompt.value !== undefined && prompt.value.length) {
@@ -339,7 +340,10 @@ define("org/forgerock/openam/ui/user/login/RESTLoginView", [
                 options.type = _.find(cb.output, function (o) { return o.name === "messageType"; });
 
                 if (options.type.value === "4") { //4 is our magic number for a <script>, taken from ScriptTextOutputCallback.java
-                    result += '<script type="text/javascript">' + options.message.value + '</script>';
+                    hideButton = "if(document.getElementsByClassName('button')[0] != undefined){document" +
+                        ".getElementsByClassName" +
+                        "('button')[0].style.visibility = 'hidden';}";
+                    result += "<script type='text/javascript'>" + hideButton + options.message.value + "</script>";
                 } else {
                     result += '<div id="callback_' + cb.input.index + '" class="textOutputCallback ' + options.type.value + '">' + options.message.value + '</div>';
                 }
