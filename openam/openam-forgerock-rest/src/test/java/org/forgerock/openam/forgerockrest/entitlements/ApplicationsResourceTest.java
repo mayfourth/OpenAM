@@ -560,7 +560,7 @@ public class ApplicationsResourceTest {
         assertEquals(exception.getReason(), "Internal Server Error");
     }
 
-    @Test
+    @Test(enabled = false)
     public void shouldReturnFirstThreeResultsOnQuery() throws EntitlementException, IllegalAccessException, InstantiationException {
         applicationsResource = new ApplicationsResource(
                 debug, applicationManagerWrapper, applicationTypeManagerWrapper) {

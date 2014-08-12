@@ -23,6 +23,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+/**
+ * A generic 'prefix' implementation of BaseResourceName.
+ * @param <T> The type that the compare method is going to return instances of.
+ * @param <E> The exception type thrown by the canonicalize method.
+ * @see org.forgerock.openam.shared.resourcename.BaseResourceName
+ */
 public abstract class BasePrefixResourceName<T, E extends Exception> implements BaseResourceName<T, E> {
 
     protected final T wildcardMatch;
@@ -97,11 +103,9 @@ public abstract class BasePrefixResourceName<T, E extends Exception> implements 
         // use default values
     }
 
-    public Set getServiceTypeNames()
-    {
+    public Set<String> getServiceTypeNames() {
         return null;
     }
-
 
     /**
      * Compares two resources.
