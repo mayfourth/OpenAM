@@ -206,6 +206,10 @@ public class ApplicationsResource implements CollectionResourceProvider {
         return wrapp;
     }
 
+    protected ApplicationWrapper createApplicationWrapper(Application application, ApplicationTypeManagerWrapper type) {
+        return new ApplicationWrapper(application, type);
+    }
+
     /**
      * Deletes an {@link Application} as per the {@link DeleteRequest}.
      *
@@ -277,10 +281,8 @@ public class ApplicationsResource implements CollectionResourceProvider {
             final Set<String> appNames = appManager.getApplicationNames(subject, realm);
 
             for (String appName : appNames) {
-                final ApplicationWrapper wrapp =
-                        new ApplicationWrapper(appManager.getApplication(subject, realm, appName), appTypeManagerWrapper);
-
-                apps.add(wrapp);
+                final Application application = appManager.getApplication(subject, realm, appName);
+                apps.add(createApplicationWrapper(application, appTypeManagerWrapper));
             }
         } catch (EntitlementException e) {
             debug.error("Application failed to retrieve the resource specified.", e);

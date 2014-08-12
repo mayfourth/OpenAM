@@ -19,14 +19,11 @@ package org.forgerock.openam.forgerockrest.entitlements;
 import com.sun.identity.entitlement.Application;
 import com.sun.identity.entitlement.EntitlementException;
 import com.sun.identity.shared.debug.Debug;
-import java.io.IOException;
-import javax.security.auth.Subject;
-import static org.fest.assertions.Assertions.assertThat;
 import org.forgerock.json.fluent.JsonValue;
-import static org.forgerock.json.fluent.JsonValue.json;
-import static org.forgerock.json.fluent.JsonValue.object;
 import org.forgerock.json.resource.CreateRequest;
 import org.forgerock.json.resource.DeleteRequest;
+import org.forgerock.json.resource.QueryRequest;
+import org.forgerock.json.resource.QueryResultHandler;
 import org.forgerock.json.resource.Resource;
 import org.forgerock.json.resource.ResourceException;
 import org.forgerock.json.resource.ResultHandler;
@@ -38,6 +35,18 @@ import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationWrapp
 import org.forgerock.openam.rest.resource.RealmContext;
 import org.forgerock.openam.rest.resource.SubjectContext;
 import org.mockito.ArgumentCaptor;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import javax.security.auth.Subject;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.fest.assertions.Assertions.assertThat;
+import static org.forgerock.json.fluent.JsonValue.json;
+import static org.forgerock.json.fluent.JsonValue.object;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -49,8 +58,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.testng.Assert.assertEquals;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.testng.Assert.fail;
 
 /**
  * @since 12.0.0
@@ -551,4 +559,70 @@ public class ApplicationsResourceTest {
         assertEquals(exception.getCode(), 500);
         assertEquals(exception.getReason(), "Internal Server Error");
     }
+
+    @Test
+    public void shouldReturnFirstThreeResultsOnQuery() throws EntitlementException, IllegalAccessException, InstantiationException {
+        applicationsResource = new ApplicationsResource(
+                debug, applicationManagerWrapper, applicationTypeManagerWrapper) {
+
+            @Override
+            protected ApplicationWrapper createApplicationWrapper(
+                    Application application, ApplicationTypeManagerWrapper type) {
+
+                ApplicationWrapper wrapper = mock(ApplicationWrapper.class);
+                String appName = application.getName();
+                given(wrapper.getName()).willReturn(appName);
+
+                try {
+                    JsonValue jsonValue = mock(JsonValue.class);
+                    given(wrapper.toJsonValue()).willReturn(jsonValue);
+                } catch (IOException e) {
+                    fail("Json parsing failed", e);
+                }
+
+                return wrapper;
+            }
+        };
+
+
+        // Given
+        SubjectContext mockSubjectContext = mock(SubjectContext.class);
+        RealmContext realmContext = new RealmContext(mockSubjectContext, "badger");
+        ServerContext serverContext = new ServerContext(realmContext);
+
+        QueryRequest request = mock(QueryRequest.class);
+        given(request.getPageSize()).willReturn(3);
+        given(request.getPagedResultsOffset()).willReturn(0);
+
+        QueryResultHandler handler = mock(QueryResultHandler.class);
+
+        Subject subject = new Subject();
+        given(mockSubjectContext.getCallerSubject()).willReturn(subject);
+
+        Set<String> appNames = new HashSet<String>(Arrays.asList("app1", "app2", "app3", "app4", "app5"));
+        given(applicationManagerWrapper.getApplicationNames(any(Subject.class), anyString())).willReturn(appNames);
+
+        for (String appName : appNames) {
+            Application app = mock(Application.class);
+            given(app.getName()).willReturn(appName);
+            given(applicationManagerWrapper
+                    .getApplication(any(Subject.class), anyString(), eq(appName))).willReturn(app);
+        }
+
+        // When
+        applicationsResource.queryCollection(serverContext, request, handler);
+
+        // Then
+        verify(applicationManagerWrapper, times(5)).getApplication(eq(subject), anyString(), anyString());
+        ArgumentCaptor<Resource> resourceCapture = ArgumentCaptor.forClass(Resource.class);
+
+        verify(handler).handleResource(resourceCapture.capture());
+        assertEquals(resourceCapture.getValue().getId(), "app1");
+        verify(handler).handleResource(resourceCapture.capture());
+        assertEquals(resourceCapture.getValue().getId(), "app2");
+        verify(handler).handleResource(resourceCapture.capture());
+        assertEquals(resourceCapture.getValue().getId(), "app3");
+    }
+
+
 }
