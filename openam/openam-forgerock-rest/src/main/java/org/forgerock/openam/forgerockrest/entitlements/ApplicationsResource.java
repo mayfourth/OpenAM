@@ -206,6 +206,18 @@ public class ApplicationsResource implements CollectionResourceProvider {
         return wrapp;
     }
 
+    /**
+     * Creates an {@link ApplicationWrapper} to hold the {@link Application} object.
+     * <p/>
+     * This method provides an abstraction to aid testing.
+     *
+     * @param application
+     *         The application
+     * @param type
+     *         The application type
+     *
+     * @return A new {@link ApplicationWrapper} wrapping the passed application
+     */
     protected ApplicationWrapper createApplicationWrapper(Application application, ApplicationTypeManagerWrapper type) {
         return new ApplicationWrapper(application, type);
     }
