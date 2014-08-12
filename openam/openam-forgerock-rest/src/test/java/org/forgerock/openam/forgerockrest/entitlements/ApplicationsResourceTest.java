@@ -732,6 +732,7 @@ public class ApplicationsResourceTest {
         ResourceException resourceException = exceptionCapture.getValue();
         assertThat(resourceException.getCode()).isEqualTo(ResourceException.INTERNAL_ERROR);
     }
+
     /**
      * Maps a resource object to its string Id.
      *
