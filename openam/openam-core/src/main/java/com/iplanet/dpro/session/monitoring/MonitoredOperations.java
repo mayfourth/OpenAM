@@ -90,4 +90,14 @@ public class MonitoredOperations implements SessionOperations {
 
         sessionMonitoringStore.storeSetPropertyTime(System.nanoTime() - start, monitorType);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof MonitoredOperations)) {
+            return false;
+        }
+        MonitoredOperations op = (MonitoredOperations) obj;
+        return op.monitorType == this.monitorType && op.sessionMonitoringStore == this.sessionMonitoringStore &&
+                op.sessionOperations == this.sessionOperations;
+    }
 }
