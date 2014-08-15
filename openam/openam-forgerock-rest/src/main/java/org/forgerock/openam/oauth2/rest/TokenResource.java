@@ -32,6 +32,8 @@ import com.sun.identity.idm.IdRepoException;
 import com.sun.identity.idm.IdType;
 import com.sun.identity.security.AdminTokenAction;
 import com.sun.identity.shared.Constants;
+import org.forgerock.oauth2.core.OAuth2Request;
+import org.forgerock.oauth2.core.OAuth2RequestFactory;
 import org.forgerock.oauth2.core.exceptions.UnauthorizedClientException;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.json.resource.ActionRequest;
@@ -57,14 +59,26 @@ import org.forgerock.openam.oauth2.IdentityManager;
 import org.forgerock.openam.cts.exceptions.CoreTokenException;
 import org.forgerock.openam.forgerockrest.RestUtils;
 import org.forgerock.openam.oauth2.OAuthTokenStore;
+import org.forgerock.openidconnect.Client;
+import org.forgerock.openidconnect.ClientDAO;
+import org.restlet.Request;
 
 import javax.inject.Inject;
 import java.security.AccessController;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 public class TokenResource implements CollectionResourceProvider {
+
+    private final OAuth2RequestFactory<Request> requestFactory;
+    private static final DateFormat DATE_FORMATTER = SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM,
+            DateFormat.SHORT);
+    public static final String EXPIRE_TIME_KEY = "expireTime";
+    private final ClientDAO clientDao;
 
     private OAuthTokenStore tokenStore;
 
@@ -81,8 +95,12 @@ public class TokenResource implements CollectionResourceProvider {
     private final IdentityManager identityManager;
 
     @Inject
-    public TokenResource(final OAuthTokenStore tokenStore, final IdentityManager identityManager) {
+    public TokenResource(final OAuthTokenStore tokenStore, final ClientDAO clientDao,
+            OAuth2RequestFactory<Request> requestFactory, final IdentityManager
+            identityManager) {
         this.tokenStore = tokenStore;
+        this.clientDao = clientDao;
+        this.requestFactory = requestFactory;
         this.identityManager = identityManager;
     }
 
@@ -225,13 +243,31 @@ public class TokenResource implements CollectionResourceProvider {
                 for (HashMap<String,Set<String>> entry : list){
                     val = new JsonValue(entry);
                     res = new Resource("result", "1", val);
+
+                    val.put(EXPIRE_TIME_KEY, getExpiryDate(entry));
+
+                    final String clientId = (String) entry.get("clientID").toArray()[0];
+                    final Request request1 = new Request();
+
+                    final OAuth2Request request = requestFactory.create(Request.getCurrent());
+
+                    Client client = clientDao.read(clientId, request);
+                    String clientName = client.getClientName();
+
                     handler.handleResource(res);
                 }
             }
             handler.handleResult(new QueryResult());
         } catch (ResourceException e){
             handler.handleError(e);
+        } catch (UnauthorizedClientException e) {
+            e.printStackTrace();
         }
+    }
+
+    private String getExpiryDate(HashMap<String, Set<String>> entry) {
+        final Long expiryTimeInMilliseconds = new Long((String) entry.get(EXPIRE_TIME_KEY).toArray()[0]);
+        return DATE_FORMATTER.format(new Date(expiryTimeInMilliseconds));
     }
 
     @Override

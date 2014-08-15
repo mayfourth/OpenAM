@@ -349,6 +349,13 @@
                 "deleteDevice" : "Delete Device"
             }
         },
+        "oAuth2" : {
+            "tokens" : {
+                "appName" : "App Name",
+                "expiryDate" : "Expiry Date",
+                "deleteToken" : "Delete Token"
+            }
+        },
         "authentication": {
             "input": {
                 "name": "Username",
