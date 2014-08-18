@@ -40,7 +40,6 @@ define("org/forgerock/openam/ui/dashboard/OAuthTokensView", [
                 OAuthTokensDelegate.getOAuthTokens()
                     .then(function (data) {
                             self.data.tokens = data.result;
-                            console.error(data.result.tokenName);
                             self.parentRender();
                     });
             },

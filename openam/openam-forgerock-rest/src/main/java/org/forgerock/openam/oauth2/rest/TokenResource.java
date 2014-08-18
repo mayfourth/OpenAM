@@ -225,12 +225,12 @@ public class TokenResource implements CollectionResourceProvider {
 
                 //split id into the query fields
                 String[] queries = id.split("\\,");
-                for (String q : queries) {
-                    String[] params = q.split("=");
-                    if (params.length == 2) {
-                        query.put(params[0], params[1]);
-                    }
-                }
+//                for (String q : queries) {
+//                    String[] params = q.split("=");
+//                    if (params.length == 2) {
+//                        query.put(params[0], params[1]);
+//                    }
+//                }
 
                 response = tokenStore.query(query);
             } catch (CoreTokenException e) {
