@@ -12,7 +12,7 @@
 
             {{#each tokens}}
             <tr>
-                <td>{{this.clientID}}</td>
+                <td>{{this.display_name}} </td>
                 <td>{{this.expireTime}} </td>
                 <td><a class="deleteToken" href="#" id="{{this.id}}">{{t "openam.oAuth2.tokens.deleteToken"}}</a></td>
             </tr>

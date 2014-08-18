@@ -62,6 +62,7 @@ import org.forgerock.openam.oauth2.OAuthTokenStore;
 import org.forgerock.openidconnect.Client;
 import org.forgerock.openidconnect.ClientDAO;
 import org.restlet.Request;
+import org.restlet.data.Reference;
 
 import javax.inject.Inject;
 import java.security.AccessController;
@@ -85,6 +86,7 @@ public class TokenResource implements CollectionResourceProvider {
     private static SSOToken token = (SSOToken) AccessController.doPrivileged(AdminTokenAction.getInstance());
     private static String adminUser = SystemProperties.get(Constants.AUTHENTICATION_SUPER_USER);
     private static AMIdentity adminUserId = null;
+
     static {
         if (adminUser != null) {
             adminUserId = new AMIdentity(token,
@@ -105,7 +107,7 @@ public class TokenResource implements CollectionResourceProvider {
     }
 
     @Override
-    public void actionCollection(ServerContext context, ActionRequest actionRequest, ResultHandler<JsonValue> handler){
+    public void actionCollection(ServerContext context, ActionRequest actionRequest, ResultHandler<JsonValue> handler) {
         final ResourceException e =
                 new NotSupportedException("Actions are not supported for resource instances");
         handler.handleError(e);
@@ -113,14 +115,14 @@ public class TokenResource implements CollectionResourceProvider {
 
     @Override
     public void actionInstance(ServerContext context, String resourceId, ActionRequest request,
-                               ResultHandler<JsonValue> handler){
+            ResultHandler<JsonValue> handler) {
         final ResourceException e =
                 new NotSupportedException("Actions are not supported for resource instances");
         handler.handleError(e);
     }
 
     @Override
-    public void createInstance(ServerContext context, CreateRequest createRequest, ResultHandler<Resource> handler){
+    public void createInstance(ServerContext context, CreateRequest createRequest, ResultHandler<Resource> handler) {
         final ResourceException e =
                 new NotSupportedException("Create is not supported for resource instances");
         handler.handleError(e);
@@ -128,40 +130,40 @@ public class TokenResource implements CollectionResourceProvider {
 
     @Override
     public void deleteInstance(ServerContext context, String resourceId, DeleteRequest request,
-                               ResultHandler<Resource> handler){
+            ResultHandler<Resource> handler) {
         //only admin can delete
         AMIdentity uid = null;
         try {
-        	//first check if SSOToken is valid
-        	uid = getUid(context);
+            //first check if SSOToken is valid
+            uid = getUid(context);
 
-        	JsonValue response = null;
+            JsonValue response = null;
             try {
-            	response = tokenStore.read(resourceId);
-                if (response == null){
+                response = tokenStore.read(resourceId);
+                if (response == null) {
                     throw new NotFoundException("Token Not Found", null);
                 }
-                Set<String> usernameSet = (Set<String>)response.get(OAuth2Constants.CoreTokenParams.USERNAME).getObject();
-                String username= null;
-                if (usernameSet != null && !usernameSet.isEmpty()){
+                Set<String> usernameSet = (Set<String>) response.get(OAuth2Constants.CoreTokenParams.USERNAME).getObject();
+                String username = null;
+                if (usernameSet != null && !usernameSet.isEmpty()) {
                     username = usernameSet.iterator().next();
                 }
-                if(username == null || username.isEmpty()){
+                if (username == null || username.isEmpty()) {
                     throw new PermanentException(404, "Not Found", null);
                 }
-                
+
                 Set<String> grantTypes = (Set<String>) response.get(OAuth2Constants.Params.GRANT_TYPE).getObject();
                 String grantType = null;
-                if (grantTypes != null && !grantTypes.isEmpty()){
+                if (grantTypes != null && !grantTypes.isEmpty()) {
                     grantType = grantTypes.iterator().next();
                 }
-                
+
                 if (grantType != null && grantType.equalsIgnoreCase(OAuth2Constants.TokenEndpoint.CLIENT_CREDENTIALS)) {
                     tokenStore.delete(resourceId);
                 } else {
                     Set<String> realms = (Set<String>) response.get(OAuth2Constants.CoreTokenParams.REALM).getObject();
                     String realm = null;
-                    if (realms != null && !realms.isEmpty()){
+                    if (realms != null && !realms.isEmpty()) {
                         realm = realms.iterator().next();
                     }
                     AMIdentity uid2 = identityManager.getResourceOwnerIdentity(username, realm);
@@ -172,19 +174,19 @@ public class TokenResource implements CollectionResourceProvider {
                     }
                 }
             } catch (CoreTokenException e) {
-                throw new ServiceUnavailableException(e.getMessage(),e);
+                throw new ServiceUnavailableException(e.getMessage(), e);
             }
-            Map< String, String> responseVal = new HashMap< String, String>();
+            Map<String, String> responseVal = new HashMap<String, String>();
             responseVal.put("success", "true");
             response = new JsonValue(responseVal);
             Resource resource = new Resource(resourceId, "1", response);
             handler.handleResult(resource);
-        } catch (ResourceException e){
+        } catch (ResourceException e) {
             handler.handleError(e);
-        } catch (SSOException e){
-            handler.handleError(new PermanentException(401, "Unauthorized" ,e));
-        } catch (IdRepoException e){
-            handler.handleError(new PermanentException(401, "Unauthorized" ,e));
+        } catch (SSOException e) {
+            handler.handleError(new PermanentException(401, "Unauthorized", e));
+        } catch (IdRepoException e) {
+            handler.handleError(new PermanentException(401, "Unauthorized", e));
         } catch (UnauthorizedClientException e) {
             handler.handleError(new PermanentException(401, "Unauthorized", e));
         }
@@ -192,15 +194,15 @@ public class TokenResource implements CollectionResourceProvider {
 
     @Override
     public void patchInstance(ServerContext context, String resourceId, PatchRequest request,
-                              ResultHandler<Resource> handler){
+            ResultHandler<Resource> handler) {
         final ResourceException e =
                 new NotSupportedException("Patch is not supported for resource instances");
         handler.handleError(e);
     }
 
     @Override
-    public void queryCollection(ServerContext context, QueryRequest queryRequest, QueryResultHandler handler){
-        try{
+    public void queryCollection(ServerContext context, QueryRequest queryRequest, QueryResultHandler handler) {
+        try {
             JsonValue response = null;
             Resource resource;
             try {
@@ -211,54 +213,71 @@ public class TokenResource implements CollectionResourceProvider {
                 AMIdentity uid;
                 try {
                     uid = getUid(context);
-                    if (!uid.equals(adminUserId)){
+                    if (!uid.equals(adminUserId)) {
                         query.put(OAuth2Constants.CoreTokenParams.USERNAME, uid.getName());
                     } else {
                         query.put(OAuth2Constants.CoreTokenParams.USERNAME, "*");
                     }
-                } catch (Exception e){
-                    PermanentException ex = new PermanentException(401, "Unauthorized" ,e);
+                } catch (Exception e) {
+                    PermanentException ex = new PermanentException(401, "Unauthorized", e);
                     handler.handleError(ex);
                 }
 
                 //split id into the query fields
                 String[] queries = id.split("\\,");
-                for (String q: queries){
+                for (String q : queries) {
                     String[] params = q.split("=");
-                    if (params.length == 2){
+                    if (params.length == 2) {
                         query.put(params[0], params[1]);
                     }
                 }
 
                 response = tokenStore.query(query);
             } catch (CoreTokenException e) {
-                throw new ServiceUnavailableException(e.getMessage(),e);
+                throw new ServiceUnavailableException(e.getMessage(), e);
             }
             resource = new Resource("result", "1", response);
             JsonValue value = resource.getContent();
-            Set<HashMap<String,Set<String>>> list = (Set<HashMap<String,Set<String>>>) value.getObject();
+            Set<HashMap<String, Set<String>>> list = (Set<HashMap<String, Set<String>>>) value.getObject();
             Resource res = null;
             JsonValue val = null;
-            if (list != null && !list.isEmpty() ){
-                for (HashMap<String,Set<String>> entry : list){
+            if (list != null && !list.isEmpty()) {
+                for (HashMap<String, Set<String>> entry : list) {
                     val = new JsonValue(entry);
                     res = new Resource("result", "1", val);
 
                     val.put(EXPIRE_TIME_KEY, getExpiryDate(entry));
 
                     final String clientId = (String) entry.get("clientID").toArray()[0];
-                    final Request request1 = new Request();
+                    final String realm = (String) entry.get("realm").toArray()[0];
 
-                    final OAuth2Request request = requestFactory.create(Request.getCurrent());
+                    OAuth2Request request = new OAuth2Request() {
+                        public <T> T getRequest() {
+                            throw new UnsupportedOperationException("Realm parameter only OAuth2Request");
+                        }
+
+                        public <T> T getParameter(String name) {
+                            if ("realm".equals(name)) {
+                                return (T) realm;
+                            }
+                            throw new UnsupportedOperationException("Realm parameter only OAuth2Request");
+                        }
+
+                        @Override
+                        public JsonValue getBody() {
+                            return null;
+                        }
+                    };
 
                     Client client = clientDao.read(clientId, request);
-                    String clientName = client.getClientName();
+                    String clientName = client.get(OAuth2Constants.ShortClientAttributeNames.DISPLAY_NAME.getType()).get(0).asString();
+    val.put(OAuth2Constants.ShortClientAttributeNames.DISPLAY_NAME.getType(), clientName);
 
                     handler.handleResource(res);
                 }
             }
             handler.handleResult(new QueryResult());
-        } catch (ResourceException e){
+        } catch (ResourceException e) {
             handler.handleError(e);
         } catch (UnauthorizedClientException e) {
             e.printStackTrace();
@@ -272,62 +291,62 @@ public class TokenResource implements CollectionResourceProvider {
 
     @Override
     public void readInstance(ServerContext context, String resourceId, ReadRequest request,
-                             ResultHandler<Resource> handler){
+            ResultHandler<Resource> handler) {
 
         AMIdentity uid = null;
         String username = null;
         try {
-        	//first check if SSOToken is valid
-        	uid = getUid(context);
-        	
-        	JsonValue response;
+            //first check if SSOToken is valid
+            uid = getUid(context);
+
+            JsonValue response;
             Resource resource;
             try {
                 response = tokenStore.read(resourceId);
             } catch (CoreTokenException e) {
                 throw new NotFoundException("Token Not Found", e);
             }
-            if (response == null){
+            if (response == null) {
                 throw new NotFoundException("Token Not Found", null);
             }
 
             Set<String> grantTypes = (Set<String>) response.get(OAuth2Constants.Params.GRANT_TYPE).getObject();
             String grantType = null;
-            if (grantTypes != null && !grantTypes.isEmpty()){
+            if (grantTypes != null && !grantTypes.isEmpty()) {
                 grantType = grantTypes.iterator().next();
             }
-            
+
             if (grantType != null && grantType.equalsIgnoreCase(OAuth2Constants.TokenEndpoint.CLIENT_CREDENTIALS)) {
-            	resource = new Resource(OAuth2Constants.Params.ID, "1", response);
-            	handler.handleResult(resource);
+                resource = new Resource(OAuth2Constants.Params.ID, "1", response);
+                handler.handleResult(resource);
             } else {
                 Set<String> realms = (Set<String>) response.get(OAuth2Constants.CoreTokenParams.REALM).getObject();
                 String realm = null;
-                if (realms != null && !realms.isEmpty()){
+                if (realms != null && !realms.isEmpty()) {
                     realm = realms.iterator().next();
                 }
-            
-                Set<String> usernameSet = (Set<String>)response.get(OAuth2Constants.CoreTokenParams.USERNAME).getObject();
-                if (usernameSet != null && !usernameSet.isEmpty()){
-                username = usernameSet.iterator().next();
+
+                Set<String> usernameSet = (Set<String>) response.get(OAuth2Constants.CoreTokenParams.USERNAME).getObject();
+                if (usernameSet != null && !usernameSet.isEmpty()) {
+                    username = usernameSet.iterator().next();
                 }
-                if(username == null || username.isEmpty()){
+                if (username == null || username.isEmpty()) {
                     throw new PermanentException(404, "Not Found", null);
                 }
                 AMIdentity uid2 = identityManager.getResourceOwnerIdentity(username, realm);
-                if (uid.equals(adminUserId) || uid.equals(uid2)){
+                if (uid.equals(adminUserId) || uid.equals(uid2)) {
                     resource = new Resource(OAuth2Constants.Params.ID, "1", response);
                     handler.handleResult(resource);
                 } else {
-                    throw new PermanentException(401, "Unauthorized" ,null);
+                    throw new PermanentException(401, "Unauthorized", null);
                 }
             }
-        } catch (ResourceException e){
+        } catch (ResourceException e) {
             handler.handleError(e);
-        } catch (SSOException e){
-            handler.handleError(new PermanentException(401, "Unauthorized" ,e));
-        } catch (IdRepoException e){
-            handler.handleError(new PermanentException(401, "Unauthorized" ,e));
+        } catch (SSOException e) {
+            handler.handleError(new PermanentException(401, "Unauthorized", e));
+        } catch (IdRepoException e) {
+            handler.handleError(new PermanentException(401, "Unauthorized", e));
         } catch (UnauthorizedClientException e) {
             handler.handleError(new PermanentException(401, "Unauthorized", e));
         }
@@ -335,7 +354,7 @@ public class TokenResource implements CollectionResourceProvider {
 
     @Override
     public void updateInstance(ServerContext context, String resourceId, UpdateRequest request,
-                               ResultHandler<Resource> handler){
+            ResultHandler<Resource> handler) {
         final ResourceException e =
                 new NotSupportedException("Update is not supported for resource instances");
         handler.handleError(e);

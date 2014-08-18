@@ -27,37 +27,40 @@
 define("org/forgerock/openam/ui/dashboard/OAuthTokensView", [
     "org/forgerock/commons/ui/common/main/AbstractView",
     "org/forgerock/openam/ui/dashboard/OAuthTokensDelegate"
-], function(AbstractView, OAuthTokensDelegate) {
-    
+], function (AbstractView, OAuthTokensDelegate) {
+
     var OAuthToken = AbstractView.extend({
-        template: "templates/openam/oauth2/TokensTemplate.html",
-        noBaseTemplate: true,
-        element: '#myOAuthTokens',
-        events: { 'click  a.deleteToken' : 'deleteToken' },
-        render: function() {
+            template: "templates/openam/oauth2/TokensTemplate.html",
+            noBaseTemplate: true,
+            element: '#myOAuthTokens',
+            events: { 'click  a.deleteToken': 'deleteToken' },
+            render: function () {
 
-            var self = this;
-            OAuthTokensDelegate.getOAuthTokens()
-                .then(function (data) {
-                    self.data.tokens = data.result;
-                    self.parentRender();
-                });
-        },
+                var self = this;
+                OAuthTokensDelegate.getOAuthTokens()
+                    .then(function (data) {
+                            self.data.tokens = data.result;
+                            console.error(data.result.tokenName);
+                            self.parentRender();
+                    });
+            },
 
-        deleteToken : function(e) {
-            e.preventDefault();
-            var self = this;
-            OAuthTokensDelegate.deleteOAuthToken(e.currentTarget.id)
-                .then(function() {
-                    console.log('Deleted access token');
-                    self.render();
-                }, function() {
-                    console.error("Failed to delete access token");
-                });
-        }
-    });
+            deleteToken: function (e) {
+                e.preventDefault();
+                var self = this;
+                OAuthTokensDelegate.deleteOAuthToken(e.currentTarget.id)
+                    .then(function () {
+                        console.log('Deleted access token');
+                        self.render();
+                    }, function () {
+                        console.error("Failed to delete access token");
+                    });
+            }
+        })
+        ;
 
     return new OAuthToken();
-});
+})
+;
 
 
