@@ -41,8 +41,8 @@ define("org/forgerock/openam/ui/dashboard/OAuthTokensDelegate", [
 
    obj.deleteOAuthToken = function(id) {
        return obj.serviceCall({
-           url: 'oauth2/token/' + id,
-           type: "DELETE",
+           url: 'oauth2/token/' + id + '?_action=revoke',
+           type: "POST",
            headers: {"Accept-API-Version": "protocol=1.0,resource=1.0"}
        });
     };

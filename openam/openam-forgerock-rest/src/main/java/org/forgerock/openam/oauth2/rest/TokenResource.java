@@ -1,7 +1,7 @@
 /*
  * DO NOT REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright (c) 2012-2014 ForgeRock AS. All rights reserved.
+ * Copyright 2012-2014 ForgeRock AS.
  *
  * The contents of this file are subject to the terms
  * of the Common Development and Distribution License
@@ -21,6 +21,7 @@
  * your own identifying information:
  * "Portions copyright [year] [name of copyright owner]"
  */
+
 package org.forgerock.openam.oauth2.rest;
 
 import com.iplanet.am.util.SystemProperties;
@@ -32,9 +33,6 @@ import com.sun.identity.idm.IdRepoException;
 import com.sun.identity.idm.IdType;
 import com.sun.identity.security.AdminTokenAction;
 import com.sun.identity.shared.Constants;
-import org.forgerock.oauth2.core.OAuth2Request;
-import org.forgerock.oauth2.core.OAuth2RequestFactory;
-import org.forgerock.oauth2.core.exceptions.UnauthorizedClientException;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.json.resource.ActionRequest;
 import org.forgerock.json.resource.CollectionResourceProvider;
@@ -55,14 +53,16 @@ import org.forgerock.json.resource.ServerContext;
 import org.forgerock.json.resource.ServiceUnavailableException;
 import org.forgerock.json.resource.UpdateRequest;
 import org.forgerock.oauth2.core.OAuth2Constants;
-import org.forgerock.openam.oauth2.IdentityManager;
+import org.forgerock.oauth2.core.OAuth2Request;
+import org.forgerock.oauth2.core.OAuth2RequestFactory;
+import org.forgerock.oauth2.core.exceptions.UnauthorizedClientException;
 import org.forgerock.openam.cts.exceptions.CoreTokenException;
 import org.forgerock.openam.forgerockrest.RestUtils;
+import org.forgerock.openam.oauth2.IdentityManager;
 import org.forgerock.openam.oauth2.OAuthTokenStore;
 import org.forgerock.openidconnect.Client;
 import org.forgerock.openidconnect.ClientDAO;
 import org.restlet.Request;
-import org.restlet.data.Reference;
 
 import javax.inject.Inject;
 import java.security.AccessController;
@@ -73,6 +73,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static org.forgerock.json.fluent.JsonValue.*;
+import static org.forgerock.oauth2.core.OAuth2Constants.CoreTokenParams.*;
+import static org.forgerock.oauth2.core.OAuth2Constants.Params.GRANT_TYPE;
+import static org.forgerock.oauth2.core.OAuth2Constants.Params.REALM;
+import static org.forgerock.oauth2.core.OAuth2Constants.Token.OAUTH_ACCESS_TOKEN;
+import static org.forgerock.oauth2.core.OAuth2Constants.TokenEndpoint.CLIENT_CREDENTIALS;
+
 public class TokenResource implements CollectionResourceProvider {
 
     private final OAuth2RequestFactory<Request> requestFactory;
@@ -81,7 +88,7 @@ public class TokenResource implements CollectionResourceProvider {
     public static final String EXPIRE_TIME_KEY = "expireTime";
     private final ClientDAO clientDao;
 
-    private OAuthTokenStore tokenStore;
+    private final OAuthTokenStore tokenStore;
 
     private static SSOToken token = (SSOToken) AccessController.doPrivileged(AdminTokenAction.getInstance());
     private static String adminUser = SystemProperties.get(Constants.AUTHENTICATION_SUPER_USER);
@@ -97,9 +104,8 @@ public class TokenResource implements CollectionResourceProvider {
     private final IdentityManager identityManager;
 
     @Inject
-    public TokenResource(final OAuthTokenStore tokenStore, final ClientDAO clientDao,
-            OAuth2RequestFactory<Request> requestFactory, final IdentityManager
-            identityManager) {
+    public TokenResource(OAuthTokenStore tokenStore, ClientDAO clientDao,
+            OAuth2RequestFactory<Request> requestFactory, IdentityManager identityManager) {
         this.tokenStore = tokenStore;
         this.clientDao = clientDao;
         this.requestFactory = requestFactory;
@@ -108,79 +114,76 @@ public class TokenResource implements CollectionResourceProvider {
 
     @Override
     public void actionCollection(ServerContext context, ActionRequest actionRequest, ResultHandler<JsonValue> handler) {
-        final ResourceException e =
-                new NotSupportedException("Actions are not supported for resource instances");
-        handler.handleError(e);
+        handler.handleError(new NotSupportedException("Actions are not supported for resource instances"));
     }
 
     @Override
     public void actionInstance(ServerContext context, String resourceId, ActionRequest request,
             ResultHandler<JsonValue> handler) {
-        final ResourceException e =
-                new NotSupportedException("Actions are not supported for resource instances");
-        handler.handleError(e);
+
+        String actionId = request.getAction();
+
+        if ("revoke".equalsIgnoreCase(actionId)) {
+            if (deleteToken(context, resourceId, handler, true)) {
+                handler.handleResult(json(object()));
+            }
+        } else {
+            handler.handleError(new NotSupportedException("Action not supported."));
+        }
     }
 
     @Override
     public void createInstance(ServerContext context, CreateRequest createRequest, ResultHandler<Resource> handler) {
-        final ResourceException e =
-                new NotSupportedException("Create is not supported for resource instances");
-        handler.handleError(e);
+        handler.handleError(new NotSupportedException("Create is not supported for resource instances"));
     }
 
-    @Override
-    public void deleteInstance(ServerContext context, String resourceId, DeleteRequest request,
-            ResultHandler<Resource> handler) {
-        //only admin can delete
-        AMIdentity uid = null;
+    /**
+     * Deletes the token with the provided token id.
+     *
+     * @param context The context.
+     * @param tokenId The token id.
+     * @param handler The handler.
+     * @param deleteRefreshToken Whether to delete associated refresh token, if token id is for an access token.
+     * @return {@code true} if the token has been deleted.
+     */
+    private boolean deleteToken(ServerContext context, String tokenId, ResultHandler<?> handler,
+            boolean deleteRefreshToken) {
         try {
-            //first check if SSOToken is valid
-            uid = getUid(context);
+            AMIdentity uid = getUid(context);
 
-            JsonValue response = null;
-            try {
-                response = tokenStore.read(resourceId);
-                if (response == null) {
-                    throw new NotFoundException("Token Not Found", null);
-                }
-                Set<String> usernameSet = (Set<String>) response.get(OAuth2Constants.CoreTokenParams.USERNAME).getObject();
-                String username = null;
-                if (usernameSet != null && !usernameSet.isEmpty()) {
-                    username = usernameSet.iterator().next();
-                }
-                if (username == null || username.isEmpty()) {
-                    throw new PermanentException(404, "Not Found", null);
-                }
-
-                Set<String> grantTypes = (Set<String>) response.get(OAuth2Constants.Params.GRANT_TYPE).getObject();
-                String grantType = null;
-                if (grantTypes != null && !grantTypes.isEmpty()) {
-                    grantType = grantTypes.iterator().next();
-                }
-
-                if (grantType != null && grantType.equalsIgnoreCase(OAuth2Constants.TokenEndpoint.CLIENT_CREDENTIALS)) {
-                    tokenStore.delete(resourceId);
-                } else {
-                    Set<String> realms = (Set<String>) response.get(OAuth2Constants.CoreTokenParams.REALM).getObject();
-                    String realm = null;
-                    if (realms != null && !realms.isEmpty()) {
-                        realm = realms.iterator().next();
-                    }
-                    AMIdentity uid2 = identityManager.getResourceOwnerIdentity(username, realm);
-                    if (uid.equals(uid2) || uid.equals(adminUserId)) {
-                        tokenStore.delete(resourceId);
-                    } else {
-                        throw new PermanentException(401, "Unauthorized", null);
-                    }
-                }
-            } catch (CoreTokenException e) {
-                throw new ServiceUnavailableException(e.getMessage(), e);
+            JsonValue token = tokenStore.read(tokenId);
+            if (token == null) {
+                throw new NotFoundException("Token Not Found", null);
             }
-            Map<String, String> responseVal = new HashMap<String, String>();
-            responseVal.put("success", "true");
-            response = new JsonValue(responseVal);
-            Resource resource = new Resource(resourceId, "1", response);
-            handler.handleResult(resource);
+            String username = getAttributeValue(token, USERNAME);
+            if (username == null || username.isEmpty()) {
+                throw new PermanentException(404, "Not Found", null);
+            }
+
+            String grantType = getAttributeValue(token, GRANT_TYPE);
+
+            if (grantType != null && grantType.equalsIgnoreCase(CLIENT_CREDENTIALS)) {
+                if (deleteRefreshToken) {
+                    deleteAccessTokensRefreshToken(token);
+                }
+                tokenStore.delete(tokenId);
+            } else {
+                String realm = getAttributeValue(token, REALM);
+                AMIdentity uid2 = identityManager.getResourceOwnerIdentity(username, realm);
+                if (uid.equals(uid2) || uid.equals(adminUserId)) {
+                    if (deleteRefreshToken) {
+                        deleteAccessTokensRefreshToken(token);
+                    }
+                    tokenStore.delete(tokenId);
+                } else {
+                    throw new PermanentException(401, "Unauthorized", null);
+                }
+            }
+
+            return true;
+
+        } catch (CoreTokenException e) {
+            handler.handleError(new ServiceUnavailableException(e.getMessage(), e));
         } catch (ResourceException e) {
             handler.handleError(e);
         } catch (SSOException e) {
@@ -189,6 +192,63 @@ public class TokenResource implements CollectionResourceProvider {
             handler.handleError(new PermanentException(401, "Unauthorized", e));
         } catch (UnauthorizedClientException e) {
             handler.handleError(new PermanentException(401, "Unauthorized", e));
+        }
+
+        return false;
+    }
+
+    /**
+     * Deletes the provided access token's refresh token.
+     *
+     * @param token The access token.
+     * @throws CoreTokenException If there was a problem deleting the refresh token.
+     */
+    private void deleteAccessTokensRefreshToken(JsonValue token) throws CoreTokenException {
+        if (OAUTH_ACCESS_TOKEN.equals(getAttributeValue(token, TOKEN_NAME))) {
+            String refreshTokenId = getAttributeValue(token, REFRESH_TOKEN);
+            if (refreshTokenId != null) {
+                tokenStore.delete(refreshTokenId);
+            }
+        }
+    }
+
+    /**
+     * Gets the value of the named attribute from the provided token.
+     *
+     * @param token The token.
+     * @param attributeName The attribute name.
+     * @return The attribute value.
+     */
+    private String getAttributeValue(JsonValue token, String attributeName) {
+        final Set<String> value = getAttributeAsSet(token, attributeName);
+        if (value != null && !value.isEmpty()) {
+            return value.iterator().next();
+        }
+        return null;
+    }
+
+    /**
+     * Gets the {@code Set<String>} of values for the given attributeName.
+     *
+     * @param value The {@code JsonValue}.
+     * @param attributeName The attribute name.
+     * @return The attribute set.
+     */
+    @SuppressWarnings("unchecked")
+    private Set<String> getAttributeAsSet(JsonValue value, String attributeName) {
+        final JsonValue param = value.get(attributeName);
+        if (param != null) {
+            return (Set<String>) param.getObject();
+        }
+        return null;
+    }
+
+    @Override
+    public void deleteInstance(ServerContext context, String resourceId, DeleteRequest request,
+            ResultHandler<Resource> handler) {
+        if (deleteToken(context, resourceId, handler, false)) {
+            Resource resource = new Resource(resourceId, "1", json(object(field("success", "true"))));
+            handler.handleResult(resource);
         }
     }
 
@@ -214,17 +274,16 @@ public class TokenResource implements CollectionResourceProvider {
                 try {
                     uid = getUid(context);
                     if (!uid.equals(adminUserId)) {
-                        query.put(OAuth2Constants.CoreTokenParams.USERNAME, uid.getName());
+                        query.put(USERNAME, uid.getName());
                     } else {
-                        query.put(OAuth2Constants.CoreTokenParams.USERNAME, "*");
+                        query.put(USERNAME, "*");
                     }
                 } catch (Exception e) {
-                    PermanentException ex = new PermanentException(401, "Unauthorized", e);
-                    handler.handleError(ex);
+                    handler.handleError(new PermanentException(401, "Unauthorized", e));
                 }
 
                 //split id into the query fields
-                String[] queries = id.split("\\,");
+//                String[] queries = id.split("\\,");
 //                for (String q : queries) {
 //                    String[] params = q.split("=");
 //                    if (params.length == 2) {
@@ -293,11 +352,8 @@ public class TokenResource implements CollectionResourceProvider {
     public void readInstance(ServerContext context, String resourceId, ReadRequest request,
             ResultHandler<Resource> handler) {
 
-        AMIdentity uid = null;
-        String username = null;
         try {
-            //first check if SSOToken is valid
-            uid = getUid(context);
+            AMIdentity uid = getUid(context);
 
             JsonValue response;
             Resource resource;
@@ -307,29 +363,18 @@ public class TokenResource implements CollectionResourceProvider {
                 throw new NotFoundException("Token Not Found", e);
             }
             if (response == null) {
-                throw new NotFoundException("Token Not Found", null);
+                throw new NotFoundException("Token Not Found");
             }
 
-            Set<String> grantTypes = (Set<String>) response.get(OAuth2Constants.Params.GRANT_TYPE).getObject();
-            String grantType = null;
-            if (grantTypes != null && !grantTypes.isEmpty()) {
-                grantType = grantTypes.iterator().next();
-            }
+            String grantType = getAttributeValue(response, GRANT_TYPE);
 
             if (grantType != null && grantType.equalsIgnoreCase(OAuth2Constants.TokenEndpoint.CLIENT_CREDENTIALS)) {
                 resource = new Resource(OAuth2Constants.Params.ID, "1", response);
                 handler.handleResult(resource);
             } else {
-                Set<String> realms = (Set<String>) response.get(OAuth2Constants.CoreTokenParams.REALM).getObject();
-                String realm = null;
-                if (realms != null && !realms.isEmpty()) {
-                    realm = realms.iterator().next();
-                }
+                String realm = getAttributeValue(response, REALM);
 
-                Set<String> usernameSet = (Set<String>) response.get(OAuth2Constants.CoreTokenParams.USERNAME).getObject();
-                if (usernameSet != null && !usernameSet.isEmpty()) {
-                    username = usernameSet.iterator().next();
-                }
+                String username = getAttributeValue(response, USERNAME);
                 if (username == null || username.isEmpty()) {
                     throw new PermanentException(404, "Not Found", null);
                 }
@@ -355,9 +400,7 @@ public class TokenResource implements CollectionResourceProvider {
     @Override
     public void updateInstance(ServerContext context, String resourceId, UpdateRequest request,
             ResultHandler<Resource> handler) {
-        final ResourceException e =
-                new NotSupportedException("Update is not supported for resource instances");
-        handler.handleError(e);
+        handler.handleError(new NotSupportedException("Update is not supported for resource instances"));
     }
 
     /**
