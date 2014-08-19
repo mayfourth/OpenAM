@@ -160,7 +160,6 @@
                                     <arg value="${requirejs.dir}/r.js" />
                                     <arg value="-o" />
                                     <arg value="${requirejs.dir}/app.build.js" />
-                                    <arg value="optimize=none" />
                                 </java>
                                 
                                 <concat destfile="${xui.dir}_minified/main_with_licenses.js">

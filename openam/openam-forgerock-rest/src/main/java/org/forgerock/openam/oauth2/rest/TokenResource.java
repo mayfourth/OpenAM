@@ -53,12 +53,13 @@ import org.forgerock.json.resource.ServerContext;
 import org.forgerock.json.resource.ServiceUnavailableException;
 import org.forgerock.json.resource.UpdateRequest;
 import org.forgerock.oauth2.core.OAuth2Constants;
+import org.forgerock.openam.cts.api.filter.TokenFilter;
+import org.forgerock.openam.oauth2.IdentityManager;
 import org.forgerock.oauth2.core.OAuth2Request;
 import org.forgerock.oauth2.core.OAuth2RequestFactory;
 import org.forgerock.oauth2.core.exceptions.UnauthorizedClientException;
 import org.forgerock.openam.cts.exceptions.CoreTokenException;
 import org.forgerock.openam.forgerockrest.RestUtils;
-import org.forgerock.openam.oauth2.IdentityManager;
 import org.forgerock.openam.oauth2.OAuthTokenStore;
 import org.forgerock.openidconnect.Client;
 import org.forgerock.openidconnect.ClientDAO;
@@ -264,10 +265,8 @@ public class TokenResource implements CollectionResourceProvider {
     public void queryCollection(ServerContext context, QueryRequest queryRequest, QueryResultHandler handler) {
         try {
             JsonValue response = null;
-            Resource resource;
             try {
                 Map<String, Object> query = new HashMap<String, Object>();
-                String id = queryRequest.getQueryId();
 
                 //get uid of submitter
                 AMIdentity uid;
@@ -282,65 +281,82 @@ public class TokenResource implements CollectionResourceProvider {
                     handler.handleError(new PermanentException(401, "Unauthorized", e));
                 }
 
-                //split id into the query fields
-//                String[] queries = id.split("\\,");
-//                for (String q : queries) {
-//                    String[] params = q.split("=");
-//                    if (params.length == 2) {
-//                        query.put(params[0], params[1]);
-//                    }
-//                }
+                String id = queryRequest.getQueryId();
+                String queryString = null;
 
-                response = tokenStore.query(query);
+                if (id.equals("access_token")) {
+                    queryString = "tokenName=access_token";
+                } else {
+                    queryString = "";
+                }
+
+                String[] constraints = queryString.split("\\,");
+                for (String constraint : constraints) {
+                    String[] params = constraint.split("=");
+                    if (params.length == 2) {
+                        query.put(params[0], params[1]);
+                    }
+                }
+
+                response = tokenStore.query(query, TokenFilter.Type.AND);
             } catch (CoreTokenException e) {
                 throw new ServiceUnavailableException(e.getMessage(), e);
             }
-            resource = new Resource("result", "1", response);
-            JsonValue value = resource.getContent();
-            Set<HashMap<String, Set<String>>> list = (Set<HashMap<String, Set<String>>>) value.getObject();
-            Resource res = null;
-            JsonValue val = null;
-            if (list != null && !list.isEmpty()) {
-                for (HashMap<String, Set<String>> entry : list) {
-                    val = new JsonValue(entry);
-                    res = new Resource("result", "1", val);
 
-                    val.put(EXPIRE_TIME_KEY, getExpiryDate(entry));
-
-                    final String clientId = (String) entry.get("clientID").toArray()[0];
-                    final String realm = (String) entry.get("realm").toArray()[0];
-
-                    OAuth2Request request = new OAuth2Request() {
-                        public <T> T getRequest() {
-                            throw new UnsupportedOperationException("Realm parameter only OAuth2Request");
-                        }
-
-                        public <T> T getParameter(String name) {
-                            if ("realm".equals(name)) {
-                                return (T) realm;
-                            }
-                            throw new UnsupportedOperationException("Realm parameter only OAuth2Request");
-                        }
-
-                        @Override
-                        public JsonValue getBody() {
-                            return null;
-                        }
-                    };
-
-                    Client client = clientDao.read(clientId, request);
-                    String clientName = client.get(OAuth2Constants.ShortClientAttributeNames.DISPLAY_NAME.getType()).get(0).asString();
-    val.put(OAuth2Constants.ShortClientAttributeNames.DISPLAY_NAME.getType(), clientName);
-
-                    handler.handleResource(res);
-                }
-            }
-            handler.handleResult(new QueryResult());
+            handleResponse(handler, response);
         } catch (ResourceException e) {
             handler.handleError(e);
         } catch (UnauthorizedClientException e) {
             e.printStackTrace();
         }
+    }
+
+    private void handleResponse(QueryResultHandler handler, JsonValue response) throws UnauthorizedClientException {
+        Resource resource = new Resource("result", "1", response);
+        JsonValue value = resource.getContent();
+        Set<HashMap<String, Set<String>>> list = (Set<HashMap<String, Set<String>>>) value.getObject();
+
+        Resource res = null;
+        JsonValue val = null;
+
+        if (list != null && !list.isEmpty()) {
+            for (HashMap<String, Set<String>> entry : list) {
+                val = new JsonValue(entry);
+                res = new Resource("result", "1", val);
+
+                val.put(EXPIRE_TIME_KEY, getExpiryDate(entry));
+                val.put(OAuth2Constants.ShortClientAttributeNames.DISPLAY_NAME.getType(), getClientName(entry));
+
+                handler.handleResource(res);
+            }
+        }
+        handler.handleResult(new QueryResult());
+    }
+
+    private String getClientName(HashMap<String, Set<String>> entry) throws UnauthorizedClientException {
+        final String clientId = (String) entry.get("clientID").toArray()[0];
+        final String realm = (String) entry.get("realm").toArray()[0];
+
+        OAuth2Request request = new OAuth2Request() {
+            public <T> T getRequest() {
+                throw new UnsupportedOperationException("Realm parameter only OAuth2Request");
+            }
+
+            public <T> T getParameter(String name) {
+                if ("realm".equals(name)) {
+                    return (T) realm;
+                }
+                throw new UnsupportedOperationException("Realm parameter only OAuth2Request");
+            }
+
+            @Override
+            public JsonValue getBody() {
+                return null;
+            }
+        };
+
+        Client client = clientDao.read(clientId, request);
+        return client.get(OAuth2Constants.ShortClientAttributeNames.DISPLAY_NAME.getType()).get(0).asString();
     }
 
     private String getExpiryDate(HashMap<String, Set<String>> entry) {

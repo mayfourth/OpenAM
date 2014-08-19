@@ -34,7 +34,7 @@ define("org/forgerock/openam/ui/dashboard/OAuthTokensDelegate", [
 
    obj.getOAuthTokens = function() {
        return obj.serviceCall({
-            url: 'oauth2/token/?_queryId=*',
+            url: 'oauth2/token/?_queryId=access_token',
             headers: {"Cache-Control": "no-cache", "Accept-API-Version": "protocol=1.0,resource=1.0"}
         });
     };
