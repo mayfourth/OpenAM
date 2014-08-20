@@ -101,7 +101,7 @@ public class RestDeploymentConfigTest {
 
         atm = AuthTargetMapping.builder()
                 .addMapping(TokenType.USERNAME, "module", "untmodule")
-                .addMapping(TokenType.X509CERT, "module", "x509module")
+                .addMapping(TokenType.X509, "module", "x509module")
                 .build();
         rdc = RestDeploymentConfig.builder()
                 .realm("a")
