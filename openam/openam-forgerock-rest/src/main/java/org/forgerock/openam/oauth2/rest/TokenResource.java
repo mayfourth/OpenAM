@@ -38,6 +38,7 @@ import org.forgerock.json.resource.ActionRequest;
 import org.forgerock.json.resource.CollectionResourceProvider;
 import org.forgerock.json.resource.CreateRequest;
 import org.forgerock.json.resource.DeleteRequest;
+import org.forgerock.json.resource.InternalServerErrorException;
 import org.forgerock.json.resource.NotFoundException;
 import org.forgerock.json.resource.NotSupportedException;
 import org.forgerock.json.resource.PatchRequest;
@@ -53,17 +54,18 @@ import org.forgerock.json.resource.ServerContext;
 import org.forgerock.json.resource.ServiceUnavailableException;
 import org.forgerock.json.resource.UpdateRequest;
 import org.forgerock.oauth2.core.OAuth2Constants;
-import org.forgerock.openam.cts.api.filter.TokenFilter;
-import org.forgerock.openam.oauth2.IdentityManager;
+import org.forgerock.oauth2.core.OAuth2ProviderSettings;
 import org.forgerock.oauth2.core.OAuth2Request;
-import org.forgerock.oauth2.core.OAuth2RequestFactory;
+import org.forgerock.oauth2.core.exceptions.ServerException;
 import org.forgerock.oauth2.core.exceptions.UnauthorizedClientException;
+import org.forgerock.openam.cts.api.filter.TokenFilter;
 import org.forgerock.openam.cts.exceptions.CoreTokenException;
 import org.forgerock.openam.forgerockrest.RestUtils;
+import org.forgerock.openam.oauth2.IdentityManager;
 import org.forgerock.openam.oauth2.OAuthTokenStore;
+import org.forgerock.openam.oauth2.OpenAMOAuth2ProviderSettingsFactory;
 import org.forgerock.openidconnect.Client;
 import org.forgerock.openidconnect.ClientDAO;
-import org.restlet.Request;
 
 import javax.inject.Inject;
 import java.security.AccessController;
@@ -83,13 +85,13 @@ import static org.forgerock.oauth2.core.OAuth2Constants.TokenEndpoint.CLIENT_CRE
 
 public class TokenResource implements CollectionResourceProvider {
 
-    private final OAuth2RequestFactory<Request> requestFactory;
     private static final DateFormat DATE_FORMATTER = SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM,
             DateFormat.SHORT);
     public static final String EXPIRE_TIME_KEY = "expireTime";
     private final ClientDAO clientDao;
 
     private final OAuthTokenStore tokenStore;
+    private final OpenAMOAuth2ProviderSettingsFactory oAuth2ProviderSettingsFactory;
 
     private static SSOToken token = (SSOToken) AccessController.doPrivileged(AdminTokenAction.getInstance());
     private static String adminUser = SystemProperties.get(Constants.AUTHENTICATION_SUPER_USER);
@@ -105,12 +107,12 @@ public class TokenResource implements CollectionResourceProvider {
     private final IdentityManager identityManager;
 
     @Inject
-    public TokenResource(OAuthTokenStore tokenStore, ClientDAO clientDao,
-            OAuth2RequestFactory<Request> requestFactory, IdentityManager identityManager) {
+    public TokenResource(OAuthTokenStore tokenStore, ClientDAO clientDao, IdentityManager identityManager,
+            OpenAMOAuth2ProviderSettingsFactory oAuth2ProviderSettingsFactory) {
         this.tokenStore = tokenStore;
         this.clientDao = clientDao;
-        this.requestFactory = requestFactory;
         this.identityManager = identityManager;
+        this.oAuth2ProviderSettingsFactory = oAuth2ProviderSettingsFactory;
     }
 
     @Override
@@ -265,53 +267,53 @@ public class TokenResource implements CollectionResourceProvider {
     public void queryCollection(ServerContext context, QueryRequest queryRequest, QueryResultHandler handler) {
         try {
             JsonValue response = null;
+            Map<String, Object> query = new HashMap<String, Object>();
+
+            //get uid of submitter
+            AMIdentity uid;
             try {
-                Map<String, Object> query = new HashMap<String, Object>();
-
-                //get uid of submitter
-                AMIdentity uid;
-                try {
-                    uid = getUid(context);
-                    if (!uid.equals(adminUserId)) {
-                        query.put(USERNAME, uid.getName());
-                    } else {
-                        query.put(USERNAME, "*");
-                    }
-                } catch (Exception e) {
-                    handler.handleError(new PermanentException(401, "Unauthorized", e));
-                }
-
-                String id = queryRequest.getQueryId();
-                String queryString = null;
-
-                if (id.equals("access_token")) {
-                    queryString = "tokenName=access_token";
+                uid = getUid(context);
+                if (!uid.equals(adminUserId)) {
+                    query.put(USERNAME, uid.getName());
                 } else {
-                    queryString = "";
+                    query.put(USERNAME, "*");
                 }
-
-                String[] constraints = queryString.split("\\,");
-                for (String constraint : constraints) {
-                    String[] params = constraint.split("=");
-                    if (params.length == 2) {
-                        query.put(params[0], params[1]);
-                    }
-                }
-
-                response = tokenStore.query(query, TokenFilter.Type.AND);
-            } catch (CoreTokenException e) {
-                throw new ServiceUnavailableException(e.getMessage(), e);
+            } catch (Exception e) {
+                handler.handleError(new PermanentException(401, "Unauthorized", e));
             }
 
+            String id = queryRequest.getQueryId();
+            String queryString = null;
+
+            if (id.equals("access_token")) {
+                queryString = "tokenName=access_token";
+            } else {
+                queryString = "";
+            }
+
+            String[] constraints = queryString.split("\\,");
+            for (String constraint : constraints) {
+                String[] params = constraint.split("=");
+                if (params.length == 2) {
+                    query.put(params[0], params[1]);
+                }
+            }
+
+            response = tokenStore.query(query, TokenFilter.Type.AND);
+
             handleResponse(handler, response);
-        } catch (ResourceException e) {
-            handler.handleError(e);
+
         } catch (UnauthorizedClientException e) {
-            e.printStackTrace();
+            handler.handleError(new PermanentException(401, e.getMessage(), e));
+        } catch (CoreTokenException e) {
+            handler.handleError(new ServiceUnavailableException(e.getMessage(), e));
+        } catch (InternalServerErrorException e) {
+            handler.handleError(e);
         }
     }
 
-    private void handleResponse(QueryResultHandler handler, JsonValue response) throws UnauthorizedClientException {
+    private void handleResponse(QueryResultHandler handler, JsonValue response) throws UnauthorizedClientException,
+            CoreTokenException, InternalServerErrorException {
         Resource resource = new Resource("result", "1", response);
         JsonValue value = resource.getContent();
         Set<HashMap<String, Set<String>>> list = (Set<HashMap<String, Set<String>>>) value.getObject();
@@ -324,7 +326,7 @@ public class TokenResource implements CollectionResourceProvider {
                 val = new JsonValue(entry);
                 res = new Resource("result", "1", val);
 
-                val.put(EXPIRE_TIME_KEY, getExpiryDate(entry));
+                val.put(EXPIRE_TIME_KEY, getExpiryDate(json(entry)));
                 val.put(OAuth2Constants.ShortClientAttributeNames.DISPLAY_NAME.getType(), getClientName(entry));
 
                 handler.handleResource(res);
@@ -337,7 +339,14 @@ public class TokenResource implements CollectionResourceProvider {
         final String clientId = (String) entry.get("clientID").toArray()[0];
         final String realm = (String) entry.get("realm").toArray()[0];
 
-        OAuth2Request request = new OAuth2Request() {
+        OAuth2Request request = createOAuth2Request(realm);
+
+        Client client = clientDao.read(clientId, request);
+        return client.get(OAuth2Constants.ShortClientAttributeNames.DISPLAY_NAME.getType()).get(0).asString();
+    }
+
+    private OAuth2Request createOAuth2Request(final String realm) {
+        return new OAuth2Request() {
             public <T> T getRequest() {
                 throw new UnsupportedOperationException("Realm parameter only OAuth2Request");
             }
@@ -354,14 +363,31 @@ public class TokenResource implements CollectionResourceProvider {
                 return null;
             }
         };
-
-        Client client = clientDao.read(clientId, request);
-        return client.get(OAuth2Constants.ShortClientAttributeNames.DISPLAY_NAME.getType()).get(0).asString();
     }
 
-    private String getExpiryDate(HashMap<String, Set<String>> entry) {
-        final Long expiryTimeInMilliseconds = new Long((String) entry.get(EXPIRE_TIME_KEY).toArray()[0]);
-        return DATE_FORMATTER.format(new Date(expiryTimeInMilliseconds));
+    private String getExpiryDate(JsonValue token) throws CoreTokenException, InternalServerErrorException {
+
+        OAuth2ProviderSettings oAuth2ProviderSettings = oAuth2ProviderSettingsFactory.get(
+                getAttributeValue(token, "realm"));
+
+        try {
+            if (token.isDefined("refreshToken")) {
+                if (oAuth2ProviderSettings.issueRefreshTokensOnRefreshingToken()) {
+                    return "Indefinitely";
+                } else {
+                    //Use refresh token expiry
+                    JsonValue refreshToken = tokenStore.read(getAttributeValue(token, "refreshToken"));
+                    long expiryTimeInMilliseconds = Long.parseLong(getAttributeValue(refreshToken, EXPIRE_TIME_KEY));
+                    return DATE_FORMATTER.format(new Date(expiryTimeInMilliseconds));
+                }
+            } else {
+                //Use access token expiry
+                long expiryTimeInMilliseconds = Long.parseLong(getAttributeValue(token, EXPIRE_TIME_KEY));
+                return DATE_FORMATTER.format(new Date(expiryTimeInMilliseconds));
+            }
+        } catch (ServerException e) {
+            throw new InternalServerErrorException(e);
+        }
     }
 
     @Override
