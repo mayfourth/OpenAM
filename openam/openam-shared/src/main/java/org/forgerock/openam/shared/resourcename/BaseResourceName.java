@@ -31,6 +31,8 @@ import java.util.Set;
  * also its display in the GUI. A class that implements
  * this interface must have a empty constructor.
  * @supported.all.api
+ * @param <T> The type that the compare method is going to return instances of.
+ * @param <E> The exception type thrown by the canonicalize method.
  */
 public interface BaseResourceName<T, E extends Exception> {
 
@@ -41,7 +43,7 @@ public interface BaseResourceName<T, E extends Exception> {
      * @return service type names for which the resource
      * comparator can be used
      */
-    public Set getServiceTypeNames();
+    public Set<String> getServiceTypeNames();
 
     /**
      * Initializes the resource name with configuration information,

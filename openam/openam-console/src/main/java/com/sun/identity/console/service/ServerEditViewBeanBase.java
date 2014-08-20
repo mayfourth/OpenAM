@@ -24,11 +24,9 @@
  *
  * $Id: ServerEditViewBeanBase.java,v 1.3 2008/09/11 16:33:16 veiming Exp $
  *
+ * Portions Copyrighted 2011-2014 ForgeRock AS.
  */
 
-/*
- * Portions Copyrighted [2011] [ForgeRock AS]
- */
 package com.sun.identity.console.service;
 
 import com.iplanet.jato.RequestManager;
@@ -50,13 +48,17 @@ import com.sun.identity.console.base.model.AMModel;
 import com.sun.identity.console.base.model.AMPropertySheetModel;
 import com.sun.identity.console.service.model.ServerSiteModel;
 import com.sun.identity.console.service.model.ServerSiteModelImpl;
+import com.sun.identity.security.EncodeAction;
 import com.sun.web.ui.model.CCNavNode;
 import com.sun.web.ui.model.CCPageTitleModel;
 import com.sun.web.ui.view.alert.CCAlert;
 import com.sun.web.ui.view.html.CCCheckBox;
 import com.sun.web.ui.view.html.CCButton;
+import com.sun.web.ui.view.html.CCPassword;
 import com.sun.web.ui.view.pagetitle.CCPageTitle;
 import com.sun.web.ui.view.tabs.CCTabs;
+
+import java.security.AccessController;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -84,7 +86,7 @@ public abstract class ServerEditViewBeanBase
     private CCPageTitleModel ptModel;
     private AMPropertySheetModel propertySheetModel;
     private Set allPropertyNames = new HashSet();
-    private Set activePropertyNames = new HashSet();
+    private Set<String> activePropertyNames = new HashSet<String>();
     protected boolean submitCycle;
 
     /**
@@ -168,8 +170,7 @@ public abstract class ServerEditViewBeanBase
         throws AMConsoleException {
         if (!submitCycle) {
             Map attributeValues = model.getServerConfiguration(serverName);
-            for (Iterator i = activePropertyNames.iterator(); i.hasNext(); ) {
-                String name = (String)i.next();
+            for (String name : activePropertyNames) {
                 String propertyName = getActualPropertyName(name);
                 String val = (String)attributeValues.get(propertyName);
                 if (val == null) {
@@ -292,14 +293,17 @@ public abstract class ServerEditViewBeanBase
             if (value == null) {
                 value = "";
             }
-            
-            Object[] params = {name, value};
-            String xmlComponent = MessageFormat.format(TEXT_TEMPLATE, params);
 
             int idx = xml.indexOf("<cc name=\"" + name + "\"");
             if (idx != -1) {
                 int endIdx = xml.indexOf("</cc>", idx);
-                xml = xml.substring(0, idx) + xmlComponent + 
+                String[] params = {name, value};
+                // If we find a Password field, obfuscate the value before it is shown.
+                if (xml.substring(idx, endIdx).contains(PASSWORD_FIELD_TAG)) {
+                    params[1] = "********";
+                }
+                String xmlComponent = MessageFormat.format(TEXT_TEMPLATE, params);
+                xml = xml.substring(0, idx) + xmlComponent +
                     xml.substring(endIdx+5);
             }
         }
@@ -324,8 +328,8 @@ public abstract class ServerEditViewBeanBase
         }
     }
 
-    protected Map getAttributeValues() {
-        Map map = new HashMap();
+    protected Map<String, String> getAttributeValues() {
+        Map<String, String> map = new HashMap<String, String>();
         for (Iterator i = activePropertyNames.iterator(); i.hasNext(); ) {
             String uiName = (String)i.next();
             String value = (String)getDisplayFieldValue(uiName);
@@ -338,7 +342,17 @@ public abstract class ServerEditViewBeanBase
                     ServerPropertyValidator.getFalseValue(propertyName);
             }
 
-            map.put(propertyName, value);
+            if (view instanceof CCPassword) {
+                // If the value is not the same as the random value then it has been updated =>
+                // encrypt and include in the map of attribute values to save
+                if (!AMPropertySheetModel.passwordRandom.equals(value)) {
+                    value = AccessController.doPrivileged(new EncodeAction(value));
+                    map.put(propertyName, value);
+                }
+            } else {
+                map.put(propertyName, value);
+            }
+
         }
         return map;
     }
@@ -432,4 +446,5 @@ public abstract class ServerEditViewBeanBase
     protected abstract String getPropertyXML();
     private static final String TEXT_TEMPLATE =
         "<cc name=\"{0}\" tagclass=\"com.sun.web.ui.taglib.html.CCStaticTextFieldTag\"><attribute name=\"defaultValue\" value=\"{1}\" /></cc>";
+    private static final String PASSWORD_FIELD_TAG = "com.sun.web.ui.taglib.html.CCPasswordTag";
 }

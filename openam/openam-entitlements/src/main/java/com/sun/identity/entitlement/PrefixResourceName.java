@@ -68,6 +68,14 @@ public class PrefixResourceName extends BasePrefixResourceName<ResourceMatch, En
         return doTargetResourceNormalization(targetResource);
     }
 
+    /**
+     * Normalize the request resource specifically for entitlement. Treat a resource with a delimiter at the end as a
+     * directory, and get rid of ?* for entitlement engine. Also used by URLResourceName.
+     * @param originalRequestResource The request resource.
+     * @param delimiter The instance's delimiter (typically '/')
+     * @param wildcard The wildcard string (typically '*')
+     * @return The normalized resource.
+     */
     static String doRequestResourceNormalization(String originalRequestResource, String delimiter, String wildcard) {
         String requestResource = originalRequestResource;
         String leftPrecedence = SystemPropertiesManager.get(Constants.DELIMITER_PREF_LEFT, Boolean.FALSE.toString());
@@ -90,6 +98,12 @@ public class PrefixResourceName extends BasePrefixResourceName<ResourceMatch, En
         return requestResource;
     }
 
+    /**
+     * Normalize the request resource specifically for entitlement. Get rid of ?* for entitlement engine.  Also used by
+     * URLResourceName.
+     * @param originalTargetResource The target resource.
+     * @return The normalized resource.
+     */
     static String doTargetResourceNormalization(String originalTargetResource) {
         String targetResource = originalTargetResource;
         // get rid of ending '?*' if any from targetResource
@@ -107,7 +121,3 @@ public class PrefixResourceName extends BasePrefixResourceName<ResourceMatch, En
     }
 
 }
-            
-            
-
-            

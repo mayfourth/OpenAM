@@ -19,8 +19,6 @@ import com.sun.identity.entitlement.Application;
 import com.sun.identity.entitlement.EntitlementException;
 import com.sun.identity.shared.debug.Debug;
 import java.io.IOException;
-import static java.lang.Math.max;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -29,7 +27,6 @@ import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.json.resource.ActionRequest;
-import org.forgerock.json.resource.CollectionResourceProvider;
 import org.forgerock.json.resource.CreateRequest;
 import org.forgerock.json.resource.DeleteRequest;
 import org.forgerock.json.resource.PatchRequest;
@@ -43,11 +40,11 @@ import org.forgerock.json.resource.ResultHandler;
 import org.forgerock.json.resource.ServerContext;
 import org.forgerock.json.resource.UpdateRequest;
 import org.forgerock.openam.forgerockrest.RestUtils;
+import org.forgerock.openam.forgerockrest.entitlements.query.QueryResultHandlerBuilder;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationManagerWrapper;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationTypeManagerWrapper;
 import org.forgerock.openam.forgerockrest.entitlements.wrappers.ApplicationWrapper;
 import org.forgerock.openam.rest.resource.RealmContext;
-import org.forgerock.openam.rest.resource.SubjectContext;
 import org.forgerock.util.Reject;
 
 /**
@@ -60,7 +57,7 @@ import org.forgerock.util.Reject;
  * leg for us.
  *
  */
-public class ApplicationsResource implements CollectionResourceProvider {
+public class ApplicationsResource extends SubjectAwareResource {
 
     private static final ObjectMapper mapper = new ObjectMapper();
     private final ApplicationManagerWrapper appManager;
@@ -205,6 +202,22 @@ public class ApplicationsResource implements CollectionResourceProvider {
     }
 
     /**
+     * Creates an {@link ApplicationWrapper} to hold the {@link Application} object.
+     * <p/>
+     * This method provides an abstraction to aid testing.
+     *
+     * @param application
+     *         The application
+     * @param type
+     *         The application type
+     *
+     * @return A new {@link ApplicationWrapper} wrapping the passed application
+     */
+    protected ApplicationWrapper createApplicationWrapper(Application application, ApplicationTypeManagerWrapper type) {
+        return new ApplicationWrapper(application, type);
+    }
+
+    /**
      * Deletes an {@link Application} as per the {@link DeleteRequest}.
      *
      * @param context {@inheritDoc}
@@ -274,11 +287,9 @@ public class ApplicationsResource implements CollectionResourceProvider {
         try {
             final Set<String> appNames = appManager.getApplicationNames(subject, realm);
 
-            for(String appName : appNames) {
-                final ApplicationWrapper wrapp =
-                        new ApplicationWrapper(appManager.getApplication(subject, realm, appName), appTypeManagerWrapper);
-
-                apps.add(wrapp);
+            for (String appName : appNames) {
+                final Application application = appManager.getApplication(subject, realm, appName);
+                apps.add(createApplicationWrapper(application, appTypeManagerWrapper));
             }
         } catch (EntitlementException e) {
             debug.error("Application failed to retrieve the resource specified.", e);
@@ -286,33 +297,28 @@ public class ApplicationsResource implements CollectionResourceProvider {
             return;
         }
 
-        int totalSize = apps.size();
-        int pageSize = request.getPageSize();
-        int offset = request.getPagedResultsOffset();
+        handler = QueryResultHandlerBuilder.withPagingAndSorting(handler, request);
 
-        if (pageSize > 0) {
-            Collections.sort(apps);
-            apps = apps.subList(offset, offset + pageSize);
-        }
-
-        for(ApplicationWrapper app : apps) {
-            try {
-                handler.handleResource(new Resource(app.getName(), Long.toString(app.getLastModifiedDate()),
-                        app.toJsonValue()));
-            } catch (IOException e) {
-                debug.error("Unable to convert resource to JSON.", e);
-                handler.handleError(ResourceException.getException(ResourceException.INTERNAL_ERROR));
-                return;
+        int remaining = 0;
+        try {
+            if (apps != null) {
+                remaining = apps.size();
+                for (ApplicationWrapper app : apps) {
+                    boolean keepGoing = handler.handleResource(
+                            new Resource(app.getName(), Long.toString(app.getLastModifiedDate()), app.toJsonValue()));
+                    remaining--;
+                    if (!keepGoing) {
+                        break;
+                    }
+                }
             }
+        } catch (IOException e) {
+            debug.error("Unable to convert resource to JSON.", e);
+            handler.handleError(ResourceException.getException(ResourceException.INTERNAL_ERROR));
+            return;
         }
 
-        //paginate
-        if (pageSize > 0) {
-            final String lastIndex = offset + pageSize > totalSize ? String.valueOf(totalSize) : String.valueOf(offset + pageSize);
-            handler.handleResult(new QueryResult(lastIndex, max(0, totalSize - (offset + pageSize))));
-        } else {
-            handler.handleResult(new QueryResult(null, -1));
-        }
+        handler.handleResult(new QueryResult(null, remaining));
     }
 
     /**
@@ -435,27 +441,6 @@ public class ApplicationsResource implements CollectionResourceProvider {
         }
 
         return rc.getRealm();
-    }
-
-    /**
-     * Retrieves the {@link Subject} from the {@link ServerContext}. Returns null
-     * if there's no Subject.
-     *
-     * @param context Context of the request made to this resource
-     * @param handler Handler which will handle the response
-     * @return an instance of the Subject in the context, or null
-     */
-    private Subject getContextSubject(ServerContext context, ResultHandler handler) {
-
-        final SubjectContext sc = context.asContext(SubjectContext.class);
-        final Subject mySubject = sc.getCallerSubject();
-
-        if (mySubject == null) {
-            debug.error("Error retrieving Subject identification from request.");
-            handler.handleError(ResourceException.getException(ResourceException.INTERNAL_ERROR));
-        }
-
-        return mySubject;
     }
 
 }

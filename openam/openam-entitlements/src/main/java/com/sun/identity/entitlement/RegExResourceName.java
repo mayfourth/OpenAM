@@ -25,6 +25,8 @@
  * Portions Copyrighted 2014 Forgerock AS.
  *
  * $Id: RegExResourceName.java,v 1.1 2009/12/07 19:53:02 veiming Exp $
+ *
+ * Portions Copyrighted 2014 ForgeRock AS.
  */
 
 package com.sun.identity.entitlement;
@@ -40,8 +42,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
- * @author dennis
+ * A {@link ResourceName} implementation that matches the resourcenames using regular expressions.
  */
 public class RegExResourceName implements ResourceName {
     private String delimiter = "/";
@@ -51,7 +52,7 @@ public class RegExResourceName implements ResourceName {
     private static final int MAX_CACHE_SIZE = 1000;
     private static Cache patternCache = new Cache(MAX_CACHE_SIZE);
 
-    public Set getServiceTypeNames() {
+    public Set<String> getServiceTypeNames() {
         return null;
     }
 
@@ -184,6 +185,10 @@ public class RegExResourceName implements ResourceName {
                     buff.append("\\.");
                 } else if (c == '*') {
                     buff.append(".*?");
+                } else if (c == '?') {
+                    buff.append("\\?");
+                } else if (c == '+') {
+                    buff.append("\\+");
                 } else {
                     buff.append(c);
                 }
