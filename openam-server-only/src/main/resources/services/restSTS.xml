@@ -51,6 +51,7 @@ provided for required attributes upon service registration.
                         <Value>USERNAME|SAML2|true</Value>
                         <Value>OPENIDCONNECT|SAML2|true</Value>
                         <Value>OPENAM|SAML2|false</Value>
+                        <Value>X509|SAML2|true</Value>
                     </DefaultValues>
                 </AttributeSchema>
                 <AttributeSchema name="deployment-realm"
@@ -69,6 +70,7 @@ provided for required attributes upon service registration.
                     <DefaultValues>
                         <Value>USERNAME|service|ldapService</Value>
                         <Value>OPENIDCONNECT|module|oidc|oidc_id_token_auth_target_header_key=oidc_id_token</Value>
+                        <Value>X509|module|cert_module</Value>
                     </DefaultValues>
                 </AttributeSchema>
                 <AttributeSchema name="keystore-filename"
@@ -164,6 +166,7 @@ provided for required attributes upon service registration.
                             <Value>USERNAME|SAML2|true</Value>
                             <Value>OPENIDCONNECT|SAML2|true</Value>
                             <Value>OPENAM|SAML2|false</Value>
+                            <Value>X509|SAML2|true</Value>
                         </DefaultValues>
                     </AttributeSchema>
                     <AttributeSchema name="deployment-realm"
@@ -182,6 +185,7 @@ provided for required attributes upon service registration.
                         <DefaultValues>
                             <Value>USERNAME|service|ldapService</Value>
                             <Value>OPENIDCONNECT|module|oidc|oidc_id_token_auth_target_header_key=oidc_id_token</Value>
+                            <Value>X509|module|cert_module</Value>
                         </DefaultValues>
                     </AttributeSchema>
                     <AttributeSchema name="keystore-filename"
