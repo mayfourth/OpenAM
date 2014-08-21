@@ -132,9 +132,7 @@ public class ServerSessionOperationStrategyTest {
     public void shouldUseRemoteWhenSessionIsNotInCTS() throws SessionException {
         // Given
         given(mockSessionService.checkSessionLocal(any(SessionID.class))).willReturn(false);
-
-        // Cross talk is disabled.
-        given(mockSessionService.isCrossTalkEnabled()).willReturn(false);
+        given(mockSessionService.isSessionFailoverEnabled()).willReturn(true);
 
         // And Session is in CTS
         given(mockCTS.hasSession(mockSession)).willReturn(false);
@@ -147,9 +145,23 @@ public class ServerSessionOperationStrategyTest {
     }
 
     @Test
+    public void shouldUseRemoteWhenFailoverIsDisabled() throws SessionException {
+        // Given
+        given(mockSessionService.checkSessionLocal(any(SessionID.class))).willReturn(false);
+        given(mockSessionService.isSessionFailoverEnabled()).willReturn(false);
+
+        // When
+        SessionOperations operation = strategy.getOperation(mockSession);
+
+        // Then
+        assertThat(operation).isEqualTo(new MonitoredOperations(mockRemote, SessionMonitorType.REMOTE, mockStore));
+    }
+
+    @Test
     public void shouldUseCTSWhenCrossTalkDisabledCTSContainsSession() throws SessionException {
         // Given
         given(mockSessionService.checkSessionLocal(any(SessionID.class))).willReturn(false);
+        given(mockSessionService.isSessionFailoverEnabled()).willReturn(true);
 
         // Cross talk is disabled.
         given(mockSessionService.isCrossTalkEnabled()).willReturn(false);

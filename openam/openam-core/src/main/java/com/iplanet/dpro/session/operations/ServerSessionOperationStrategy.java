@@ -106,15 +106,19 @@ public class ServerSessionOperationStrategy implements SessionOperationStrategy 
             return logAndWrap(session, local, SessionMonitorType.LOCAL);
         }
 
-        boolean sessionFailoverEnabled = service.isSessionFailoverEnabled();
-        boolean crossTalkEnabled = service.isCrossTalkEnabled();
-        boolean localSite = isLocalSite(session);
-        boolean remoteSiteUp = !localSite && isSiteUp(getSiteId(session));
-        if ((sessionFailoverEnabled && crossTalkEnabled && (localSite || remoteSiteUp)) || !cts.hasSession(session)) {
-            return logAndWrap(session, remote, SessionMonitorType.REMOTE);
+        if (service.isSessionFailoverEnabled() && cts.hasSession(session)) {
+            // Cross talk is disabled.
+            if (!service.isCrossTalkEnabled()) {
+                return logAndWrap(session, cts, SessionMonitorType.CTS);
+            }
+
+            // Remote Site which is known to be down
+            if (!isLocalSite(session) && !isSiteUp(getSiteId(session))) {
+                return logAndWrap(session, cts, SessionMonitorType.CTS);
+            }
         }
 
-        return logAndWrap(session, cts, SessionMonitorType.CTS);
+        return logAndWrap(session, remote, SessionMonitorType.REMOTE);
     }
 
     /**
