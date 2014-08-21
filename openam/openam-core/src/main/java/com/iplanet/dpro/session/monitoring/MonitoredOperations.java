@@ -19,6 +19,7 @@ import com.iplanet.dpro.session.Session;
 import com.iplanet.dpro.session.SessionException;
 import com.iplanet.dpro.session.operations.SessionOperations;
 import com.iplanet.dpro.session.share.SessionInfo;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * Wraps a provided {@link SessionOperations} instance with timing meta information, and
@@ -99,5 +100,14 @@ public class MonitoredOperations implements SessionOperations {
         MonitoredOperations op = (MonitoredOperations) obj;
         return op.monitorType == this.monitorType && op.sessionMonitoringStore == this.sessionMonitoringStore &&
                 op.sessionOperations == this.sessionOperations;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("monitorType", monitorType)
+                .append("sessionOperations", sessionOperations)
+                .append("sessionMonitoringStore", sessionMonitoringStore)
+                .toString();
     }
 }

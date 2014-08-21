@@ -104,6 +104,31 @@ public class ServerSessionOperationStrategyTest {
     }
 
     @Test
+    public void shouldUseCTSWhenRemoteIsDown() throws SessionException {
+        // Given
+        given(mockSessionService.checkSessionLocal(any(SessionID.class))).willReturn(false);
+        given(mockSessionService.isSessionFailoverEnabled()).willReturn(true);
+
+        // Cross-talk is enabled
+        given(mockSessionService.isCrossTalkEnabled()).willReturn(true);
+
+        // The Session is a Site
+        given(mockNamingQuery.isSite(anyString())).willReturn(true);
+
+        // The Site is down.
+        given(mockSessionService.checkSiteUp(anyString())).willReturn(false);
+
+        // And Session is in CTS
+        given(mockCTS.hasSession(mockSession)).willReturn(true);
+
+        // When
+        SessionOperations operation = strategy.getOperation(mockSession);
+
+        // Then
+        assertThat(operation).isEqualTo(new MonitoredOperations(mockCTS, SessionMonitorType.CTS, mockStore));
+    }
+
+    @Test
     public void shouldUseRemoteWhenSessionIsNotInCTS() throws SessionException {
         // Given
         given(mockSessionService.checkSessionLocal(any(SessionID.class))).willReturn(false);

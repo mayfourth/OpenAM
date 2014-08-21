@@ -106,11 +106,44 @@ public class ServerSessionOperationStrategy implements SessionOperationStrategy 
             return logAndWrap(session, local, SessionMonitorType.LOCAL);
         }
 
-        if (service.isCrossTalkEnabled() || !cts.hasSession(session)) {
+        boolean sessionFailoverEnabled = service.isSessionFailoverEnabled();
+        boolean crossTalkEnabled = service.isCrossTalkEnabled();
+        boolean localSite = isLocalSite(session);
+        boolean siteUp = isSiteUp(getSiteId(session));
+        if ((sessionFailoverEnabled && crossTalkEnabled && (localSite || siteUp)) || !cts.hasSession(session)) {
             return logAndWrap(session, remote, SessionMonitorType.REMOTE);
         }
 
         return logAndWrap(session, cts, SessionMonitorType.CTS);
+    }
+
+    /**
+     * Fetches the Site for a Session Server ID, based on the results of WebtopNaming.
+     * @param session A non null Session which may or may not be part of a Site.
+     * @return Null if no Site ID was found, otherwise a non null Site ID.
+     */
+    private String getSiteId(Session session) {
+        String serverID = session.getID().getSessionServerID();
+        if (queryUtils.isSite(serverID)) {
+            return serverID;
+        }
+        return queryUtils.getSiteID(serverID);
+    }
+
+    /**
+     * Indicates that the Site associated with the Session is up.
+     *
+     * @param siteId Site ID to test if it is up. May be null, in which case
+     *               false will be returned.
+     * @return False if the Site ID is null, or if the Site was down.
+     * True if the Site was up.
+     */
+    private boolean isSiteUp(String siteId) {
+        if (siteId == null) {
+            return false;
+        }
+
+        return service.checkSiteUp(siteId);
     }
 
     /**
@@ -128,11 +161,22 @@ public class ServerSessionOperationStrategy implements SessionOperationStrategy 
     }
 
     /**
+     * Indicates that the Session belongs to a the local Site. That is, it is
+     * hosted on a Server within the current cluster.
+     *
+     * @param session Non null Session.
+     * @return True if the Session is considered local.
+     */
+    private boolean isLocalSite(Session session) {
+        return service.isLocalSite(session.getID());
+    }
+
+    /**
      * Inline logging function.
      * @param session Non null.
      * @param op Non null operation selected.
      * @param type
-     * @return op.
+     * @return {code op}, wrapped in a MonitoredOperations.
      */
     private SessionOperations logAndWrap(Session session, SessionOperations op, SessionMonitorType type) {
         if (debug.messageEnabled()) {
