@@ -36,7 +36,7 @@ import com.iplanet.dpro.session.share.SessionNotification;
 import com.iplanet.services.comm.client.NotificationHandler;
 import com.iplanet.services.comm.share.Notification;
 import com.sun.identity.shared.debug.Debug;
-import java.util.Hashtable;
+
 import java.util.Vector;
 
 /**
@@ -47,8 +47,6 @@ import java.util.Vector;
  */
 public class SessionNotificationHandler implements NotificationHandler {
 
-    private Hashtable sessionTable;
-
     public static SessionNotificationHandler handler = null;
 
     public static Debug sessionDebug = null;
@@ -57,14 +55,6 @@ public class SessionNotificationHandler implements NotificationHandler {
         sessionDebug = Debug.getInstance("amSession");
     }
     
-    /**
-     * Constructs <code>SessionNotificationHandler</code>
-     * @param table Session table
-     */
-    public SessionNotificationHandler(Hashtable table) {
-        sessionTable = table;
-
-    }
 
    /**
     * Process the notification.
@@ -93,8 +83,7 @@ public class SessionNotificationHandler implements NotificationHandler {
         sessionDebug.message("SESSION NOTIFICATION : " + info.toXMLString());
 
         SessionID sid = new SessionID(info.sid);
-        Session session = null;
-        session = (Session) sessionTable.get(sid);
+        Session session = Session.readSession(sid);
         if (session != null) {
             if (!info.state.equals("valid")) {
                 Session.removeSID(sid);

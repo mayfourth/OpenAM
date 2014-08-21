@@ -61,6 +61,7 @@ import com.sun.identity.session.util.SessionUtils;
 import com.sun.identity.shared.Constants;
 import com.sun.identity.shared.debug.Debug;
 import org.forgerock.guice.core.InjectorHolder;
+import org.forgerock.util.Reject;
 import org.forgerock.util.thread.listener.ShutdownListener;
 import org.forgerock.util.thread.listener.ShutdownManager;
 
@@ -601,7 +602,7 @@ public class Session extends GeneralTaskRunnable {
                         ss.getCurrentHostServer(sid));
                 }    
             } else {            
-                Session sess = (Session) sessionTable.get(sid);
+                Session sess = readSession(sid);
                 if (sess != null) {
                     cookieValue = sess.getProperty(lbCookieName);
                 }
@@ -971,8 +972,7 @@ public class Session extends GeneralTaskRunnable {
      * @param sid Session ID.
      */
     public static void removeSID(SessionID sid) {
-        Session session = null;
-        session = (Session) sessionTable.remove(sid);
+        Session session = deleteSession(sid);
 
         if (session != null) {
             session.cancel();
@@ -1064,7 +1064,7 @@ public class Session extends GeneralTaskRunnable {
                     "invalidSessionID", null);
         }
 
-        Session session = sessionTable.get(sessionID);
+        Session session = readSession(sessionID);
         if (session != null) {
             TokenRestriction restriction = session.getRestriction();
                     /*
@@ -1100,7 +1100,7 @@ public class Session extends GeneralTaskRunnable {
         }
         session.context = RestrictedTokenContext.getCurrent();
 
-        sessionTable.put(sessionID, session);
+        writeSession(sessionID, session);
         if (!isPollingEnabled()) {
             session.addInternalSessionListener();
         }
@@ -1631,8 +1631,7 @@ public class Session extends GeneralTaskRunnable {
     private void addInternalSessionListener() {
         try {
             if (SessionNotificationHandler.handler == null) {
-                SessionNotificationHandler.handler = 
-                    new SessionNotificationHandler(sessionTable);
+                SessionNotificationHandler.handler = new SessionNotificationHandler();
                 PLLClient.addNotificationHandler(Session.SESSION_SERVICE,
                         SessionNotificationHandler.handler);
             }
@@ -1862,7 +1861,7 @@ public class Session extends GeneralTaskRunnable {
      * @param sid session ID.
      */
     public static void markNonLocal(SessionID sid) {
-        Session sess = (Session) sessionTable.get(sid);
+        Session sess = readSession(sid);
         if (sess != null) {
             sess.sessionIsLocal = false;
         }
@@ -2052,5 +2051,40 @@ public class Session extends GeneralTaskRunnable {
             }
             session.setIsPolling(false);
         }
+    }
+
+    /**
+     * Reads a Session from the Session table.
+     * @param sessionID Non null sessionID of the Session to lookup.
+     * @return Null indicates no Session present, otherwise non null.
+     */
+    static Session readSession(SessionID sessionID) {
+        // if SFO enabled and CrossTalk disabled
+        // if Session is not null
+        // if Session is in deleted state
+        // return null.
+        return sessionTable.get(sessionID);
+    }
+
+    /**
+     * Store a Session in the table.
+     *
+     * @param sessionID SessionID to key the Session in the table. Non nul.
+     * @param session The Session to store. Non null.
+     */
+    private static void writeSession(SessionID sessionID, Session session) {
+        Reject.ifNull(sessionID);
+        Reject.ifNull(session);
+        sessionTable.put(sessionID, session);
+    }
+
+    /**
+     * Delete the Session from the table.
+     * @param sessionID The SessionID of the Session to delete. Non null.
+     * @return A possibly null Session if none was matched, otherwise non null.
+     */
+    private static Session deleteSession(SessionID sessionID) {
+        Reject.ifNull(sessionID);
+        return sessionTable.remove(sessionID);
     }
 }
