@@ -24,37 +24,45 @@
 
 /**
  * @author Aleanora Kaladzinskaya
+ * @author Eugenia Sergueeva
  */
 
 /*global window, define, $, form2js, _, js2form, document, console */
 
 define("org/forgerock/openam/ui/policy/ManagePoliciesView", [
     "org/forgerock/commons/ui/common/main/AbstractView",
-    "org/forgerock/commons/ui/common/util/UIUtils",
-    "org/forgerock/openam/ui/policy/ListView",
-    "org/forgerock/openam/ui/policy/PolicyDelegate"
-], function (AbstractView, uiUtils, listView, policyDelegate) {
+    "org/forgerock/commons/ui/common/util/UIUtils"
+], function (AbstractView, uiUtils) {
     var ManagePoliciesView = AbstractView.extend({
         baseTemplate: "templates/policy/BaseTemplate.html",
         template: "templates/policy/ManagePoliciesTemplate.html",
 
         render: function (args, callback) {
-
             var appName = args[0],
-                self = this;
+                policyLinkFormatter = function (cellvalue, options, rowObject) {
+                    return '<a href="#app/' + appName + '/policy/' + cellvalue + '">' + cellvalue + '</a>';
+                };
 
             this.parentRender(function () {
-                self.$el.find('#newPolicy').attr("href", "#app/" + appName + "/policy/");
-                self.$el.find('#managePoliciesTitle').text("Manage " + appName + " Policies");
+                this.$el.find('#newPolicy').attr("href", "#app/" + appName + "/policy/");
+                this.$el.find('#managePoliciesTitle').text("Manage " + appName + " Policies");
 
-                policyDelegate.getApplicationPolicies(appName).done(function (data) {
-                    self.listPolicies(data, callback, self.$el.find('#managePolicies'));
-                });
+                var options = {
+                    view: this,
+                    id: '#managePolicies',
+                    url: '/openam/json/policies?_queryFilter=' + encodeURIComponent('applicationName eq "' + appName + '"'),
+                    colNames: ['Name', 'Last Modified'],
+                    colModel: [
+                        {name: 'name', formatter: policyLinkFormatter, width: 460},
+                        {name: 'lastModified', width: 460}
+                    ],
+                    width: '920',
+                    pager: '#policiesPager',
+                    callback: callback
+                };
+
+                uiUtils.buildRestResponseBasedJQGrid(options);
             });
-        },
-
-        listPolicies: function (data, callback, element) {
-            listView.render(data, callback, element, "templates/policy/ListPoliciesTemplate.html");
         }
     });
 

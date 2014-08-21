@@ -30,25 +30,40 @@
 
 define("org/forgerock/openam/ui/policy/ManageApplicationsView", [
     "org/forgerock/commons/ui/common/main/AbstractView",
-    "org/forgerock/openam/ui/policy/ListView",
-    "org/forgerock/openam/ui/policy/PolicyDelegate"
-], function (AbstractView, listView, policyDelegate) {
+    "org/forgerock/commons/ui/common/util/UIUtils"
+], function (AbstractView, uiUtils) {
     var ManageApplicationsView = AbstractView.extend({
         baseTemplate: "templates/policy/BaseTemplate.html",
         template: "templates/policy/ManageApplicationsTemplate.html",
 
         render: function (args, callback) {
-            var self = this;
+            var appLinkFormatter = function (cellvalue, options, rowObject) {
+                    return '<a href="#app/' + cellvalue + '">' + cellvalue + '</a>';
+                },
+                policyLinkFormatter = function (cellvalue, options, rowObject) {
+                    return '<a href="#app/' + cellvalue + '/policies/">View</a>';
+                };
 
             this.parentRender(function () {
-                policyDelegate.getAllApplications().done(function (data) {
-                    self.listApplications(data, callback, self.$el.find('#manageApps'));
-                });
-            });
-        },
+                var options = {
+                    view: this,
+                    id: '#manageApps',
+                    url: '/openam/json/applications?_queryFilter=true',
+                    colNames: ['Name', 'Realm', 'Type', 'Last Modified', 'Policies'],
+                    colModel: [
+                        {name: 'name', formatter: appLinkFormatter, width: 260},
+                        {name: 'realm', width: 70},
+                        {name: 'applicationType', width: 260},
+                        {name: 'lastModifiedDate', width: 260},
+                        {name: 'name', formatter: policyLinkFormatter,  width: 70}
+                    ],
+                    width: '920',
+                    pager: '#appsPager',
+                    callback: callback
+                };
 
-        listApplications: function (data, callback, element) {
-            listView.render(data, callback, element, "templates/policy/ListApplicationsTemplate.html");
+                uiUtils.buildRestResponseBasedJQGrid(options);
+            });
         }
     });
 

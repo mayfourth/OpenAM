@@ -11,9 +11,8 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2012-2014 ForgeRock AS
+ * Copyright 2012-2014 ForgeRock AS.
  */
-
 package org.forgerock.openam.forgerockrest;
 
 import com.iplanet.am.util.SystemProperties;
@@ -100,8 +99,8 @@ import org.forgerock.openam.services.RestSecurity;
 import org.forgerock.openam.services.email.MailServer;
 import org.forgerock.openam.services.email.MailServerImpl;
 import org.forgerock.openam.shared.security.whitelist.RedirectUrlValidator;
+import org.forgerock.openam.utils.TimeUtils;
 import org.forgerock.util.Reject;
-import org.mozilla.jss.crypto.ObjectNotFoundException;
 
 /**
  * A simple {@code Map} based collection resource provider.
@@ -136,8 +135,8 @@ public final class IdentityResource implements CollectionResourceProvider {
     final static String UNIVERSAL_ID = "universalid";
     final static String MAIL = "mail";
     final static String UNIVERSAL_ID_ABBREV = "uid";
-    final static String EMAIL = "email";
     final static String USERNAME = "username";
+    final static String EMAIL = "email";
     final static String TOKEN_ID = "tokenId";
     final static String CONFIRMATION_ID = "confirmationId";
     final static String CURRENT_PASSWORD = "currentpassword";
@@ -221,7 +220,7 @@ public final class IdentityResource implements CollectionResourceProvider {
      * @return random string
      */
     static private String generateTokenID(String resource) {
-        if(resource == null || resource.isEmpty()) {
+        if (isNullOrEmpty(resource)) {
             return null;
         }
         return Hash.hash(resource + RandomStringUtils.randomAlphanumeric(32));
@@ -241,7 +240,7 @@ public final class IdentityResource implements CollectionResourceProvider {
         Calendar ttl = Calendar.getInstance();
         org.forgerock.openam.cts.api.tokens.Token ctsToken = new org.forgerock.openam.cts.api.tokens.Token(
                 generateTokenID(resource), TokenType.REST);
-        if(userId != null && !userId.isEmpty()) {
+        if (!isNullOrEmpty(userId)) {
             ctsToken.setUserId(userId);
         }
         ctsToken.setAttribute(CoreTokenField.STRING_ONE, realmName);
@@ -289,7 +288,7 @@ public final class IdentityResource implements CollectionResourceProvider {
 
             // Get the email address provided from registration page
             emailAddress = jVal.get(EMAIL).asString();
-            if (emailAddress == null || emailAddress.isEmpty()) {
+            if (isNullOrEmpty(emailAddress)){
                 throw new BadRequestException("Email not provided");
             }
 
@@ -313,7 +312,7 @@ public final class IdentityResource implements CollectionResourceProvider {
             // Build Confirmation URL
             String confURL = restSecurity.getSelfRegistrationConfirmationUrl();
             StringBuilder confURLBuilder = new StringBuilder(100);
-            if (confURL == null || confURL.isEmpty()) {
+            if (isNullOrEmpty(confURL)) {
                 confURLBuilder.append(deploymentURL.append("/json/confirmation/register").toString());
             } else {
                 confURLBuilder.append(confURL);
@@ -390,7 +389,7 @@ public final class IdentityResource implements CollectionResourceProvider {
 
         try {
             // Check if subject has not  been included
-            if (subject == null || subject.isEmpty()) {
+            if (isNullOrEmpty(subject)){
                 // Use default email service subject
                 subject = mailattrs.get(MAIL_SUBJECT).iterator().next();
             }
@@ -400,7 +399,7 @@ public final class IdentityResource implements CollectionResourceProvider {
         }
         try {
             // Check if Custom Message has been included
-            if (message == null || message.isEmpty()) {
+            if (isNullOrEmpty(message)){
                 // Use default email service message
                 message = mailattrs.get(MAIL_MESSAGE).iterator().next();
             }
@@ -456,46 +455,56 @@ public final class IdentityResource implements CollectionResourceProvider {
      * @param request Request from client to confirm registration
      * @param handler Result handler
      */
-    private void confirmRegistration(final ServerContext context, final ActionRequest request,
+    private void confirmationIdCheck(final ServerContext context, final ActionRequest request,
                                      final ResultHandler<JsonValue> handler, final String realm){
+        final String METHOD = "IdentityResource.confirmationIdCheck";
         final JsonValue jVal = request.getContent();
         String tokenID;
         String confirmationId;
         String email = null;
+        String username = null;
+        //email or username value used to create confirmationId
+        String hashComponent = null;
+        String hashComponentAttr = null;
         JsonValue result = new JsonValue(new LinkedHashMap<String, Object>(1));
 
         try{
             tokenID = jVal.get(TOKEN_ID).asString();
             confirmationId = jVal.get(CONFIRMATION_ID).asString();
             email = jVal.get(EMAIL).asString();
+            username = jVal.get(USERNAME).asString();
 
-            if (email == null || email.isEmpty()) {
-                throw new BadRequestException("Email not provided");
-            }
-
-            if (confirmationId == null || confirmationId.isEmpty()) {
+            if (isNullOrEmpty(confirmationId)) {
                 throw new BadRequestException("confirmationId not provided");
             }
-
-            if (tokenID == null || tokenID.isEmpty()) {
+            if (isNullOrEmpty(email) && !isNullOrEmpty(username)) {
+                hashComponent = username;
+                hashComponentAttr = USERNAME;
+            } 
+            if (!isNullOrEmpty(email) && isNullOrEmpty(username)) {
+                hashComponent = email;
+                hashComponentAttr = EMAIL;
+            } 
+            if (isNullOrEmpty(hashComponent)) {
+                throw new BadRequestException("Required information not provided");
+            }
+            if (isNullOrEmpty(tokenID)) {
                 throw new BadRequestException("tokenId not provided");
             }
 
-            validateToken(tokenID, realm, email, confirmationId);
+            validateToken(tokenID, realm, hashComponent, confirmationId);
 
             // build resource
-            result.put(EMAIL,email );
+            result.put(hashComponentAttr,hashComponent);
             result.put(TOKEN_ID, tokenID);
             result.put(CONFIRMATION_ID, confirmationId);
             handler.handleResult(result);
 
         } catch (BadRequestException be){
-            debug.error("IdentityResource.confirmRegistration: Cannot confirm registration for : "
-                    + email);
+            debug.error(METHOD + ": Cannot confirm registration/forgotPassword for : " + hashComponent, be);
             handler.handleError(be);
         } catch (Exception e){
-            debug.error("IdentityResource.confirmRegistration: Cannot confirm registration for : "
-                    + email + e);
+            debug.error(METHOD + ": Cannot confirm registration/forgotPassword for : " + hashComponent, e);
             handler.handleError(new NotFoundException(e.getMessage()));
         }
     }
@@ -523,20 +532,20 @@ public final class IdentityResource implements CollectionResourceProvider {
         //check expiry
         org.forgerock.openam.cts.api.tokens.Token ctsToken = CTSHolder.getCTS().read(tokenID);
 
-        if (ctsToken == null) {
+        if (ctsToken == null || TimeUtils.toUnixTime(ctsToken.getExpiryTimestamp()) < System.currentTimeMillis()) {
             throw new NotFoundException("Cannot find tokenID: " + tokenID);
         }
 
         // check confirmationId
         if (!confirmationId.equalsIgnoreCase(Hash.hash(tokenID + hashComponent +
                 SystemProperties.get(AM_ENCRYPTION_PWD)))) {
-            debug.error("IdentityResource.confirmRegistration: Invalid confirmationId : " + confirmationId);
+            debug.error("IdentityResource.validateToken: Invalid confirmationId : " + confirmationId);
             throw new BadRequestException("Invalid confirmationId", null);
         }
 
         //check realm
         if (!realm.equals(ctsToken.getValue(CoreTokenField.STRING_ONE))) {
-            debug.error("IdentityResource.confirmRegistration: Invalid realm : " + realm);
+            debug.error("IdentityResource.validateToken: Invalid realm : " + realm);
             throw new BadRequestException("Invalid realm", null);
         }
 
@@ -559,7 +568,7 @@ public final class IdentityResource implements CollectionResourceProvider {
         } else if (action.equalsIgnoreCase("register")){
             createRegistrationEmail(context,request, realm, restSecurity, handler);
         } else if (action.equalsIgnoreCase("confirm")) {
-            confirmRegistration(context, request, handler, realm);
+            confirmationIdCheck(context, request, handler, realm);
         } else if (action.equalsIgnoreCase("anonymousCreate")) {
             anonymousCreate(context, request, realm, handler);
         } else if (action.equalsIgnoreCase("forgotPassword")) {
@@ -812,13 +821,13 @@ public final class IdentityResource implements CollectionResourceProvider {
                 }
             }
         } catch (BadRequestException bre){ // For any malformed request.
-            debug.error("Error performing anonymousUpdate" + bre.getMessage());
+            debug.warning("Bad request received for anonymousUpdate " + bre.getMessage());
             handler.handleError(bre);
         } catch (CoreTokenException cte){ // For any unexpected CTS error
-            debug.error("Error performing anonymousUpdate" + cte.getMessage());
+            debug.error("Error performing anonymousUpdate", cte);
             handler.handleError(ResourceException.getException(ResourceException.INTERNAL_ERROR, cte.getMessage(), cte));
         } catch (NotFoundException nfe) {
-            debug.error("Error performing anonymousUpdate" + nfe.getMessage());
+            debug.message("Unable to find token for anonymousUpdate " + nfe.getMessage());
             handler.handleError(ResourceException.getException(HttpURLConnection.HTTP_GONE, nfe.getMessage(), nfe));
         }
 
@@ -1403,6 +1412,14 @@ public final class IdentityResource implements CollectionResourceProvider {
             dtls = idsvc.read(resourceId, getIdentityServicesAttributes(realm), admin);
             // Continue modifying the identity if read success
 
+            for (String key : jVal.keys()) {
+                if ("userpassword".equalsIgnoreCase(key)) {
+                    handler.handleError(new BadRequestException("Cannot update user password via PUT. "
+                            + "Use POST with _action=forgotPassword."));
+                    return;
+                }
+            }
+
             newDtls = jsonValueToIdentityDetails(jVal, realm);
 
             if (newDtls.getAttributes() == null || newDtls.getAttributes().length < 1) {
@@ -1413,13 +1430,6 @@ public final class IdentityResource implements CollectionResourceProvider {
                 throw new BadRequestException("id in path does not match id in request body");
             }
             newDtls.setName(resourceId);
-
-            // Strips any key matching 'userpassword', ignoring case to ensure password not changed on update.
-            for (String key : jVal.keys()) {
-                if ("userpassword".equalsIgnoreCase(key)) {
-                    jVal.remove(key);
-                }
-            }
 
             // Handle attribute change when password is required
             // Get restSecurity for this realm
@@ -1554,4 +1564,8 @@ public final class IdentityResource implements CollectionResourceProvider {
         }
         return restSecurity;
     }
+
+    private static boolean isNullOrEmpty(final String value) {
+       return value == null || value.isEmpty();
+   }
 }
