@@ -109,8 +109,8 @@ public class ServerSessionOperationStrategy implements SessionOperationStrategy 
         boolean sessionFailoverEnabled = service.isSessionFailoverEnabled();
         boolean crossTalkEnabled = service.isCrossTalkEnabled();
         boolean localSite = isLocalSite(session);
-        boolean siteUp = isSiteUp(getSiteId(session));
-        if ((sessionFailoverEnabled && crossTalkEnabled && (localSite || siteUp)) || !cts.hasSession(session)) {
+        boolean remoteSiteUp = !localSite && isSiteUp(getSiteId(session));
+        if ((sessionFailoverEnabled && crossTalkEnabled && (localSite || remoteSiteUp)) || !cts.hasSession(session)) {
             return logAndWrap(session, remote, SessionMonitorType.REMOTE);
         }
 
