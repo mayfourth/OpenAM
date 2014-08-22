@@ -33,9 +33,11 @@ import com.sun.identity.idm.IdRepoException;
 import com.sun.identity.idm.IdType;
 import com.sun.identity.security.AdminTokenAction;
 import com.sun.identity.shared.Constants;
+import com.sun.identity.shared.locale.Locale;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.json.resource.ActionRequest;
 import org.forgerock.json.resource.CollectionResourceProvider;
+import org.forgerock.json.resource.Context;
 import org.forgerock.json.resource.CreateRequest;
 import org.forgerock.json.resource.DeleteRequest;
 import org.forgerock.json.resource.InternalServerErrorException;
@@ -53,6 +55,7 @@ import org.forgerock.json.resource.ResultHandler;
 import org.forgerock.json.resource.ServerContext;
 import org.forgerock.json.resource.ServiceUnavailableException;
 import org.forgerock.json.resource.UpdateRequest;
+import org.forgerock.json.resource.servlet.HttpContext;
 import org.forgerock.oauth2.core.OAuth2Constants;
 import org.forgerock.oauth2.core.OAuth2ProviderSettings;
 import org.forgerock.oauth2.core.OAuth2Request;
@@ -73,6 +76,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -300,8 +304,7 @@ public class TokenResource implements CollectionResourceProvider {
             }
 
             response = tokenStore.query(query, TokenFilter.Type.AND);
-
-            handleResponse(handler, response);
+            handleResponse(handler, response, context);
 
         } catch (UnauthorizedClientException e) {
             handler.handleError(new PermanentException(401, e.getMessage(), e));
@@ -312,10 +315,11 @@ public class TokenResource implements CollectionResourceProvider {
         }
     }
 
-    private void handleResponse(QueryResultHandler handler, JsonValue response) throws UnauthorizedClientException,
+    private void handleResponse(QueryResultHandler handler, JsonValue response, ServerContext context) throws UnauthorizedClientException,
             CoreTokenException, InternalServerErrorException {
         Resource resource = new Resource("result", "1", response);
         JsonValue value = resource.getContent();
+        String acceptLanguage = context.asContext(HttpContext.class).getHeaderAsString("accept-language");
         Set<HashMap<String, Set<String>>> list = (Set<HashMap<String, Set<String>>>) value.getObject();
 
         Resource res = null;
@@ -325,9 +329,12 @@ public class TokenResource implements CollectionResourceProvider {
             for (HashMap<String, Set<String>> entry : list) {
                 val = new JsonValue(entry);
                 res = new Resource("result", "1", val);
+                Client client = getClient(val);
 
                 val.put(EXPIRE_TIME_KEY, getExpiryDate(json(entry)));
-                val.put(OAuth2Constants.ShortClientAttributeNames.DISPLAY_NAME.getType(), getClientName(entry));
+                val.put(OAuth2Constants.ShortClientAttributeNames.DISPLAY_NAME.getType(), getClientName(client));
+                val.put(OAuth2Constants.ShortClientAttributeNames.SCOPES.getType(), getScopes(client, val,
+                        acceptLanguage));
 
                 handler.handleResource(res);
             }
@@ -335,34 +342,82 @@ public class TokenResource implements CollectionResourceProvider {
         handler.handleResult(new QueryResult());
     }
 
-    private String getClientName(HashMap<String, Set<String>> entry) throws UnauthorizedClientException {
-        final String clientId = (String) entry.get("clientID").toArray()[0];
-        final String realm = (String) entry.get("realm").toArray()[0];
-
-        OAuth2Request request = createOAuth2Request(realm);
-
-        Client client = clientDao.read(clientId, request);
+    private String getClientName(Client client) throws UnauthorizedClientException {
         return client.get(OAuth2Constants.ShortClientAttributeNames.DISPLAY_NAME.getType()).get(0).asString();
     }
 
-    private OAuth2Request createOAuth2Request(final String realm) {
-        return new OAuth2Request() {
-            public <T> T getRequest() {
-                throw new UnsupportedOperationException("Realm parameter only OAuth2Request");
-            }
+    private String getScopes(Client client, JsonValue entry, String acceptLanguage) throws UnauthorizedClientException {
+        JsonValue allScopes = client.get(OAuth2Constants.ShortClientAttributeNames.SCOPES.getType());
+        Set<String> allowedScopes = getAttributeAsSet(entry, "scope");
 
-            public <T> T getParameter(String name) {
-                if ("realm".equals(name)) {
-                    return (T) realm;
+        String result = "";
+
+        java.util.Locale locale = Locale.getLocaleObjFromAcceptLangHeader(acceptLanguage);
+        for(String allowedScope : allowedScopes) {
+            String displayName = getDisplayName(allowedScope, allScopes, locale);
+            result += displayName + ", ";
+        }
+
+        return result.replaceAll(", $", "");
+    }
+
+    private String getDisplayName(String allowedScope, JsonValue allScopes, java.util.Locale serverLocale) {
+        final String delimiter = "|";
+        String defaultDisplayName = null;
+
+        for(JsonValue scope : allScopes) {
+            if (scope.asString().contains(delimiter)) {
+                String[] values = scope.asString().split("\\" + delimiter);
+                if (values.length == 3) {
+                    String name = values[0];
+                    String language = values[1];
+                    String displayName = values[2];
+                    java.util.Locale currentLocale = Locale.getLocale(language);
+
+                    final String currentLanguage = currentLocale.getLanguage();
+                    if (currentLanguage.equalsIgnoreCase("en")) {
+                        defaultDisplayName = displayName;
+                    }
+
+                    if (serverLocale.getLanguage().equals(currentLanguage) && name.equals(allowedScope)) {
+                        return displayName;
+                    }
                 }
-                throw new UnsupportedOperationException("Realm parameter only OAuth2Request");
             }
+        }
 
-            @Override
-            public JsonValue getBody() {
-                return null;
-            }
-        };
+        if (defaultDisplayName != null) {
+            return defaultDisplayName;
+        }
+        
+        return allowedScope;
+    }
+
+    private Client getClient(JsonValue entry) throws UnauthorizedClientException {
+        final String clientId = getAttributeValue(entry, "clientID");
+        final String realm = getAttributeValue(entry, "realm");
+
+        return clientDao.read(clientId, getRequest(realm));
+    }
+
+    private OAuth2Request getRequest(final String realm) {
+        return new OAuth2Request() {
+                public <T> T getRequest() {
+                    throw new UnsupportedOperationException("Realm parameter only OAuth2Request");
+                }
+
+                public <T> T getParameter(String name) {
+                    if ("realm".equals(name)) {
+                        return (T) realm;
+                    }
+                    throw new UnsupportedOperationException("Realm parameter only OAuth2Request");
+                }
+
+                @Override
+                public JsonValue getBody() {
+                    return null;
+                }
+            };
     }
 
     private String getExpiryDate(JsonValue token) throws CoreTokenException, InternalServerErrorException {
