@@ -1,0 +1,9 @@
+
+<div class="container-shadow hidden" id="login-container">
+    {{spinnerManager.showSpinner}}
+    <form action="" method="post" class="form small">
+            {{#each reqs.callbacks}}          
+                {{callbackRender}}     
+            {{/each}}         
+    </form>
+</div>
