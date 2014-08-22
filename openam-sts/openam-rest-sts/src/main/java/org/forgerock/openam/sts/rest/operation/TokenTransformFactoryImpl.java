@@ -28,6 +28,7 @@ import org.forgerock.openam.sts.XMLUtilities;
 import org.forgerock.openam.sts.XmlMarshaller;
 import org.forgerock.openam.sts.rest.config.user.TokenTransformConfig;
 import org.forgerock.openam.sts.rest.token.provider.AMSessionInvalidator;
+import org.forgerock.openam.sts.rest.token.validator.RestCertificateTokenValidator;
 import org.forgerock.openam.sts.token.ThreadLocalAMTokenCache;
 import org.forgerock.openam.sts.rest.token.provider.AMSAMLTokenProvider;
 import org.forgerock.openam.sts.rest.token.provider.AMSessionInvalidatorImpl;
@@ -161,9 +162,7 @@ public class TokenTransformFactoryImpl implements TokenTransformFactory {
     }
 
     private TokenValidator buildX509TokenValidator() {
-        //X509TokenValidator tokenValidator = new X509TokenValidator();
-        //return new CertificateTokenValidator(logger, x509TokenAuthenticationHandler);
-        return null;
+        return new RestCertificateTokenValidator(x509TokenAuthenticationHandler, threadLocalAMTokenCache, principalFromSession);
     }
 
     /*

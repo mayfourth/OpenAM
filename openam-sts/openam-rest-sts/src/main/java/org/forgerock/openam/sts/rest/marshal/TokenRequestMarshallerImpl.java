@@ -32,6 +32,7 @@ import org.forgerock.openam.sts.STSPrincipal;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.TokenMarshalException;
 import org.forgerock.openam.sts.XmlMarshaller;
+import org.forgerock.openam.sts.rest.token.validator.RestCertificateTokenValidator;
 import org.forgerock.openam.sts.service.invocation.ProofTokenState;
 import org.forgerock.openam.sts.service.invocation.SAML2TokenState;
 import org.forgerock.openam.sts.token.SAML2SubjectConfirmation;
@@ -315,6 +316,8 @@ public class TokenRequestMarshallerImpl implements TokenRequestMarshaller {
                         QNameConstants.BINARY_SECURITY_TOKEN, BinarySecurityTokenType.class, binarySecurityToken);
         try {
             binarySecurityToken.setValue(Base64.encode(x509Certificate.getEncoded()));
+            binarySecurityToken.setValueType(RestCertificateTokenValidator.X509_V3_TYPE);
+            binarySecurityToken.setEncodingType(RestCertificateTokenValidator.BASE64_ENCODING_TYPE);
         } catch (CertificateEncodingException e) {
             throw new TokenMarshalException(ResourceException.BAD_REQUEST, "Could not obtain encoded representation of " +
                     "client cert presented via two-way-tls: " + e, e);
