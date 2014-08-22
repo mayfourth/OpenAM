@@ -94,7 +94,7 @@ public class ServerSessionOperationStrategyTest {
         given(mockSessionService.checkSessionLocal(any(SessionID.class))).willReturn(false);
 
         // Cross-talk is enabled
-        given(mockSessionService.isCrossTalkEnabled()).willReturn(true);
+        given(mockSessionService.isReducedCrossTalkEnabled()).willReturn(false);
 
         // When
         SessionOperations operation = strategy.getOperation(mockSession);
@@ -110,7 +110,7 @@ public class ServerSessionOperationStrategyTest {
         given(mockSessionService.isSessionFailoverEnabled()).willReturn(true);
 
         // Cross-talk is enabled
-        given(mockSessionService.isCrossTalkEnabled()).willReturn(true);
+        given(mockSessionService.isReducedCrossTalkEnabled()).willReturn(false);
 
         // The Session is a Site
         given(mockNamingQuery.isSite(anyString())).willReturn(true);
@@ -164,7 +164,7 @@ public class ServerSessionOperationStrategyTest {
         given(mockSessionService.isSessionFailoverEnabled()).willReturn(true);
 
         // Cross talk is disabled.
-        given(mockSessionService.isCrossTalkEnabled()).willReturn(false);
+        given(mockSessionService.isReducedCrossTalkEnabled()).willReturn(true);
 
         // And Session is in CTS
         given(mockCTS.hasSession(mockSession)).willReturn(true);

@@ -108,7 +108,7 @@ public class ServerSessionOperationStrategy implements SessionOperationStrategy 
 
         if (service.isSessionFailoverEnabled() && cts.hasSession(session)) {
             // Cross talk is disabled.
-            if (!service.isCrossTalkEnabled()) {
+            if (service.isReducedCrossTalkEnabled()) {
                 return logAndWrap(session, cts, SessionMonitorType.CTS);
             }
 

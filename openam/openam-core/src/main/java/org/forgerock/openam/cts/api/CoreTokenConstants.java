@@ -70,9 +70,9 @@ public class CoreTokenConstants {
             "iplanet-am-session-sfo-enabled";
     /**
      * System property for checking whether session crosstalk is enabled/disabled. See
-     * {@link com.iplanet.dpro.session.service.SessionService#isCrossTalkEnabled()}.
+     * {@link com.iplanet.dpro.session.service.SessionService#isReducedCrossTalkEnabled()}.
      */
-    public static final String IS_CROSSTALK_ENABLED = "iplanet-am-session-crosstalk-enabled";
+    public static final String IS_REDUCED_CROSSTALK_ENABLED = "iplanet-am-session-reduced-crosstalk-enabled";
     public static final String OBJECT_CLASS = "objectClass";
 
     public static final String FR_CORE_TOKEN = "frCoreToken";

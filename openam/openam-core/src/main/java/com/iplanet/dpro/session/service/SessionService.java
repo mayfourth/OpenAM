@@ -351,7 +351,7 @@ public class SessionService {
      * Indicates whether to use crosstalk or session persistence to resolve remote sessions. Always true when session
      * persistence/SFO is disabled.
      */
-    private static volatile boolean isCrosstalkEnabled = true;
+    private static volatile boolean isReducedCrosstalkEnabled = true;
 
     // Must be True to permit Session Failover HA to be available.
     private static boolean isSiteEnabled = false;  // If this is set to True and no Site is found, issues will arise
@@ -820,8 +820,8 @@ public class SessionService {
     /**
      * Returns true if crosstalk is enabled (or is session failover is disabled).
      */
-    public boolean isCrossTalkEnabled() {
-        return !isSessionFailoverEnabled || isCrosstalkEnabled;
+    public boolean isReducedCrossTalkEnabled() {
+        return !isSessionFailoverEnabled || isReducedCrosstalkEnabled;
     }
 
     /**
@@ -2218,8 +2218,8 @@ public class SessionService {
                     useInternalRequestRouting = true;
 
                     // Determine whether crosstalk is enabled or disabled (default to false in SFO case).
-                    isCrosstalkEnabled = CollectionHelper.getBooleanMapAttr(sessionAttrs,
-                            CoreTokenConstants.IS_CROSSTALK_ENABLED, false);
+                    isReducedCrosstalkEnabled = CollectionHelper.getBooleanMapAttr(sessionAttrs,
+                            CoreTokenConstants.IS_REDUCED_CROSSTALK_ENABLED, false);
 
                     // Obtain Site Ids
                     Set<String> serverIDs = WebtopNaming.getSiteNodes(sessionServerID);
