@@ -115,8 +115,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -1213,18 +1211,7 @@ public class SessionService {
                 throw new IllegalArgumentException("Session id mismatch");
             }
 
-            ConcurrentMap<String, Set<SessionID>> urls = session.getSessionEventURLs();
-
-            Set<SessionID> sids = urls.get(url);
-            if (sids == null) {
-                sids = Collections.newSetFromMap(new ConcurrentHashMap<SessionID, Boolean>());
-                Set<SessionID> previousValue = urls.putIfAbsent(url, sids);
-                if (previousValue != null) {
-                    sids = previousValue;
-                }
-            }
-
-            if (sids.add(sid)) {
+            if (session.addSessionEventURL(url, sid)) {
                 session.updateForFailover();
             }
         }
@@ -2424,21 +2411,20 @@ public class SessionService {
          */
         boolean sendToLocal() {
             boolean remoteURLExists = false;
-            Map<String, Set<SessionID>> urls = session.getSessionEventURLs();   
+            Map<String, Set<SessionID>> urls = session.getSessionEventURLs(eventType, session);
             // CHECK THE GLOBAL URLS FIRST
             if (!sessionService.sessionEventURLs.isEmpty()) {
                 Enumeration aenum = sessionService.sessionEventURLs.elements();
 
-                SessionNotification snGlobal = new SessionNotification(session
-                        .toSessionInfo(), eventType, System.currentTimeMillis());
+                SessionNotification snGlobal = new SessionNotification(session.toSessionInfo(), eventType,
+                        System.currentTimeMillis());
 
                 while (aenum.hasMoreElements()) {
                     String url = (String) aenum.nextElement();
                     try {
                         URL parsedUrl = new URL(url);
                         if (sessionService.isLocalSessionService(parsedUrl)) {
-                            SessionNotificationHandler.handler
-                                    .processNotification(snGlobal);
+                            SessionNotificationHandler.handler.processNotification(snGlobal);
                             // remove this URL from the individual url list
                             urls.remove(url);
                         } else {
@@ -2448,8 +2434,7 @@ public class SessionService {
                         // than no need to send individual notification.
 
                     } catch (Exception e) {
-                        sessionService.sessionDebug.error(
-                                "Local Global notification to " + url, e);
+                        sessionService.sessionDebug.error("Local Global notification to " + url, e);
                     }
                 }
             }
@@ -2465,9 +2450,9 @@ public class SessionService {
 
                         if (sessionService.isLocalSessionService(parsedUrl)) {
                             for (SessionID sid : entry.getValue()) {
-                                SessionInfo info = sessionInfoFactory.getSessionInfo(session, sid);
-                                SessionNotification sn = new SessionNotification(
-                                        info, eventType, System.currentTimeMillis());
+                                SessionInfo info = sessionInfoFactory.makeSessionInfo(session, sid);
+                                SessionNotification sn = new SessionNotification(info, eventType,
+                                        System.currentTimeMillis());
                                 SessionNotificationHandler.handler.processNotification(sn);
                             }
                         } else {
@@ -2486,13 +2471,12 @@ public class SessionService {
          * Thread which sends the Session Notification.
          */
         public void run() {
-            Map<String, Set<SessionID>> urls = session.getSessionEventURLs();
+            Map<String, Set<SessionID>> urls = session.getSessionEventURLs(eventType, session);
             if (!sessionService.sessionEventURLs.isEmpty()) {
 
-                SessionNotification snGlobal = new SessionNotification(session
-                        .toSessionInfo(), eventType, System.currentTimeMillis());
-                Notification notGlobal = new Notification(snGlobal
-                        .toXMLString());
+                SessionNotification snGlobal = new SessionNotification(session.toSessionInfo(), eventType,
+                        System.currentTimeMillis());
+                Notification notGlobal = new Notification(snGlobal.toXMLString());
                 NotificationSet setGlobal = new NotificationSet(SESSION_SERVICE);
                 setGlobal.addNotification(notGlobal);
 
@@ -2510,8 +2494,7 @@ public class SessionService {
                             urls.remove(url);
                         }
                     } catch (Exception e) {
-                        sessionService.sessionDebug.error(
-                                "Remote Global notification to " + url, e);
+                        sessionService.sessionDebug.error("Remote Global notification to " + url, e);
                     }
                 }
             }
@@ -2526,9 +2509,9 @@ public class SessionService {
 
                         if (!sessionService.isLocalSessionService(parsedUrl)) {
                             for (SessionID sid : entry.getValue()) {
-                                SessionInfo info = sessionInfoFactory.getSessionInfo(session, sid);
-                                SessionNotification sn = new SessionNotification(
-                                    info, eventType, System.currentTimeMillis());
+                                SessionInfo info = sessionInfoFactory.makeSessionInfo(session, sid);
+                                SessionNotification sn = new SessionNotification(info, eventType,
+                                        System.currentTimeMillis());
                                 Notification not = new Notification(sn.toXMLString());
                                 NotificationSet set = new NotificationSet(SESSION_SERVICE);
                                 set.addNotification(not);
@@ -2536,8 +2519,7 @@ public class SessionService {
                             }
                         }
                     } catch (Exception e) {
-                        sessionService.sessionDebug.error(
-                            "Remote Individual notification to " + url, e);
+                        sessionService.sessionDebug.error("Remote Individual notification to " + url, e);
                     }
                 }
             }

@@ -39,6 +39,7 @@ import com.iplanet.dpro.session.SessionID;
 import com.iplanet.dpro.session.TokenRestriction;
 import com.iplanet.dpro.session.share.SessionEncodeURL;
 import com.iplanet.dpro.session.share.SessionInfo;
+import com.iplanet.services.naming.WebtopNaming;
 import com.iplanet.sso.SSOToken;
 import com.sun.identity.common.HeadTaskRunnable;
 import com.sun.identity.common.SystemTimerPool;
@@ -1293,8 +1294,36 @@ public class InternalSession implements TaskRunnable, Serializable {
      * restricted token ids
      * @return Map of session event URLs
      */
-    ConcurrentMap<String, Set<SessionID>> getSessionEventURLs() {
-        return sessionEventURLs;
+    Map<String, Set<SessionID>> getSessionEventURLs(int eventType, InternalSession session) {
+        if (eventType == SessionEvent.DESTROY || eventType == SessionEvent.LOGOUT) {
+            Map<String, Set<SessionID>> urls = new HashMap<String, Set<SessionID>>();
+            try {
+                String localServer = WebtopNaming.getLocalServer();
+                for (String url : WebtopNaming.getPlatformServerList()) {
+                    if (!localServer.equals(url)) {
+                        urls.put(url + "/notificationservice", Collections.singleton(session.getID()));
+                    }
+                }
+                return urls;
+            } catch (Exception e) {
+                debug.warning("Unable to get list of servers", e);
+            }
+        }
+        return Collections.unmodifiableMap(sessionEventURLs);
+    }
+
+    boolean addSessionEventURL(String url, SessionID sid) {
+
+        Set<SessionID> sids = sessionEventURLs.get(url);
+        if (sids == null) {
+            sids = Collections.newSetFromMap(new ConcurrentHashMap<SessionID, Boolean>());
+            Set<SessionID> previousValue = sessionEventURLs.putIfAbsent(url, sids);
+            if (previousValue != null) {
+                sids = previousValue;
+            }
+        }
+
+        return sids.add(sid);
     }
 
     /**
