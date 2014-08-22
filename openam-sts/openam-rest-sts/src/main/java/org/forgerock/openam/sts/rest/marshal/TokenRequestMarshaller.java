@@ -18,6 +18,7 @@ package org.forgerock.openam.sts.rest.marshal;
 
 import org.apache.cxf.sts.request.ReceivedToken;
 import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.json.resource.servlet.HttpContext;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.TokenMarshalException;
 import org.forgerock.openam.sts.service.invocation.ProofTokenState;
@@ -33,10 +34,12 @@ public interface TokenRequestMarshaller {
     /**
      * Marshals a json token into an instance of the org.apache.cxf.sts.request.ReceivedToken class.
      * @param token the json representation of a token
+     * @param httpContext The HttpContext, which is necessary to obtain the client's x509 cert
+     *                    presented via two-way-tls for token transformations with x509 certs as input token types.
      * @return a ReceivedToken instance which has an xml representation of the json token.
      * @throws org.forgerock.openam.sts.TokenMarshalException if the json string cannot be marshalled into a recognized token.
      */
-    ReceivedToken marshallInputToken(JsonValue token) throws TokenMarshalException;
+    ReceivedToken marshallInputToken(JsonValue token, HttpContext httpContext) throws TokenMarshalException;
 
     /**
      * Returns the TokenType corresponding to the JsonValue. The JsonValue will be pulled from the RestSTSServiceInvocationState.

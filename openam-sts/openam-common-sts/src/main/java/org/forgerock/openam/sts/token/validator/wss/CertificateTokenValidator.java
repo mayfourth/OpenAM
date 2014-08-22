@@ -21,9 +21,6 @@ import org.apache.ws.security.WSSecurityException;
 import org.apache.ws.security.handler.RequestData;
 import org.apache.ws.security.validate.Credential;
 import org.apache.ws.security.validate.SignatureTrustValidator;
-import org.forgerock.openam.sts.AMSTSConstants;
-import org.forgerock.openam.sts.token.validator.wss.AuthenticationHandler;
-
 
 import java.security.cert.X509Certificate;
 import org.slf4j.Logger;
@@ -36,7 +33,14 @@ import org.slf4j.Logger;
  * This validation functionality will only augment the existing CXF validation functionality to determine whether the
  * included certs are present in the OpenAM LDAP certificate store.
  *
- * @author Dirk Hogan
+ * TODO: It may make sense to move this to a soap-specific package. The rest-sts CertificateTokenValidator will only
+ * be consumed via in a two-way tls case, and will consume the OpenAM Cert LoginModule only to do the additional (OCSP, CRL, LDAP)
+ * checks. On the other hand, in the soap-sts, the validity of the caller asserting its identity via presenting a x509 cert
+ * (SecurityPolicyExamples 2.2.1 and 2.2.2) will be insured because messages sent to the caller will be encrypted using the
+ * caller's public key. In this case, only trust needs to be established - something which this class, by virtue of
+ * extending the SignatureTrustValidator, provides. In the rest-sts case, this trust has already been established by
+ * two-way tls. Thus the rest-sts incarnation of this class (in the rest-sts module), will only invoke the AuthenticationHandler
+ * to dispatch the request to the OpenAM rest authN context. This class should probably be moved into the soap-sts package.
  */
 public class CertificateTokenValidator extends SignatureTrustValidator {
     private final AuthenticationHandler<X509Certificate[]> authenticationHandler;

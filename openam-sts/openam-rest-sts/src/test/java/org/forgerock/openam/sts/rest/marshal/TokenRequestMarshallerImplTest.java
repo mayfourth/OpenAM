@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
+import javax.inject.Named;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -70,6 +71,11 @@ public class TokenRequestMarshallerImplTest {
             return LoggerFactory.getLogger(AMSTSConstants.REST_STS_DEBUG_ID);
         }
 
+        @Provides
+        @Named(AMSTSConstants.OFFLOADED_TWO_WAY_TLS_HEADER_KEY)
+        String getOffloadedTwoWayTLSHeaderKey() {
+            return "client_cert";
+        }
     }
 
     @BeforeTest
@@ -81,7 +87,7 @@ public class TokenRequestMarshallerImplTest {
     public void marshallUsernameToken() throws TokenMarshalException {
         JsonValue jsonUnt = json(object(field("token_type", "USERNAME"),
                 field("username", "bobo"), field("password", "cornholio")));
-        ReceivedToken token = tokenMarshaller.marshallInputToken(jsonUnt);
+        ReceivedToken token = tokenMarshaller.marshallInputToken(jsonUnt, null);
         assertTrue(token.isUsernameToken());
         assertFalse(token.isBinarySecurityToken());
         assertFalse(token.isDOMElement());
@@ -92,7 +98,7 @@ public class TokenRequestMarshallerImplTest {
     public void marshallOpenAMToken() throws TokenMarshalException {
         JsonValue jsonOpenAM = json(object(field("token_type", "OPENAM"),
                 field("session_id", "super_random")));
-        ReceivedToken token = tokenMarshaller.marshallInputToken(jsonOpenAM);
+        ReceivedToken token = tokenMarshaller.marshallInputToken(jsonOpenAM, null);
         assertFalse(token.isUsernameToken());
         assertFalse(token.isBinarySecurityToken());
         assertTrue(token.isDOMElement());

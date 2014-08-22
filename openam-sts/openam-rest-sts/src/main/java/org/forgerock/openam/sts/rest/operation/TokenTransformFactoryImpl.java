@@ -45,6 +45,7 @@ import org.forgerock.openam.sts.token.validator.wss.UsernameTokenValidator;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.net.URISyntaxException;
+import java.security.cert.X509Certificate;
 
 import org.slf4j.Logger;
 
@@ -65,6 +66,7 @@ public class TokenTransformFactoryImpl implements TokenTransformFactory {
     private final ThreadLocalAMTokenCache threadLocalAMTokenCache;
     private final PrincipalFromSession principalFromSession;
     private final AuthenticationHandler<OpenIdConnectIdToken> openIdConnectIdTokenAuthenticationHandler;
+    private final AuthenticationHandler<X509Certificate[]> x509TokenAuthenticationHandler;
     private final UrlConstituentCatenator urlConstituentCatenator;
     private final XmlMarshaller<OpenIdConnectIdToken> idTokenXmlMarshaller;
     private final XMLUtilities xmlUtilities;
@@ -85,6 +87,7 @@ public class TokenTransformFactoryImpl implements TokenTransformFactory {
             ThreadLocalAMTokenCache threadLocalAMTokenCache,
             PrincipalFromSession principalFromSession,
             AuthenticationHandler<OpenIdConnectIdToken> openIdConnectIdTokenAuthenticationHandler,
+            AuthenticationHandler<X509Certificate[]> x509TokenAuthenticationHandler,
             UrlConstituentCatenator urlConstituentCatenator,
             XmlMarshaller<OpenIdConnectIdToken> idTokenXmlMarshaller,
             XMLUtilities xmlUtilities,
@@ -103,6 +106,7 @@ public class TokenTransformFactoryImpl implements TokenTransformFactory {
         this.threadLocalAMTokenCache = threadLocalAMTokenCache;
         this.principalFromSession = principalFromSession;
         this.openIdConnectIdTokenAuthenticationHandler = openIdConnectIdTokenAuthenticationHandler;
+        this.x509TokenAuthenticationHandler = x509TokenAuthenticationHandler;
         this.urlConstituentCatenator = urlConstituentCatenator;
         this.idTokenXmlMarshaller = idTokenXmlMarshaller;
         this.xmlUtilities = xmlUtilities;
@@ -122,6 +126,8 @@ public class TokenTransformFactoryImpl implements TokenTransformFactory {
             tokenValidator = buildOpenAMTokenValidator();
         } else if (TokenType.OPENIDCONNECT.equals(inputTokenType)) {
             tokenValidator = buildOpenIdConnectValidator();
+        } else if (TokenType.X509.equals(inputTokenType)) {
+            tokenValidator = buildX509TokenValidator();
         }
         else {
             String message = "Unexpected input token type of: " + inputTokenType;
@@ -152,6 +158,12 @@ public class TokenTransformFactoryImpl implements TokenTransformFactory {
     private TokenValidator buildOpenIdConnectValidator() {
         return new OpenIdConnectIdTokenValidator(openIdConnectIdTokenAuthenticationHandler, idTokenXmlMarshaller,
                 threadLocalAMTokenCache, principalFromSession, logger);
+    }
+
+    private TokenValidator buildX509TokenValidator() {
+        //X509TokenValidator tokenValidator = new X509TokenValidator();
+        //return new CertificateTokenValidator(logger, x509TokenAuthenticationHandler);
+        return null;
     }
 
     /*

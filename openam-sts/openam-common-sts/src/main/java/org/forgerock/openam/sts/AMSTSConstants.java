@@ -330,4 +330,14 @@ public class AMSTSConstants {
      */
     public static final String REST_STS_PUBLISH_INSTANCE_STATE = SharedSTSConstants.REST_STS_PUBLISH_INSTANCE_STATE;
 
+    /**
+     * If a rest-sts instance is configured to support a token transformation with an x509 token as an input token type, the
+     * instance must be invoked via a two-way TLS exchange (i.e. where the client presents their certificate). If OpenAM
+     * is deployed behind a tls-offloading engine, the client certificate won't be set as a HttpServetRequest attribute
+     * referenced by the javax.servlet.request.X509Certificate key, but rather the rest sts instance must be configured
+     * with the name of the http header where the tls-offloading engine will store the client certificate prior to invoking
+     * OpenAM.
+     */
+    public static final String OFFLOADED_TWO_WAY_TLS_HEADER_KEY = "offloaded_two_way_tls_header_key";
+
 }

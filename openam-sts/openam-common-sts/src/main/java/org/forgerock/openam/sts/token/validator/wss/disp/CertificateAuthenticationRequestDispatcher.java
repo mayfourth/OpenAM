@@ -20,34 +20,32 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
 import com.google.inject.Inject;
+import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.openam.sts.AMSTSConstants;
+import org.forgerock.openam.sts.TokenValidationException;
 import org.forgerock.openam.sts.config.user.AuthTargetMapping;
 import org.restlet.data.MediaType;
+import org.restlet.engine.header.Header;
 import org.restlet.representation.Representation;
 import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.ClientResource;
 
 import java.net.URI;
+
+import org.restlet.util.Series;
 import org.slf4j.Logger;
 
+import static org.forgerock.json.fluent.JsonValue.field;
+import static org.forgerock.json.fluent.JsonValue.json;
+import static org.forgerock.json.fluent.JsonValue.object;
+
 /**
- * Class which encapsulates knowledge as to how to post a x509 certificate to the OpenAM REST authN context.
- *
- * There is currently no OpenAM REST authN context which takes POSTed cert context, and thus this class is currently
- * not used. It will be resurrected and refactored once this context is in place.
+ * Class which encapsulates knowledge as to how to post a x509 certificate to the OpenAM REST authN context. This class
+ * will initiate the authN process to receive the json callback with a placeholder for an X509Certificate, and set this
+ * reference, and return the json callback state.
  */
 public class CertificateAuthenticationRequestDispatcher implements TokenAuthenticationRequestDispatcher<X509Certificate[]> {
     private final Logger logger;
-
-    /**
-     * String taken from org.forgerock.openam.forgerockrest.authn.callbackhandlers.RestAuthX509CallbackHandler. This
-     * CallbackHandler is responsible for placing the x509 Cert in the Callback, and expects to find it in a form
-     * parameter with the following identifier.
-     */
-    private static final String CERT_PARAM_ID = "javax.servlet.request.X509Certificate";
-    private static final String OPEN_BRACKET = "{";
-    private static final String CLOSE_BRACKET = "}";
-    private static final String COLON = ":";
-    private static final String QUOTE = "\"";
 
     @Inject
     public CertificateAuthenticationRequestDispatcher(Logger logger) {
@@ -55,8 +53,11 @@ public class CertificateAuthenticationRequestDispatcher implements TokenAuthenti
     }
 
     @Override
-    public Representation dispatch(URI uri, AuthTargetMapping.AuthTarget target, X509Certificate[] certificates) {
+    public Representation dispatch(URI uri, AuthTargetMapping.AuthTarget target, X509Certificate[] certificates) throws TokenValidationException {
         //TODO: log if there is more than one cert - or do I just dispatch multiple requests, or ??  - for now, just log
+        //and how do I put multiple certs in the callback - just encode the entire chain?? It looks like common practice is just to use the
+        //first element in the array...Confirm this - seems to make sense, as it will be the leaf cert, and all other certs in the chain
+        //should be in the recipient's trust store.
         if (certificates.length > 1) {
             StringBuilder stringBuilder = new StringBuilder("Dealing with more than a single certificate. Their DNs:");
             for (int ndx = 0; ndx < certificates.length; ndx++) {
@@ -64,35 +65,52 @@ public class CertificateAuthenticationRequestDispatcher implements TokenAuthenti
             }
             logger.warn(stringBuilder.toString());
         }
-        ClientResource clientResource = new ClientResource(uri);
-        String base64Cert = null;
+        final JsonValue callbackState = obtainCallbackState(uri);
+        final JsonValue fulfilledCallback = setCertificateInCallback(callbackState, certificates[0]);
+        return postFulfilledCallback(fulfilledCallback, uri);
+    }
+
+    private JsonValue obtainCallbackState(URI uri) throws TokenValidationException {
         try {
-            base64Cert =  javax.xml.bind.DatatypeConverter.printBase64Binary(certificates[0].getEncoded());
-            //base64Cert = Base64.encode(certificates[0].getEncoded());
+            ClientResource resource = new ClientResource(uri);
+            Series<Header> headers = (Series<Header>)resource.getRequestAttributes().get(AMSTSConstants.RESTLET_HEADER_KEY);
+            if (headers == null) {
+                headers = new Series<Header>(Header.class);
+                resource.getRequestAttributes().put(AMSTSConstants.RESTLET_HEADER_KEY, headers);
+            }
+            headers.set(AMSTSConstants.CONTENT_TYPE, AMSTSConstants.APPLICATION_JSON);
+            return parseCallbackFromRepresentation(resource.post(null));
+        } catch (org.restlet.resource.ResourceException e) {
+            throw new TokenValidationException(e.getStatus().getCode(), "Exception caught consuming rest authN to " +
+                    "obtain json callback to set X509 Cert: " + e, e);
+        }
+    }
+
+    private JsonValue parseCallbackFromRepresentation(Representation representation) {
+        //TODO: parse the callback structure.
+        return null;
+    }
+
+    private JsonValue setCertificateInCallback(JsonValue callbackState, X509Certificate certificate) throws TokenValidationException {
+        try {
+            String base64Cert =  javax.xml.bind.DatatypeConverter.printBase64Binary(certificate.getEncoded());
         } catch (CertificateEncodingException e) {
             String message = "Exception caught encoding cert: " + e;
             logger.error(message, e);
-            throw new RuntimeException(message);
+            throw new TokenValidationException(org.forgerock.json.resource.ResourceException.BAD_REQUEST, message);
         }
-        /*
-        Hack below will go away when POSTed x509 authN module exists and consumption thereof formalized, and this class
-        is re-written to adhere to said formalization.TODO
-         */
-        StringBuilder stringBuilder =
-                new StringBuilder()
-                .append(OPEN_BRACKET)
-                .append(QUOTE)
-                .append(CERT_PARAM_ID)
-                .append(QUOTE)
-                .append(COLON)
-                .append(QUOTE)
-                .append(base64Cert)
-                .append(QUOTE)
-                .append(CLOSE_BRACKET);
+        //TODO: set the cert in the parsed callback.
+        return null;
+    }
 
+    private Representation postFulfilledCallback(JsonValue fulfilledCallback, URI uri) throws TokenValidationException {
         StringRepresentation stringRepresentation =
-                new StringRepresentation(stringBuilder.toString(), MediaType.APPLICATION_JSON);
-        logger.debug("String representation of cert: " + stringRepresentation.getText());
-        return clientResource.post(stringRepresentation);
+                new StringRepresentation(fulfilledCallback.toString(), MediaType.APPLICATION_JSON);
+        try {
+            return new ClientResource(uri).post(stringRepresentation);
+        } catch (org.restlet.resource.ResourceException e) {
+            throw new TokenValidationException(e.getStatus().getCode(), "Exception caught posting X509 Cert in json callback " +
+                    "to rest authN: " + e, e);
+        }
     }
 }

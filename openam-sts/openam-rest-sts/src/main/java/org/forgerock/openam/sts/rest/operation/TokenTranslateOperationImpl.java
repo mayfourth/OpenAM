@@ -114,7 +114,7 @@ public class TokenTranslateOperationImpl implements TokenTranslateOperation {
                     ", is not a supported token translation.";
             throw new TokenValidationException(ResourceException.BAD_REQUEST, message);
         }
-        ReceivedToken receivedToken = tokenRequestMarshaller.marshallInputToken(invocationState.getInputTokenState());
+        ReceivedToken receivedToken = tokenRequestMarshaller.marshallInputToken(invocationState.getInputTokenState(), httpContext);
         WebServiceContext webServiceContext = webServiceContextFactory.getWebServiceContext(httpContext, securityContext);
         TokenValidatorParameters validatorParameters = buildTokenValidatorParameters(receivedToken, webServiceContext);
         TokenProviderParameters providerParameters = buildTokenProviderParameters(inputTokenType,

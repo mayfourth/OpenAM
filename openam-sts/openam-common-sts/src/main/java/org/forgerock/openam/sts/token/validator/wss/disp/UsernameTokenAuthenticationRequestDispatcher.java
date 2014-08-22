@@ -34,8 +34,6 @@ import java.net.URI;
 public class UsernameTokenAuthenticationRequestDispatcher implements TokenAuthenticationRequestDispatcher<UsernameToken> {
     private static final String USERNAME = "X-OpenAM-Username";
     private static final String PASSWORD = "X-OpenAM-Password";
-    private static final String CONTENT_TYPE = "Content-Type";
-    private static final String APPLICATION_JSON = "application/json";
 
     @Override
     public Representation dispatch(URI uri, AuthTargetMapping.AuthTarget target, UsernameToken token) throws TokenValidationException {
@@ -48,11 +46,12 @@ public class UsernameTokenAuthenticationRequestDispatcher implements TokenAuthen
         }
         headers.set(USERNAME, token.getName());
         headers.set(PASSWORD, token.getPassword());
-        headers.set(CONTENT_TYPE, APPLICATION_JSON);
+        headers.set(AMSTSConstants.CONTENT_TYPE, AMSTSConstants.APPLICATION_JSON);
         try {
             return resource.post(null);
         } catch (ResourceException e) {
-            throw new TokenValidationException(e.getStatus().getCode(), "Exception caught posting to json client: " + e, e);
+            throw new TokenValidationException(e.getStatus().getCode(), "Exception caught posting UsernameToken " +
+                    "to rest authN: " + e, e);
         }
     }
 }

@@ -113,7 +113,11 @@ public class TokenTranslateOperationImplTest {
         Logger getSlf4jLogger() {
             return LoggerFactory.getLogger(AMSTSConstants.REST_STS_DEBUG_ID);
         }
-
+        @Provides
+        @Named(AMSTSConstants.OFFLOADED_TWO_WAY_TLS_HEADER_KEY)
+        String getOffloadedTwoWayTLSHeaderKey() {
+            return "client_cert";
+        }
     }
 
     @Test(expectedExceptions = TokenValidationException.class)

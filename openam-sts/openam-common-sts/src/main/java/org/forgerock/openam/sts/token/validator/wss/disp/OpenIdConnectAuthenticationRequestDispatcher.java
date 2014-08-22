@@ -60,7 +60,8 @@ public class OpenIdConnectAuthenticationRequestDispatcher implements TokenAuthen
         try {
             return resource.post(null);
         } catch (ResourceException e) {
-            throw new TokenValidationException(e.getStatus().getCode(), "Exception caught posting to json client: " + e, e);
+            throw new TokenValidationException(e.getStatus().getCode(), "Exception caught posting OpenIdConnectIdToken " +
+                    "to rest authN: " + e, e);
         }
     }
 }
