@@ -68,6 +68,7 @@ import org.forgerock.util.thread.listener.ShutdownManager;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URL;
 import java.security.AccessController;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -119,7 +120,7 @@ public class Session extends GeneralTaskRunnable {
     /**
      * Used for uniquely referencing this Session object.
      */
-    private SessionID sessionID;
+    private final SessionID sessionID;
 
     /**
      * Defines the type of Session that has been created. Where 0 for User
@@ -142,6 +143,11 @@ public class Session extends GeneralTaskRunnable {
      * Total Maximum time allowed for the session, in minutes.
      */
     private long maxSessionTime;
+
+    /**
+     * Flag to indicate that maxSessionTime minutes have elapsed since this object was created.
+     */
+    private volatile boolean maxSessionTimeExceeded = false;
 
     /**
      * Maximum idle time allowed for the session, in minutes.
@@ -179,7 +185,7 @@ public class Session extends GeneralTaskRunnable {
      * All session related properties are stored as key-value pair in this
      * table.
      */
-    private Hashtable sessionProperties = new Hashtable();
+    private Hashtable<String, String> sessionProperties = new Hashtable<String, String>();
 
     /**
      * URL of the Session Server, where this session resides.
@@ -235,10 +241,10 @@ public class Session extends GeneralTaskRunnable {
 
     public static final String SESSION_SERVICE = "session";
 
-    private static String cookieName = 
+    private static String cookieName =
 	SystemProperties.get("com.iplanet.am.cookie.name");
 
-    public static String lbCookieName = 
+    public static String lbCookieName =
         SystemProperties.get(Constants.AM_LB_COOKIE_NAME,"amlbcookie");
 
     private static final boolean resetLBCookie = 
@@ -271,7 +277,7 @@ public class Session extends GeneralTaskRunnable {
     
     private static boolean pollerPoolInitialized = false;
     
-    private static final String ENABLE_POLLING_PROPERTY = 
+    private static final String ENABLE_POLLING_PROPERTY =
         "com.iplanet.am.session.client.polling.enable";
     
     /**
@@ -291,19 +297,17 @@ public class Session extends GeneralTaskRunnable {
      * The session service URL table indexed by server address contained in the
      * Session ID object.
      */
-    private static Hashtable sessionServiceURLTable = new Hashtable();
+    private static Hashtable<String, URL> sessionServiceURLTable = new Hashtable<String, URL>();
 
     /**
      * Set of session event listeners for THIS session only
      */
-    private Set<SessionListener> sessionEventListeners = 
-            new HashSet<SessionListener>();
+    private Set<SessionListener> sessionEventListeners = new HashSet<SessionListener>();
 
     /**
      * Set of session event listeners for ALL sessions
      */
-    private static Set<SessionListener> allSessionEventListeners = 
-            new HashSet<SessionListener>();
+    private static Set<SessionListener> allSessionEventListeners = new HashSet<SessionListener>();
 
     /**
      * This is used only in polling mode to find the polling state of this
@@ -311,7 +315,7 @@ public class Session extends GeneralTaskRunnable {
      */
     private volatile boolean isPolling = false;
 
-    static private ThreadPool threadPool = null;
+    private static ThreadPool threadPool = null;
     private static final int DEFAULT_POOL_SIZE = 5;
     private static final int DEFAULT_THRESHOLD = 10000;
     private static boolean cacheBasedPolling = Boolean.valueOf(
@@ -345,13 +349,13 @@ public class Session extends GeneralTaskRunnable {
 
     static private String getAMServerID() {
         String serverid = null;
-        
+
         try {
             serverid = WebtopNaming.getAMServerID();
         } catch (Exception le) {
             serverid = null;
         }
-        
+
         return serverid;
     }
     
@@ -483,21 +487,16 @@ public class Session extends GeneralTaskRunnable {
     
     public void run() {
         if (isPollingEnabled()) {
-            final SessionID sid = getID();
             try {
                 if (!getIsPolling()) {
-                    long expectedTime = -1;
-                    if (maxIdleTime < (Long.MAX_VALUE / 60)) {
-                        expectedTime = (latestRefreshTime +
-                            (maxIdleTime * 60)) * 1000;
+                    long expectedTime;
+                    if (willExpire(maxIdleTime)) {
+                        expectedTime = (latestRefreshTime + (maxIdleTime * 60)) * 1000;
                         if (cacheBasedPolling) {
-                            expectedTime = Math.min(expectedTime,
-                                (latestRefreshTime + (maxCachingTime * 60))
-                                * 1000);
+                            expectedTime = Math.min(expectedTime, (latestRefreshTime + (maxCachingTime * 60)) * 1000);
                         }
                     } else {
-                        expectedTime = (latestRefreshTime + 
-                            (appSSOTokenRefreshTime * 60)) * 1000;
+                        expectedTime = (latestRefreshTime + (appSSOTokenRefreshTime * 60)) * 1000;
                     }
                     if (expectedTime > scheduledExecutionTime()) {
                         // Get an instance as required otherwise it causes issues on container restart.
@@ -515,40 +514,36 @@ public class Session extends GeneralTaskRunnable {
                                     threadPool.run(sender);
                                 } catch (ThreadPoolException e) {
                                     setIsPolling(false);
-                                    sessionDebug.error("Send Polling Error: ",
-                                        e);
+                                    sessionDebug.error("Send Polling Error: ", e);
                                 }
                                 return null;
                             }
                     });
                 }
             } catch (SessionException se) {
-                Session.removeSID(sid);
-                sessionDebug.message(
-                    "session is not in timeout state so clean it", se);
+                Session.removeSID(sessionID);
+                sessionDebug.message("session is not in timeout state so clean it", se);
             } catch (Exception ex) {
                 sessionDebug.error("Exception encountered while polling", ex);
             }
         } else {
             // schedule at the max session time
             long expectedTime = -1;
-            if (maxSessionTime < (Long.MAX_VALUE / 60)) {
-                expectedTime = (latestRefreshTime + (maxSessionTime * 60))
-                    * 1000;
+            if (willExpire(maxSessionTime)) {
+                expectedTime = (latestRefreshTime + (maxSessionTime * 60)) * 1000;
             }
             if (expectedTime > scheduledExecutionTime()) {
                 SystemTimerPool.getTimerPool().schedule(this, new Date(expectedTime));
                 return;
             }
             try {
-                Session.removeSID(getID());
+                maxSessionTimeExceeded = true;
+                Session.removeSID(sessionID);
                 if (sessionDebug.messageEnabled()) {
-                    sessionDebug.message("Session Destroyed, Caching "
-                        + "time exceeded the Max Session Time");
+                    sessionDebug.message("Session Destroyed, Caching time exceeded the Max Session Time");
                 }
             } catch (Exception ex) {
-                sessionDebug.error("Exception occured while cleaning "
-                    + "up Session Cache", ex);
+                sessionDebug.error("Exception occured while cleaning up Session Cache", ex);
             }
         }
     }
@@ -574,20 +569,20 @@ public class Session extends GeneralTaskRunnable {
     public static String getLBCookie(SessionID sid)
              throws SessionException {
         String cookieValue = null;
-        lbCookieName = 
+        lbCookieName =
             SystemProperties.get(Constants.AM_LB_COOKIE_NAME,"amlbcookie");
         if(sessionDebug.messageEnabled()){
             sessionDebug.message("Session.getLBCookie()" +
                 "lbCookieName is:" + lbCookieName);
         }
         
-        if(sid == null || sid.toString() == null || 
+        if(sid == null || sid.toString() == null ||
             sid.toString().length() == 0) {
-            throw new SessionException(SessionBundle.rbName, 
+            throw new SessionException(SessionBundle.rbName,
         	    "invalidSessionID", null);
         }
          
-        if(isServerMode() && 
+        if(isServerMode() &&
             !SessionService.getSessionService().isSiteEnabled()) {
                 cookieValue = WebtopNaming.getLBCookieValue(
                                   sid.getSessionServerID());
@@ -818,7 +813,7 @@ public class Session extends GeneralTaskRunnable {
                 refresh(false);
             }
         }    
-        return (String) sessionProperties.get(name);
+        return sessionProperties.get(name);
     }
 
     /**
@@ -866,7 +861,7 @@ public class Session extends GeneralTaskRunnable {
      */
     public String getPropertyWithoutValidation(String name) {
         if (isServerMode()) {
-            return (String) sessionProperties.get(name);
+            return sessionProperties.get(name);
         }
         return null;
     }
@@ -972,19 +967,39 @@ public class Session extends GeneralTaskRunnable {
      * @param sid Session ID.
      */
     public static void removeSID(SessionID sid) {
-        Session session = deleteSession(sid);
-
+        Session session = sessionTable.get(sid);
         if (session != null) {
-            session.cancel();
-            session.setState(Session.DESTROYED);            
+            if (session.shouldRemoveFromSessionTable()) {
+                deleteSession(sid);
+                session.cancel();
+            }
+            session.setState(Session.DESTROYED);
             long eventTime = System.currentTimeMillis();
-            SessionEvent event = new SessionEvent(session,
-                    SessionEvent.DESTROY, eventTime);
+            SessionEvent event = new SessionEvent(session, SessionEvent.DESTROY, eventTime);
             invokeListeners(event);
         }
     }
 
-   /** 
+    /**
+     * If Session Failover is enabled, cross-talk is disabled, and this session is not local, it should
+     * remain in the sessionTable until its maxSessionTime has elapsed. In all other scenarios, this
+     * session should be removed from the sessionTable on the first call to removeSID.
+     *
+     * @return true if this session should be removed from the sessionTable without delay when destroyed.
+     */
+    private boolean shouldRemoveFromSessionTable() {
+        try {
+            return maxSessionTimeExceeded ||
+                    sessionService == null ||
+                    !sessionService.isSessionFailoverEnabled() ||
+                    !sessionService.isReducedCrossTalkEnabled() ||
+                    sessionService.checkSessionLocal(sessionID);
+        } catch (SessionException e) {
+            return true;
+        }
+    }
+
+    /**
     * Invokes the Session Listener.
     * @param evt Session Event.
     */
@@ -1023,14 +1038,11 @@ public class Session extends GeneralTaskRunnable {
      * @exception SessionException if the session state is not valid.
      */
     public void addSessionListener(SessionListener listener, boolean force) throws SessionException {
-
         if (!force && sessionState != Session.VALID) {
-        throw new SessionException(SessionBundle.rbName,
-                "invalidSessionState", null);
+            throw new SessionException(SessionBundle.rbName, "invalidSessionState", null);
+        }
+        sessionEventListeners.add(listener);
     }
-
-    sessionEventListeners.add(listener);
-}
 
     /**
      * Returns a session based on a Session ID object.
@@ -1111,29 +1123,35 @@ public class Session extends GeneralTaskRunnable {
         if (isPollingEnabled()) {
             long timeoutTime = (latestRefreshTime + (maxIdleTime * 60)) * 1000;
             if (cacheBasedPolling) {
-                timeoutTime = Math.min((latestRefreshTime +
-                    (maxCachingTime * 60)) * 1000, timeoutTime);
+                timeoutTime = Math.min((latestRefreshTime + (maxCachingTime * 60)) * 1000, timeoutTime);
             }
             if (scheduledExecutionTime() > timeoutTime) {
                 cancel();
             }
-            if (scheduledExecutionTime() == -1) {
+            if (! isScheduled()) {
                 SystemTimerPool.getTimerPool().schedule(this, new Date(timeoutTime));
             }
         } else {
-            if ((sessionCleanupEnabled) && (maxSessionTime < (Long.MAX_VALUE / 60))) {
+            if ((sessionCleanupEnabled) && willExpire(maxSessionTime)) {
                 long timeoutTime = (latestRefreshTime + (maxSessionTime * 60)) * 1000;
 
                 if (scheduledExecutionTime() > timeoutTime) {
                     cancel();
                 }
-                if (scheduledExecutionTime() == -1) {
+                if (! isScheduled()) {
                     SystemTimerPool.getTimerPool().schedule(this, new Date(timeoutTime));
                 }
             }
         }
     }
-    
+
+    /**
+     * Returns true if the provided time is less than Long.MAX_VALUE seconds.
+     */
+    private boolean willExpire(long minutes) {
+        return minutes < Long.MAX_VALUE / 60;
+    }
+
     /**
      * Returns a Session Response object based on the XML document received from
      * remote Session Server. This is in response to a request that we send to
@@ -1145,8 +1163,7 @@ public class Session extends GeneralTaskRunnable {
      * @exception SessionException if there was an error in sending the XML
      *            document or if the response has multiple components.
      */
-    public static SessionResponse sendPLLRequest(URL svcurl, 
-            SessionRequest sreq) throws SessionException {
+    public static SessionResponse sendPLLRequest(URL svcurl, SessionRequest sreq) throws SessionException {
         try {
 
             String cookies = cookieName + "=" + sreq.getSessionID();
@@ -1160,8 +1177,7 @@ public class Session extends GeneralTaskRunnable {
             set.addRequest(req);
             Vector responses = PLLClient.send(svcurl, cookies, set);
             if (responses.size() != 1) {
-                throw new SessionException(SessionBundle.rbName,
-                        "unexpectedResponse", null);
+                throw new SessionException(SessionBundle.rbName, "unexpectedResponse", null);
             }
             Response res = (Response) responses.elementAt(0);
             return SessionResponse.parseXML(res.getContent());
@@ -1293,7 +1309,7 @@ public class Session extends GeneralTaskRunnable {
         String uri
     ) throws SessionException {
         String key = protocol + "://" + server + ":" + port + uri;
-        URL url = (URL) sessionServiceURLTable.get(key);
+        URL url = sessionServiceURLTable.get(key);
         if (url == null) {
             try {
                 url = WebtopNaming.getServiceURL(SESSION_SERVICE, protocol,
@@ -1465,9 +1481,8 @@ public class Session extends GeneralTaskRunnable {
         long oldMaxIdleTime = maxIdleTime;
         long oldMaxSessionTime = maxSessionTime;
         update(info);
-        if ((scheduledExecutionTime() == -1) || (oldMaxCachingTime >
-            maxCachingTime) || (oldMaxIdleTime > maxIdleTime) ||
-            (oldMaxSessionTime > maxSessionTime)) {
+        if ((! isScheduled()) || (oldMaxCachingTime > maxCachingTime) ||
+                (oldMaxIdleTime > maxIdleTime) || (oldMaxSessionTime > maxSessionTime)) {
             scheduleToTimerPool();
         }
     }
@@ -1499,8 +1514,7 @@ public class Session extends GeneralTaskRunnable {
             sessionState = DESTROYED;
         sessionProperties = info.properties;
         if (timedOutAt <= 0) {
-            String sessionTimedOutProp = (String) sessionProperties
-                    .get("SessionTimedOut");
+            String sessionTimedOutProp = sessionProperties.get("SessionTimedOut");
             if (sessionTimedOutProp != null) {
                 try {
                     timedOutAt = Long.parseLong(sessionTimedOutProp);
@@ -1514,8 +1528,7 @@ public class Session extends GeneralTaskRunnable {
         // note : do not use getProperty() call here to avoid unexpected
         // recursion via
         // refresh()
-        String restrictionProp = (String) sessionProperties
-                .get(TOKEN_RESTRICTION_PROP);
+        String restrictionProp = sessionProperties.get(TOKEN_RESTRICTION_PROP);
         if (restrictionProp != null) {
             try {
                 restriction = TokenRestrictionFactory
@@ -2034,7 +2047,7 @@ public class Session extends GeneralTaskRunnable {
                         long oldMaxIdleTime = session.maxIdleTime;
                         long oldMaxSessionTime = session.maxSessionTime;
                         session.update(info);
-                        if ((scheduledExecutionTime() == -1) ||
+                        if ((! isScheduled()) ||
                             (oldMaxCachingTime > session.maxCachingTime) ||
                             (oldMaxIdleTime > session.maxIdleTime) ||
                             (oldMaxSessionTime > session.maxSessionTime)) {

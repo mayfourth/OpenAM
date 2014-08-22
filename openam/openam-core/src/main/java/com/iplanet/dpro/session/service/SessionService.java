@@ -278,13 +278,14 @@ public class SessionService {
 
     private static SecureRandom secureRandom = null;
 
-    private static Hashtable sessionTable = null;
+    private static Hashtable<SessionID, InternalSession> sessionTable = null;
 
     private static Set remoteSessionSet = null;
 
     private static final Hashtable<String, InternalSession> sessionHandleTable = new Hashtable<String, InternalSession>();
 
-    private static Map restrictedTokenMap = Collections.synchronizedMap(new HashMap());
+    private static Map<SessionID, SessionID> restrictedTokenMap =
+            Collections.synchronizedMap(new HashMap<SessionID, SessionID>());
 
     private static String sessionServer;
 
@@ -543,7 +544,7 @@ public class SessionService {
                                   TokenRestriction restriction) throws SessionException {
 
         // locate master session
-        InternalSession session = (InternalSession) sessionTable.get(masterSid);
+        InternalSession session = sessionTable.get(masterSid);
         if (session == null) {
             session = sessionService.recoverSession(masterSid);
 
@@ -746,7 +747,7 @@ public class SessionService {
         boolean isSessionStored = false;
         if (sid == null)
             return null;
-        InternalSession session = (InternalSession) sessionTable.remove(sid);
+        InternalSession session = sessionTable.remove(sid);
 
         if (session != null) {
             remoteSessionSet.remove(sid);
@@ -953,7 +954,7 @@ public class SessionService {
             return null;
         }
 
-        InternalSession is = (InternalSession) sessionTable.get(sid);
+        InternalSession is = sessionTable.get(sid);
         return is;
     }
 
@@ -995,7 +996,7 @@ public class SessionService {
      */
     private InternalSession resolveToken(SessionID token)
             throws SessionException {
-        InternalSession sess = (InternalSession) sessionTable.get(token);
+        InternalSession sess = sessionTable.get(token);
         if (sess == null) {
             sess = resolveRestrictedToken(token, true);
         }
@@ -1010,10 +1011,10 @@ public class SessionService {
 
     private InternalSession resolveRestrictedToken(SessionID token,
                                                    boolean checkRestriction) throws SessionException {
-        SessionID sid = (SessionID) restrictedTokenMap.get(token);
+        SessionID sid = restrictedTokenMap.get(token);
         if (sid == null)
             return null;
-        InternalSession session = (InternalSession) sessionTable.get(sid);
+        InternalSession session = sessionTable.get(sid);
         if (session == null) {
             // orphaned restricted token
             restrictedTokenMap.remove(token);
@@ -1803,7 +1804,7 @@ public class SessionService {
                 secureRandom = SecureRandom.getInstance("SHA1PRNG");
             }
 
-            sessionTable = new Hashtable();
+            sessionTable = new Hashtable<SessionID, InternalSession>();
             remoteSessionSet = Collections.synchronizedSet(new HashSet());
             if (stats.isEnabled()) {
                 maxSessionStats = new SessionMaxStats(sessionTable);
@@ -2665,7 +2666,7 @@ public class SessionService {
             }
 
             SessionID sid = new SessionID(in.readUTF());
-            return (InternalSession) sessionTable.get(sid);
+            return sessionTable.get(sid);
 
         } catch (Exception ex) {
             sessionDebug.error("Failed to retrieve new session", ex);
@@ -2811,7 +2812,7 @@ public class SessionService {
         // switch to non-local mode for cached cient side session
         // image
         Session.markNonLocal(sid);
-        InternalSession is = (InternalSession) sessionTable.remove(sid);
+        InternalSession is = sessionTable.remove(sid);
         if (is != null) {
             is.cancel();
             removeSessionHandle(is);
@@ -2895,7 +2896,7 @@ public class SessionService {
                 HttpURLConnection conn = invokeRemote(url, sid, null);
                 in = new DataInputStream(conn.getInputStream());
 
-                sess = (InternalSession) sessionTable.get(sid);
+                sess = sessionTable.get(sid);
                 if (sess == null) {
                     sess = resolveRestrictedToken(sid, false);
                 }
@@ -3117,7 +3118,7 @@ public class SessionService {
         if (!isSessionFailoverEnabled) {
             return HttpURLConnection.HTTP_NOT_IMPLEMENTED;
         }
-        InternalSession is = (InternalSession) sessionTable.get(sid);
+        InternalSession is = sessionTable.get(sid);
 
         if (is == null) {
             sessionDebug.error("handleSaveSession: session not found " + sid);
