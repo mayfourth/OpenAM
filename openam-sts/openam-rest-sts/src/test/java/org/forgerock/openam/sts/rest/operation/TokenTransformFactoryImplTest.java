@@ -49,6 +49,8 @@ import org.forgerock.openam.sts.token.validator.wss.AuthenticationHandlerImpl;
 import org.forgerock.openam.sts.token.validator.wss.UsernameTokenValidator;
 import org.forgerock.openam.sts.token.validator.wss.disp.CertificateAuthenticationRequestDispatcher;
 import org.forgerock.openam.sts.token.validator.wss.disp.OpenIdConnectAuthenticationRequestDispatcher;
+import org.forgerock.openam.sts.token.validator.wss.disp.RestX509CallbackParser;
+import org.forgerock.openam.sts.token.validator.wss.disp.RestX509CallbackParserImpl;
 import org.forgerock.openam.sts.token.validator.wss.disp.TokenAuthenticationRequestDispatcher;
 import org.forgerock.openam.sts.token.validator.wss.uri.AuthenticationUriProvider;
 import org.forgerock.openam.sts.token.validator.wss.uri.AuthenticationUriProviderImpl;
@@ -87,6 +89,7 @@ public class TokenTransformFactoryImplTest {
                     .to(CertificateAuthenticationRequestDispatcher.class);
             bind(new TypeLiteral<AuthenticationHandler<X509Certificate[]>>(){})
                     .to(new TypeLiteral<AuthenticationHandlerImpl<X509Certificate[]>>() {});
+            bind(RestX509CallbackParser.class).to(RestX509CallbackParserImpl.class);
 
             bind(AuthenticationUriProvider.class)
                     .to(AuthenticationUriProviderImpl.class);

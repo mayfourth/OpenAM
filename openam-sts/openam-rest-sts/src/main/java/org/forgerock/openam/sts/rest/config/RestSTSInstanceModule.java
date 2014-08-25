@@ -67,6 +67,8 @@ import org.forgerock.openam.sts.token.validator.PrincipalFromSessionImpl;
 import org.forgerock.openam.sts.token.validator.wss.AuthenticationHandler;
 import org.forgerock.openam.sts.token.validator.wss.disp.CertificateAuthenticationRequestDispatcher;
 import org.forgerock.openam.sts.token.validator.wss.disp.OpenIdConnectAuthenticationRequestDispatcher;
+import org.forgerock.openam.sts.token.validator.wss.disp.RestX509CallbackParser;
+import org.forgerock.openam.sts.token.validator.wss.disp.RestX509CallbackParserImpl;
 import org.forgerock.openam.sts.token.validator.wss.disp.TokenAuthenticationRequestDispatcher;
 import org.forgerock.openam.sts.token.validator.wss.disp.UsernameTokenAuthenticationRequestDispatcher;
 import org.forgerock.openam.sts.token.validator.wss.AuthenticationHandlerImpl;
@@ -127,9 +129,11 @@ public class RestSTSInstanceModule extends AbstractModule {
 
         bind(new TypeLiteral<TokenAuthenticationRequestDispatcher<X509Certificate[]>>(){})
                 .to(CertificateAuthenticationRequestDispatcher.class);
-
-        bind(new TypeLiteral<AuthenticationHandler<X509Certificate[]>>(){})
+        //bind the class which will parse the json callbacks encapsulating X509Cert state.
+        bind(RestX509CallbackParser.class).to(RestX509CallbackParserImpl.class);
+        bind(new TypeLiteral<AuthenticationHandler<X509Certificate[]>>() {})
                 .to(new TypeLiteral<AuthenticationHandlerImpl<X509Certificate[]>>() {});
+
 
         bind(WebServiceContextFactory.class).to(CrestWebServiceContextFactoryImpl.class);
         bind(TokenRequestMarshaller.class).to(TokenRequestMarshallerImpl.class);
