@@ -16,7 +16,7 @@
 
 package org.forgerock.openam.sts.rest.token.validator;
 
-import org.apache.cxf.helpers.DOMUtils;
+import com.sun.identity.shared.encode.Base64;
 import org.apache.cxf.sts.STSPropertiesMBean;
 import org.apache.cxf.sts.request.ReceivedToken;
 import org.apache.cxf.sts.token.validator.TokenValidator;
@@ -25,19 +25,20 @@ import org.apache.cxf.sts.token.validator.TokenValidatorResponse;
 import org.apache.cxf.ws.security.sts.provider.model.secext.BinarySecurityTokenType;
 import org.apache.ws.security.WSConstants;
 import org.apache.ws.security.handler.RequestData;
-import org.apache.ws.security.message.token.BinarySecurity;
-import org.apache.ws.security.message.token.X509Security;
 import org.forgerock.json.resource.ResourceException;
+import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.AMSTSRuntimeException;
 import org.forgerock.openam.sts.TokenCreationException;
 import org.forgerock.openam.sts.TokenValidationException;
 import org.forgerock.openam.sts.token.ThreadLocalAMTokenCache;
 import org.forgerock.openam.sts.token.validator.PrincipalFromSession;
 import org.forgerock.openam.sts.token.validator.wss.AuthenticationHandler;
-import org.w3c.dom.Document;
-import org.w3c.dom.Text;
 
+import java.io.ByteArrayInputStream;
+import java.io.UnsupportedEncodingException;
 import java.security.Principal;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
 public class RestCertificateTokenValidator implements TokenValidator {
@@ -68,7 +69,8 @@ public class RestCertificateTokenValidator implements TokenValidator {
     public boolean canHandleToken(ReceivedToken validateTarget, String realm) {
         Object token = validateTarget.getToken();
         return (token instanceof BinarySecurityTokenType)
-                && X509_V3_TYPE.equals(((BinarySecurityTokenType)token).getValueType());
+                && X509_V3_TYPE.equals(((BinarySecurityTokenType)token).getValueType())
+                && BASE64_ENCODING_TYPE.equals(((BinarySecurityTokenType)token).getEncodingType());
     }
 
     @Override
@@ -78,14 +80,11 @@ public class RestCertificateTokenValidator implements TokenValidator {
         validateTarget.setState(ReceivedToken.STATE.INVALID);
         response.setToken(validateTarget);
 
-        X509Certificate[] x509Certificates;
-        if (validateTarget.isBinarySecurityToken()) {
-            x509Certificates = marshalBinarySecurityTokenToCertArray((BinarySecurityTokenType)validateTarget.getToken());
-        } else {
-            //No toString in ReceivedToken, so I can't log what I really have
-            throw new AMSTSRuntimeException(ResourceException.INTERNAL_ERROR,
-                    "Token passed to RestCertificateTokenValidator not BinarySecurityToken, as expected.");
-        }
+        //no concern about the blind cast, as the validateToken will not be called unless canHandleToken returned true, and
+        //it returned the type check.
+        X509Certificate[] x509Certificates =
+                marshalBinarySecurityTokenToCertArray((BinarySecurityTokenType)validateTarget.getToken());
+
         try {
             authenticationHandler.authenticate(makeRequestData(tokenParameters), x509Certificates);
             /*
@@ -120,33 +119,22 @@ public class RestCertificateTokenValidator implements TokenValidator {
     }
 
     /*
-    TODO: does this really have to be this complicated? from X509Certificate to RecievedToken in the TokenRequestMarshallerImpl,
-    back to an X509Certificate - are there possibilities to simplify?
+    Part of paying the 'tax' of running the rest-sts on the cxf-sts engine. The TokenRequestMarshallerImpl has marshaled the
+    X509Cert set by the container or tls-offloader into a ReceivedToken, which requires a BinarySecurityTokenType, and the
+    validator will  marshal this representation back to the X509Certificate required by the AuthenticationHandler. This is
+    all because the cxf-sts wants its tokens represented in xml format.
      */
     private X509Certificate[] marshalBinarySecurityTokenToCertArray(BinarySecurityTokenType binarySecurityType) {
-        String encodingType = binarySecurityType.getEncodingType();
-        if (!BASE64_ENCODING_TYPE.equals(encodingType)) {
-            //TODO - throw exception
-        }
-
-        Document doc = DOMUtils.createDocument();
-        BinarySecurity binarySecurity = new X509Security(doc);
-        binarySecurity.setEncodingType(encodingType);
-        binarySecurity.setValueType(binarySecurityType.getValueType());
-        String data = binarySecurityType.getValue();
-        ((Text) binarySecurity.getElement().getFirstChild()).setData(data);
-
-        /*
         try {
-            Credential credential = new Credential();
-            credential.setBinarySecurityToken(binarySecurity);
-            if (sigCrypto != null) {
-                X509Certificate cert = ((X509Security)binarySecurity).getX509Certificate(sigCrypto);
-                credential.setCertificates(new X509Certificate[]{cert});
-            }
-
+            final X509Certificate certificate = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(
+                    new ByteArrayInputStream(Base64.decode(binarySecurityType.getValue().getBytes(AMSTSConstants.UTF_8_CHARSET_ID))));
+            return new X509Certificate[]{certificate};
+        } catch (CertificateException e) {
+            throw new AMSTSRuntimeException(ResourceException.INTERNAL_ERROR,
+                    "Could not marshal BinarySecurityTokenType back to X509Certificate: " + e, e);
+        } catch (UnsupportedEncodingException e) {
+            throw new AMSTSRuntimeException(ResourceException.INTERNAL_ERROR,
+                    "Could not marshal BinarySecurityTokenType back to X509Certificate: " + e, e);
         }
-        */
-        return null;
     }
 }
