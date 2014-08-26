@@ -206,6 +206,19 @@
                             <Value>true</Value>
                         </DefaultValues>
                     </AttributeSchema>
+                    <AttributeSchema name="iplanet-am-session-logout-destroy-broadcast"
+                                     type="single_choice"
+                                     syntax="string"
+                                     i18nKey="a121d.session.destroy.logout.broadcast">
+                        <ChoiceValues>
+                            <ChoiceValue i18nKey="choiceBroadcastOff">OFF</ChoiceValue>
+                            <ChoiceValue i18nKey="choiceBroadcastToLocalSite">LOCAL_SITE</ChoiceValue>
+                            <ChoiceValue i18nKey="choiceBroadcastToAllSites">ALL_SITES</ChoiceValue>
+                        </ChoiceValues>
+                        <DefaultValues>
+                            <Value>OFF</Value>
+                        </DefaultValues>
+                    </AttributeSchema>
                     <!-- This property is deprecated as of 10.1.0 -->
                     <!-- Was i18Key a127 -->
                     <AttributeSchema name="iplanet-am-session-store-username"

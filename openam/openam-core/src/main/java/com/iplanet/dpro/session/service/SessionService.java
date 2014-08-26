@@ -354,6 +354,11 @@ public class SessionService {
      */
     private static volatile boolean isReducedCrosstalkEnabled = true;
 
+    /**
+     * Indicates what broadcast to undertake on session logout/destroy
+     */
+    private static volatile SessionBroadcast logoutDestroyBroadcast;
+
     // Must be True to permit Session Failover HA to be available.
     private static boolean isSiteEnabled = false;  // If this is set to True and no Site is found, issues will arise
     // Trying to resolve the serverID and will hang install and subsequent login attempts.
@@ -2222,6 +2227,9 @@ public class SessionService {
                     isReducedCrosstalkEnabled = CollectionHelper.getBooleanMapAttr(sessionAttrs,
                             CoreTokenConstants.IS_REDUCED_CROSSTALK_ENABLED, false);
 
+                    logoutDestroyBroadcast = SessionBroadcast.valueOf(CollectionHelper.getMapAttr(sessionAttrs,
+                            CoreTokenConstants.LOGOUT_DESTROY_BROADCAST));
+
                     // Obtain Site Ids
                     Set<String> serverIDs = WebtopNaming.getSiteNodes(sessionServerID);
                     if ((serverIDs == null) || (serverIDs.isEmpty())) {
@@ -2390,6 +2398,13 @@ public class SessionService {
     }
 
     /**
+     * Indicates what broadcast to undertake on session logout/destroy
+     */
+    public SessionBroadcast getLogoutDestroyBroadcast() {
+        return logoutDestroyBroadcast;
+    }
+
+    /**
      * Inner Session Notification Publisher Class Thread.
      */
     class SessionNotificationSender implements Runnable {
@@ -2399,6 +2414,7 @@ public class SessionService {
         private InternalSession session;
 
         private int eventType;
+        private Map<String, Set<SessionID>> urls;
 
         SessionNotificationSender(SessionService ss, InternalSession sess,
                                   int evttype) {
@@ -2412,7 +2428,7 @@ public class SessionService {
          */
         boolean sendToLocal() {
             boolean remoteURLExists = false;
-            Map<String, Set<SessionID>> urls = session.getSessionEventURLs(eventType, session);
+            this.urls = session.getSessionEventURLs(eventType, logoutDestroyBroadcast);
             // CHECK THE GLOBAL URLS FIRST
             if (!sessionService.sessionEventURLs.isEmpty()) {
                 Enumeration aenum = sessionService.sessionEventURLs.elements();
@@ -2460,8 +2476,7 @@ public class SessionService {
                             remoteURLExists = true;
                         }
                     } catch (Exception e) {
-                        sessionService.sessionDebug.error(
-                            "Local Individual notification to " + url, e);
+                        sessionService.sessionDebug.error("Local Individual notification to " + url, e);
                     }
                 }
             }
@@ -2472,7 +2487,9 @@ public class SessionService {
          * Thread which sends the Session Notification.
          */
         public void run() {
-            Map<String, Set<SessionID>> urls = session.getSessionEventURLs(eventType, session);
+            if (urls == null) {
+                throw new IllegalStateException("Must call sendToLocal before starting thread");
+            }
             if (!sessionService.sessionEventURLs.isEmpty()) {
 
                 SessionNotification snGlobal = new SessionNotification(session.toSessionInfo(), eventType,
@@ -2492,7 +2509,6 @@ public class SessionService {
                         if (!sessionService.isLocalSessionService(parsedUrl)) {
                             PLLServer.send(parsedUrl, setGlobal);
                             //remove this url from the indvidual url list.
-                            urls.remove(url);
                         }
                     } catch (Exception e) {
                         sessionService.sessionDebug.error("Remote Global notification to " + url, e);

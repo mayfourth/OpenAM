@@ -54,6 +54,8 @@ import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -1294,22 +1296,36 @@ public class InternalSession implements TaskRunnable, Serializable {
      * restricted token ids
      * @return Map of session event URLs
      */
-    Map<String, Set<SessionID>> getSessionEventURLs(int eventType, InternalSession session) {
-        if (eventType == SessionEvent.DESTROY || eventType == SessionEvent.LOGOUT) {
-            Map<String, Set<SessionID>> urls = new HashMap<String, Set<SessionID>>();
+    Map<String, Set<SessionID>> getSessionEventURLs(int eventType, SessionBroadcast logoutDestroyBroadcast) {
+        Map<String, Set<SessionID>> urls;
+
+        if ((eventType == SessionEvent.DESTROY || eventType == SessionEvent.LOGOUT) &&
+                logoutDestroyBroadcast != SessionBroadcast.OFF) {
+            urls = new HashMap<String, Set<SessionID>>();
             try {
                 String localServer = WebtopNaming.getLocalServer();
-                for (String url : WebtopNaming.getPlatformServerList()) {
-                    if (!localServer.equals(url)) {
-                        urls.put(url + "/notificationservice", Collections.singleton(session.getID()));
+                Collection<String> servers;
+                if (logoutDestroyBroadcast == SessionBroadcast.ALL_SITES) {
+                    servers = WebtopNaming.getPlatformServerList();
+                } else {
+                    servers = new ArrayList<String>();
+                    for (String serverID : WebtopNaming.getSiteNodes(WebtopNaming.getAMServerID())) {
+                        servers.add(WebtopNaming.getServerFromID(serverID));
                     }
                 }
-                return urls;
+                for (String url : servers) {
+                    if (!localServer.equals(url)) {
+                        urls.put(url + "/notificationservice", Collections.singleton(this.getID()));
+                    }
+                }
             } catch (Exception e) {
                 debug.warning("Unable to get list of servers", e);
             }
+        } else {
+            urls = new HashMap<String, Set<SessionID>>(sessionEventURLs);
         }
-        return Collections.unmodifiableMap(sessionEventURLs);
+
+        return urls;
     }
 
     boolean addSessionEventURL(String url, SessionID sid) {

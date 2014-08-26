@@ -135,4 +135,9 @@ public class CoreTokenConstants {
      * The size of each asynchronous work queue.
      */
     public static final String CTS_ASYNC_QUEUE_SIZE = "org.forgerock.services.cts.async.queue.size";
+
+    /**
+     * Where to broadcast session logout/destroy to.
+     */
+    public static final String LOGOUT_DESTROY_BROADCAST = "iplanet-am-session-logout-destroy-broadcast";
 }
