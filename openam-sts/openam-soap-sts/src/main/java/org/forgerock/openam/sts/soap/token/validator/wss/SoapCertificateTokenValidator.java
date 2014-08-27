@@ -35,22 +35,19 @@ import org.slf4j.Logger;
  * This validation functionality will only augment the existing CXF validation functionality to determine whether the
  * included certs are present in the OpenAM LDAP certificate store.
  *
- * The rest-sts CertificateTokenValidator will only
- * be consumed via in a two-way tls case, and will consume the OpenAM Cert LoginModule only to do the additional (OCSP, CRL, LDAP)
- * checks. On the other hand, in the soap-sts, the validity of the caller asserting its identity via presenting a x509 cert
+ * In the soap-sts, the validity of the caller asserting its identity via presenting a x509 cert
  * (SecurityPolicyExamples 2.2.1 and 2.2.2) will be insured because messages sent to the caller will be encrypted using the
  * caller's public key. In this case, only trust needs to be established - something which this class, by virtue of
- * extending the SignatureTrustValidator, provides. In the rest-sts case, this trust has already been established by
- * two-way tls. Thus the rest-sts incarnation of this class (in the rest-sts module), will only invoke the AuthenticationHandler
- * to dispatch the request to the OpenAM rest authN context. It may be a configuration option whether this class should
- * consume the OpenAM Certificate module.
+ * extending the SignatureTrustValidator, provides. It may be a configuration option whether this class should
+ * consume the OpenAM Certificate module, so that the additional invocation against the OpenAM Certificate module, performed
+ * by the AuthenticationHandler<X509Certificate>, should be performed.
  */
-public class CertificateTokenValidator extends SignatureTrustValidator {
+public class SoapCertificateTokenValidator extends SignatureTrustValidator {
     private final AuthenticationHandler<X509Certificate[]> authenticationHandler;
     private final Logger logger;
 
     @Inject
-    public CertificateTokenValidator(Logger logger, AuthenticationHandler<X509Certificate[]> authenticationHandler) {
+    public SoapCertificateTokenValidator(Logger logger, AuthenticationHandler<X509Certificate[]> authenticationHandler) {
         this.logger = logger;
         this.authenticationHandler = authenticationHandler;
     }
