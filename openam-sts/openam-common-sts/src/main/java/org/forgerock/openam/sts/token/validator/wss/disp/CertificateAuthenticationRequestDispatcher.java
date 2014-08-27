@@ -16,23 +16,16 @@
 
 package org.forgerock.openam.sts.token.validator.wss.disp;
 
-import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
 import com.google.inject.Inject;
 import com.sun.identity.shared.encode.Base64;
-import org.forgerock.json.fluent.JsonValue;
-import org.forgerock.json.resource.ResourceException;
 import org.forgerock.openam.sts.AMSTSConstants;
-import org.forgerock.openam.sts.TokenMarshalException;
 import org.forgerock.openam.sts.TokenValidationException;
 import org.forgerock.openam.sts.config.user.AuthTargetMapping;
-import org.forgerock.openam.sts.token.validator.wss.AuthenticationHandler;
-import org.restlet.data.MediaType;
 import org.restlet.engine.header.Header;
 import org.restlet.representation.Representation;
-import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.ClientResource;
 
 import java.net.URI;
@@ -46,12 +39,10 @@ import org.slf4j.Logger;
  * reference, and return the json callback state.
  */
 public class CertificateAuthenticationRequestDispatcher implements TokenAuthenticationRequestDispatcher<X509Certificate[]> {
-    private final RestX509CallbackParser callbackParser;
     private final Logger logger;
 
     @Inject
-    public CertificateAuthenticationRequestDispatcher(RestX509CallbackParser callbackParser, Logger logger) {
-        this.callbackParser = callbackParser;
+    public CertificateAuthenticationRequestDispatcher(Logger logger) {
         this.logger = logger;
     }
 
@@ -69,9 +60,6 @@ public class CertificateAuthenticationRequestDispatcher implements TokenAuthenti
             logger.warn(stringBuilder.toString());
         }
         return postCertInHeader(uri, certificates[0], target);
-
-//        final JsonValue fulfilledCallback = initiateCertAuthentication(uri, certificates[0]);
-//        return postFulfilledCallback(fulfilledCallback, uri);
     }
 
     private Representation postCertInHeader(URI uri, X509Certificate certificate,
@@ -108,49 +96,6 @@ public class CertificateAuthenticationRequestDispatcher implements TokenAuthenti
             return resource.post(null);
         } catch (org.restlet.resource.ResourceException e) {
             throw new TokenValidationException(e.getStatus().getCode(), "Exception caught posting X509 Certificate " +
-                    "to rest authN: " + e, e);
-        }
-    }
-
-    private JsonValue initiateCertAuthentication(URI uri, X509Certificate certificate) throws TokenValidationException {
-        try {
-            ClientResource resource = new ClientResource(uri);
-            Series<Header> headers = (Series<Header>)resource.getRequestAttributes().get(AMSTSConstants.RESTLET_HEADER_KEY);
-            if (headers == null) {
-                headers = new Series<Header>(Header.class);
-                resource.getRequestAttributes().put(AMSTSConstants.RESTLET_HEADER_KEY, headers);
-            }
-            headers.set(AMSTSConstants.CONTENT_TYPE, AMSTSConstants.APPLICATION_JSON);
-            final Representation representation = resource.post(null);
-            final String base64Certificate = Base64.encode(certificate.getEncoded());
-            return callbackParser.updateCallbackWithCertificateState(representation.getText(), base64Certificate);
-        } catch (org.restlet.resource.ResourceException e) {
-            //thrown by resource.post(null)
-            throw new TokenValidationException(e.getStatus().getCode(), "Exception caught consuming rest authN to " +
-                    "obtain json callback to set X509 Cert: " + e, e);
-        } catch (IOException e) {
-            //thrown by representation.getText()
-            throw new TokenValidationException(ResourceException.INTERNAL_ERROR, "Exception caught consuming rest authN to " +
-                    "obtain json callback to set X509 Cert: " + e, e);
-
-        } catch (CertificateEncodingException e) {
-            //thrown by certificate.getEncoded.
-            throw new TokenValidationException(ResourceException.INTERNAL_ERROR, "Exception caught obtaining encoded " +
-                    "certificate state prior to updating json callback with certificate state: " + e, e);
-        } catch (TokenMarshalException e) {
-            //thrown by callbackParser.updateCallbackWithCertificateState
-            throw new TokenValidationException(ResourceException.INTERNAL_ERROR, "Exception caught updating json callback " +
-                    "with certificate state: " + e, e);
-        }
-    }
-
-    private Representation postFulfilledCallback(JsonValue fulfilledCallback, URI uri) throws TokenValidationException {
-        StringRepresentation stringRepresentation =
-                new StringRepresentation(fulfilledCallback.toString(), MediaType.APPLICATION_JSON);
-        try {
-            return new ClientResource(uri).post(stringRepresentation);
-        } catch (org.restlet.resource.ResourceException e) {
-            throw new TokenValidationException(e.getStatus().getCode(), "Exception caught posting X509 Cert in json callback " +
                     "to rest authN: " + e, e);
         }
     }

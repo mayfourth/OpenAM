@@ -236,6 +236,12 @@ public class AMSTSConstants {
     public static final String OPEN_ID_CONNECT_ID_TOKEN_AUTH_TARGET_HEADER_KEY = "oidc_id_token_auth_target_header_key";
 
     /*
+    When validating X509Tokens, the OpenAM Certificate authN module must be configured in portal mode. This involves setting
+    the Trusted Remote Hosts value to something other than none, and specifying the header name which will reference the
+    client's x509 certificate. This header name must be configured in the AuthTargetMapping
+     */
+    public static final String X509_TOKEN_AUTH_TARGET_HEADER_KEY = "x509_token_token_auth_target_header_key";
+    /*
     This value is used to key the SAML2SubjectConfirmation instance in additionalProperties Map<String, Object> encapsulated
     in the TokenProviderParameters so that the AMSAMLTokenProvider
     can determine the type of subject confirmation specified in the REST invocation, avoiding the WS-Trust secret decoder
