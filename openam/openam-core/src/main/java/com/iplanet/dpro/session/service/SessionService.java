@@ -824,7 +824,7 @@ public class SessionService {
     }
 
     /**
-     * Returns true if crosstalk is enabled (or is session failover is disabled).
+     * Returns true if crosstalk is reduced (and if session failover is enabled).
      */
     public boolean isReducedCrossTalkEnabled() {
         return isSessionFailoverEnabled && isReducedCrosstalkEnabled;

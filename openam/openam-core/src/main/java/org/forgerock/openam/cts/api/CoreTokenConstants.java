@@ -69,7 +69,7 @@ public class CoreTokenConstants {
     public static final String IS_SFO_ENABLED =
             "iplanet-am-session-sfo-enabled";
     /**
-     * System property for checking whether session crosstalk is enabled/disabled. See
+     * System property for checking whether session crosstalk is reduced. See
      * {@link com.iplanet.dpro.session.service.SessionService#isReducedCrossTalkEnabled()}.
      */
     public static final String IS_REDUCED_CROSSTALK_ENABLED = "iplanet-am-session-reduced-crosstalk-enabled";
