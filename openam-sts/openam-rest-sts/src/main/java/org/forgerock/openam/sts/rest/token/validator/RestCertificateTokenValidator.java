@@ -95,8 +95,8 @@ public class RestCertificateTokenValidator implements TokenValidator {
             response.setPrincipal(principal);
             validateTarget.setState(ReceivedToken.STATE.VALID);
         } catch (TokenValidationException e) {
-            throw new AMSTSRuntimeException(ResourceException.FORBIDDEN,
-                    "Exception caught validating OIDC token with authentication handler: " + e, e);
+            throw new AMSTSRuntimeException(e.getCode(),
+                    "Exception caught validating X509 token with authentication handler: " + e, e);
         } catch (TokenCreationException e) {
             throw new AMSTSRuntimeException(ResourceException.INTERNAL_ERROR,
                     "No OpenAM Session token cached: " + e, e);

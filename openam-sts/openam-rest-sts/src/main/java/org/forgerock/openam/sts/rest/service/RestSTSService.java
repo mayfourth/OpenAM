@@ -77,10 +77,11 @@ public class RestSTSService implements SingletonResourceProvider {
                 handler.handleError(e);
             } catch (AMSTSRuntimeException e) {
                 /*
-                RuntimeException thrown by the AM implementation of CXF-STS-defined interfaces
+                RuntimeException thrown by the AM implementation of CXF-STS-defined interfaces, including the Authentication
+                handlers.
                  */
                 logger.error("AMSTSException caught in the RestSTSService: " + e, e);
-                handler.handleError(new InternalServerErrorException(e.getMessage()));
+                handler.handleError(ResourceException.getException(e.getCode(), e.getMessage(), e));
             } catch (STSException e) {
                 /*
                 RuntimeException thrown by the CXF-STS engine
