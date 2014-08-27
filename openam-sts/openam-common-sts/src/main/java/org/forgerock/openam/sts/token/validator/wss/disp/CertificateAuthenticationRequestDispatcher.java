@@ -21,12 +21,14 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
 import com.google.inject.Inject;
+import com.sun.identity.shared.encode.Base64;
 import org.forgerock.json.fluent.JsonValue;
 import org.forgerock.json.resource.ResourceException;
 import org.forgerock.openam.sts.AMSTSConstants;
 import org.forgerock.openam.sts.TokenMarshalException;
 import org.forgerock.openam.sts.TokenValidationException;
 import org.forgerock.openam.sts.config.user.AuthTargetMapping;
+import org.forgerock.openam.sts.token.validator.wss.AuthenticationHandler;
 import org.restlet.data.MediaType;
 import org.restlet.engine.header.Header;
 import org.restlet.representation.Representation;
@@ -66,9 +68,48 @@ public class CertificateAuthenticationRequestDispatcher implements TokenAuthenti
             }
             logger.warn(stringBuilder.toString());
         }
+        return postCertInHeader(uri, certificates[0], target);
 
-        final JsonValue fulfilledCallback = initiateCertAuthentication(uri, certificates[0]);
-        return postFulfilledCallback(fulfilledCallback, uri);
+//        final JsonValue fulfilledCallback = initiateCertAuthentication(uri, certificates[0]);
+//        return postFulfilledCallback(fulfilledCallback, uri);
+    }
+
+    private Representation postCertInHeader(URI uri, X509Certificate certificate,
+                                            AuthTargetMapping.AuthTarget target) throws TokenValidationException {
+        final String base64Certificate;
+        try {
+            base64Certificate = Base64.encode(certificate.getEncoded());
+        } catch (CertificateEncodingException e) {
+            throw new TokenValidationException(org.forgerock.json.resource.ResourceException.BAD_REQUEST,
+                    "Could not obtain the base64-encoded representation of the client certificate: " + e, e);
+        }
+        ClientResource resource = new ClientResource(uri);
+        Series<Header> headers = (Series<Header>)resource.getRequestAttributes().get(AMSTSConstants.RESTLET_HEADER_KEY);
+        if (headers == null) {
+            headers = new Series<Header>(Header.class);
+            resource.getRequestAttributes().put(AMSTSConstants.RESTLET_HEADER_KEY, headers);
+        }
+        headers.set(AMSTSConstants.CONTENT_TYPE, AMSTSConstants.APPLICATION_JSON);
+        if (target == null) {
+            throw new TokenValidationException(org.forgerock.json.resource.ResourceException.BAD_REQUEST,
+                    "When validatating X509 Certificates, an AuthTarget needs to be configured with a Map containing a String " +
+                            "entry referenced by key" + AMSTSConstants.X509_TOKEN_AUTH_TARGET_HEADER_KEY +
+                            " which specifies the header name which will reference the OIDC ID Token.");
+        }
+        Object headerKey = target.getContext().get(AMSTSConstants.X509_TOKEN_AUTH_TARGET_HEADER_KEY);
+        if (!(headerKey instanceof String)) { //checks both for null and String
+            throw new TokenValidationException(org.forgerock.json.resource.ResourceException.BAD_REQUEST,
+                    "When validatating X509 Certificates, an AuthTarget needs to be configured with a Map containing a String " +
+                            "entry referenced by key" + AMSTSConstants.X509_TOKEN_AUTH_TARGET_HEADER_KEY +
+                            " which specifies the header name which will reference the OIDC ID Token.");
+        }
+        headers.set((String)headerKey, base64Certificate);
+        try {
+            return resource.post(null);
+        } catch (org.restlet.resource.ResourceException e) {
+            throw new TokenValidationException(e.getStatus().getCode(), "Exception caught posting X509 Certificate " +
+                    "to rest authN: " + e, e);
+        }
     }
 
     private JsonValue initiateCertAuthentication(URI uri, X509Certificate certificate) throws TokenValidationException {
@@ -81,7 +122,7 @@ public class CertificateAuthenticationRequestDispatcher implements TokenAuthenti
             }
             headers.set(AMSTSConstants.CONTENT_TYPE, AMSTSConstants.APPLICATION_JSON);
             final Representation representation = resource.post(null);
-            final String base64Certificate = javax.xml.bind.DatatypeConverter.printBase64Binary(certificate.getEncoded());
+            final String base64Certificate = Base64.encode(certificate.getEncoded());
             return callbackParser.updateCallbackWithCertificateState(representation.getText(), base64Certificate);
         } catch (org.restlet.resource.ResourceException e) {
             //thrown by resource.post(null)
