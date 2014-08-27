@@ -68,7 +68,6 @@ import org.forgerock.util.thread.listener.ShutdownManager;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URL;
 import java.security.AccessController;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -176,10 +175,22 @@ public class Session extends GeneralTaskRunnable {
     private volatile long timedOutAt = 0;
 
     /**
-     * Four possible values for the state of the session 0 - Invalid 1 - 
-     * Valid 2 - Inactive 3 - Destroyed
+     * Four possible values for the state of the session:
+     * <ul>
+     *     <li>0 - Invalid</li>
+     *     <li>1 - Valid</li>
+     *     <li>2 - Inactive</li>
+     *     <li>3 - Destroyed</li>
+     * </ul>
      */
     private int sessionState;
+
+    /**
+     * If this is a Remote session that has been destroyed but not yet removed from the
+     * sessionTable, this flag is used to avoid repeated notification of the DESTROY event
+     * to session listeners.
+     */
+    private volatile boolean removed = false;
 
     /**
      * All session related properties are stored as key-value pair in this
@@ -973,10 +984,13 @@ public class Session extends GeneralTaskRunnable {
                 deleteSession(sid);
                 session.cancel();
             }
-            session.setState(Session.DESTROYED);
-            long eventTime = System.currentTimeMillis();
-            SessionEvent event = new SessionEvent(session, SessionEvent.DESTROY, eventTime);
-            invokeListeners(event);
+            if (!session.removed) {
+                session.setState(Session.DESTROYED);
+                long eventTime = System.currentTimeMillis();
+                SessionEvent event = new SessionEvent(session, SessionEvent.DESTROY, eventTime);
+                invokeListeners(event);
+            }
+            session.removed = true;
         }
     }
 

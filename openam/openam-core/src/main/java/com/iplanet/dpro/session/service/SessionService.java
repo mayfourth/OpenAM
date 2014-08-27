@@ -955,12 +955,16 @@ public class SessionService {
             return null;
         // check if sid is actually a handle return null
         // (in order to prevent from assuming recovery case)
-        if (sid.toString().startsWith(SHANDLE_SCHEME_PREFIX)) {
+        if (isSessionHandle(sid)) {
             return null;
         }
 
         InternalSession is = sessionTable.get(sid);
         return is;
+    }
+
+    public static boolean isSessionHandle(SessionID sid) {
+        return sid.toString().startsWith(SHANDLE_SCHEME_PREFIX);
     }
 
     /**
@@ -1383,7 +1387,7 @@ public class SessionService {
      * @throws SessionException
      */
     public void logout(SessionID sid) throws SessionException {
-        if (sid == null || sid.toString().startsWith(SHANDLE_SCHEME_PREFIX)) {
+        if (sid == null || isSessionHandle(sid)) {
             throw new SessionException(SessionBundle.getString("invalidSessionID") + sid);
         }
         //if the provided sid was a restricted token, resolveToken will always validate the restriction, so there is no
