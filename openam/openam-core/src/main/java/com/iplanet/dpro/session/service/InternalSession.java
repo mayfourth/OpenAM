@@ -55,6 +55,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -1293,19 +1294,18 @@ public class InternalSession implements TaskRunnable, Serializable {
 
     /**
      * Returns the URL of the Session events and the associated master and
-     * restricted token ids
-     * @return Map of session event URLs
+     * restricted token ids.
+     * @return Map of session event URLs and their associated SessionIDs.
      */
-    Map<String, Set<SessionID>> getSessionEventURLs(int eventType, SessionBroadcast logoutDestroyBroadcast) {
-        Map<String, Set<SessionID>> urls;
+    Map<String, Set<SessionID>> getSessionEventURLs(int eventType, SessionBroadcastMode logoutDestroyBroadcast) {
+        Map<String, Set<SessionID>> urls = new HashMap<String, Set<SessionID>>();
 
         if ((eventType == SessionEvent.DESTROY || eventType == SessionEvent.LOGOUT) &&
-                logoutDestroyBroadcast != SessionBroadcast.OFF) {
-            urls = new HashMap<String, Set<SessionID>>();
+                logoutDestroyBroadcast != SessionBroadcastMode.OFF) {
             try {
                 String localServer = WebtopNaming.getLocalServer();
                 Collection<String> servers;
-                if (logoutDestroyBroadcast == SessionBroadcast.ALL_SITES) {
+                if (logoutDestroyBroadcast == SessionBroadcastMode.ALL_SITES) {
                     servers = WebtopNaming.getPlatformServerList();
                 } else {
                     servers = new ArrayList<String>();
@@ -1315,20 +1315,31 @@ public class InternalSession implements TaskRunnable, Serializable {
                 }
                 for (String url : servers) {
                     if (!localServer.equals(url)) {
-                        urls.put(url + "/notificationservice", Collections.singleton(this.getID()));
+                        urls.put(url + "/notificationservice", new HashSet<SessionID>(Arrays.asList(this.getID())));
                     }
                 }
             } catch (Exception e) {
                 debug.warning("Unable to get list of servers", e);
             }
-        } else {
-            urls = new HashMap<String, Set<SessionID>>(sessionEventURLs);
+        }
+
+        for (String url : sessionEventURLs.keySet()) {
+            if (urls.containsKey(url)) {
+                urls.get(url).addAll(sessionEventURLs.get(url));
+            } else {
+                urls.put(url, sessionEventURLs.get(url));
+            }
         }
 
         return urls;
     }
 
-    boolean addSessionEventURL(String url, SessionID sid) {
+    /**
+     * Adds a listener for the associated session ID.
+     * @param url The listening URL.
+     * @param sid The associated SessionID.
+     */
+    void addSessionEventURL(String url, SessionID sid) {
 
         Set<SessionID> sids = sessionEventURLs.get(url);
         if (sids == null) {
@@ -1339,7 +1350,9 @@ public class InternalSession implements TaskRunnable, Serializable {
             }
         }
 
-        return sids.add(sid);
+        if (sids.add(sid))  {
+            updateForFailover();
+        }
     }
 
     /**
@@ -1646,9 +1659,8 @@ public class InternalSession implements TaskRunnable, Serializable {
 
     /**
      * Update for the session failover
-     *
      */
-    protected void updateForFailover() {
+    private void updateForFailover() {
         if (SessionService.getSessionService().isSessionFailoverEnabled()
                 && isISStored) {
             if (sessionState != Session.VALID) {

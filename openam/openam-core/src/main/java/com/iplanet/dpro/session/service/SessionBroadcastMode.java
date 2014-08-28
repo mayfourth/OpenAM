@@ -16,6 +16,6 @@
 
 package com.iplanet.dpro.session.service;
 
-public enum SessionBroadcast {
+public enum SessionBroadcastMode {
     OFF, LOCAL_SITE, ALL_SITES;
 }

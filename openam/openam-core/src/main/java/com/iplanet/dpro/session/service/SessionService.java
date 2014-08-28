@@ -357,7 +357,7 @@ public class SessionService {
     /**
      * Indicates what broadcast to undertake on session logout/destroy
      */
-    private static volatile SessionBroadcast logoutDestroyBroadcast;
+    private static volatile SessionBroadcastMode logoutDestroyBroadcast = SessionBroadcastMode.OFF;
 
     // Must be True to permit Session Failover HA to be available.
     private static boolean isSiteEnabled = false;  // If this is set to True and no Site is found, issues will arise
@@ -1221,9 +1221,7 @@ public class SessionService {
                 throw new IllegalArgumentException("Session id mismatch");
             }
 
-            if (session.addSessionEventURL(url, sid)) {
-                session.updateForFailover();
-            }
+            session.addSessionEventURL(url, sid);
         }
     }
 
@@ -2229,10 +2227,12 @@ public class SessionService {
 
                     // Determine whether crosstalk is enabled or disabled (default to false in SFO case).
                     isReducedCrosstalkEnabled = CollectionHelper.getBooleanMapAttr(sessionAttrs,
-                            CoreTokenConstants.IS_REDUCED_CROSSTALK_ENABLED, false);
+                            CoreTokenConstants.IS_REDUCED_CROSSTALK_ENABLED, true);
 
-                    logoutDestroyBroadcast = SessionBroadcast.valueOf(CollectionHelper.getMapAttr(sessionAttrs,
-                            CoreTokenConstants.LOGOUT_DESTROY_BROADCAST));
+                    if (isReducedCrosstalkEnabled) {
+                        logoutDestroyBroadcast = SessionBroadcastMode.valueOf(CollectionHelper.getMapAttr(sessionAttrs,
+                                CoreTokenConstants.LOGOUT_DESTROY_BROADCAST, "OFF"));
+                    }
 
                     // Obtain Site Ids
                     Set<String> serverIDs = WebtopNaming.getSiteNodes(sessionServerID);
@@ -2404,7 +2404,7 @@ public class SessionService {
     /**
      * Indicates what broadcast to undertake on session logout/destroy
      */
-    public SessionBroadcast getLogoutDestroyBroadcast() {
+    public SessionBroadcastMode getLogoutDestroyBroadcast() {
         return logoutDestroyBroadcast;
     }
 
@@ -2512,7 +2512,6 @@ public class SessionService {
                         // ONLY SEND TO REMOTE URL
                         if (!sessionService.isLocalSessionService(parsedUrl)) {
                             PLLServer.send(parsedUrl, setGlobal);
-                            //remove this url from the indvidual url list.
                         }
                     } catch (Exception e) {
                         sessionService.sessionDebug.error("Remote Global notification to " + url, e);
