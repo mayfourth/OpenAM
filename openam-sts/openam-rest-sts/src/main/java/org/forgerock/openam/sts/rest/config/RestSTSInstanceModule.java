@@ -412,8 +412,11 @@ public class RestSTSInstanceModule extends AbstractModule {
     @Provides
     @Named(AMSTSConstants.OFFLOADED_TWO_WAY_TLS_HEADER_KEY)
     String getOffloadedTwoWayTLSHeaderKey() {
-        //TODO: pull from config, once appropriate location decided upon (and return empty string if value not set).
-        return "client_cert";
+        String headerKey = stsInstanceConfig.getDeploymentConfig().getOffloadedTwoWayTlsHeaderKey();
+        if (headerKey == null) {
+            return "";
+        }
+        return headerKey;
     }
 }
 

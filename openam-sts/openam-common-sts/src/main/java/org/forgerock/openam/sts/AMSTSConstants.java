@@ -344,6 +344,6 @@ public class AMSTSConstants {
      * with the name of the http header where the tls-offloading engine will store the client certificate prior to invoking
      * OpenAM.
      */
-    public static final String OFFLOADED_TWO_WAY_TLS_HEADER_KEY = "offloaded_two_way_tls_header_key";
+    public static final String OFFLOADED_TWO_WAY_TLS_HEADER_KEY = SharedSTSConstants.OFFLOADED_TWO_WAY_TLS_HEADER_KEY;
 
 }

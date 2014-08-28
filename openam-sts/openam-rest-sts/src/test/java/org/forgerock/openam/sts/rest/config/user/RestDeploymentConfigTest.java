@@ -25,6 +25,7 @@ import static org.testng.AssertJUnit.assertEquals;
 import org.forgerock.openam.sts.config.user.AuthTargetMapping;
 
 public class RestDeploymentConfigTest {
+    private static final String CLIENT_CERT = "client_cert";
     @Test
     public void testEquals() {
         AuthTargetMapping atm = AuthTargetMapping.builder()
@@ -33,12 +34,14 @@ public class RestDeploymentConfigTest {
         RestDeploymentConfig dc1 = RestDeploymentConfig.builder()
                 .realm("a")
                 .uriElement("b")
+                .offloadedTwoWayTLSHeaderKey(CLIENT_CERT)
                 .authTargetMapping(atm)
                 .build();
 
         RestDeploymentConfig dc2 = RestDeploymentConfig.builder()
                 .realm("a")
                 .uriElement("b")
+                .offloadedTwoWayTLSHeaderKey(CLIENT_CERT)
                 .authTargetMapping(atm)
                 .build();
         assertEquals(dc1, dc2);
@@ -84,6 +87,18 @@ public class RestDeploymentConfigTest {
                 .authTargetMapping(atm)
                 .build();
         Assert.assertEquals(rdc, RestDeploymentConfig.fromJson(rdc.toJson()));
+
+        atm = AuthTargetMapping.builder()
+                .addMapping(TokenType.USERNAME, "module", "untmodule")
+                .build();
+        rdc = RestDeploymentConfig.builder()
+                .realm("a")
+                .uriElement("b")
+                .authTargetMapping(atm)
+                .offloadedTwoWayTLSHeaderKey(CLIENT_CERT)
+                .build();
+        Assert.assertEquals(rdc, RestDeploymentConfig.fromJson(rdc.toJson()));
+
     }
 
     @Test
@@ -107,6 +122,7 @@ public class RestDeploymentConfigTest {
                 .realm("a")
                 .uriElement("b")
                 .authTargetMapping(atm)
+                .offloadedTwoWayTLSHeaderKey(CLIENT_CERT)
                 .build();
 
         assertEquals(rdc, RestDeploymentConfig.marshalFromAttributeMap(rdc.marshalToAttributeMap()));

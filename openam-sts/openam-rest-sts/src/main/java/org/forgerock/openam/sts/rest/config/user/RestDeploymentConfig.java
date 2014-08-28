@@ -34,7 +34,7 @@ import static org.forgerock.json.fluent.JsonValue.object;
 /**
  * This class represents the deployment configuration for an STS instance. This includes:
  * 1. the AuthTargetMapping instance - i.e. the REST authN context for each token type.
- * 2. The uri element (e.g. /realm1/accounting/bobo) at which the STS instance will be deployed
+ * 2. The uri element at which the STS instance will be deployed
  * 3. The realm within which the STS is deployed.
  *
  */
@@ -47,11 +47,14 @@ public class RestDeploymentConfig {
     private static final String REALM = SharedSTSConstants.DEPLOYMENT_REALM;
     private static final String URI_ELEMENT = SharedSTSConstants.DEPLOYMENT_URL_ELEMENT;
     public static final String AUTH_TARGET_MAPPINGS = AuthTargetMapping.AUTH_TARGET_MAPPINGS;
+    private static final String OFFLOADED_TWO_WAY_TLS_HEADER_KEY = SharedSTSConstants.OFFLOADED_TWO_WAY_TLS_HEADER_KEY;
+
 
     public static class RestDeploymentConfigBuilder {
         private String uriElement;
         private String realm = "/"; //default value
         private AuthTargetMapping authTargetMapping;
+        private String offloadedTwoWayTLSHeaderKey;
 
         public RestDeploymentConfigBuilder uriElement(String uriElement)  {
             this.uriElement = uriElement;
@@ -68,6 +71,11 @@ public class RestDeploymentConfig {
             return this;
         }
 
+        public RestDeploymentConfigBuilder offloadedTwoWayTLSHeaderKey(String offloadedTLSHeaderKey)  {
+            this.offloadedTwoWayTLSHeaderKey = offloadedTLSHeaderKey;
+            return this;
+        }
+
         public RestDeploymentConfig build() {
             return new RestDeploymentConfig(this);
         }
@@ -76,11 +84,13 @@ public class RestDeploymentConfig {
     private final String uriElement;
     private final String realm;
     private final AuthTargetMapping authTargetMapping;
+    private final String offloadedTwoWayTLSHeaderKey;
 
     private RestDeploymentConfig(RestDeploymentConfigBuilder builder) {
         uriElement = builder.uriElement;
         realm = builder.realm;
         authTargetMapping = builder.authTargetMapping;
+        offloadedTwoWayTLSHeaderKey = builder.offloadedTwoWayTLSHeaderKey; //can be null
         Reject.ifNull(uriElement, "UriElement String cannot be null");
         Reject.ifNull(realm, "Realm String cannot be null");
         Reject.ifNull(authTargetMapping, "AuthTargetMapping cannot be null");
@@ -103,6 +113,11 @@ public class RestDeploymentConfig {
         return authTargetMapping;
     }
 
+    public String getOffloadedTwoWayTlsHeaderKey() {
+        return offloadedTwoWayTLSHeaderKey;
+    }
+
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -110,6 +125,7 @@ public class RestDeploymentConfig {
         sb.append('\t').append("Deployment uriElement: ").append(uriElement).append('\n');
         sb.append('\t').append("realm: ").append(realm).append('\n');
         sb.append('\t').append("authTargetMapping: ").append(authTargetMapping).append('\n');
+        sb.append('\t').append("offloadedTwoWayTLSHeaderKey: ").append(offloadedTwoWayTLSHeaderKey).append('\n');
         return sb.toString();
     }
 
@@ -119,7 +135,10 @@ public class RestDeploymentConfig {
             RestDeploymentConfig otherConfig = (RestDeploymentConfig)other;
             return  uriElement.equals(otherConfig.getUriElement()) &&
                     realm.equals(otherConfig.getRealm()) &&
-                    authTargetMapping.equals(otherConfig.getAuthTargetMapping());
+                    authTargetMapping.equals(otherConfig.getAuthTargetMapping()) &&
+                    (offloadedTwoWayTLSHeaderKey != null
+                            ? offloadedTwoWayTLSHeaderKey.equals(otherConfig.getOffloadedTwoWayTlsHeaderKey())
+                            : otherConfig.getOffloadedTwoWayTlsHeaderKey() == null);
         }
         return false;
     }
@@ -131,7 +150,8 @@ public class RestDeploymentConfig {
 
     public JsonValue toJson() {
         return json(object(field(URI_ELEMENT, uriElement), field(REALM, realm),
-                field(AuthTargetMapping.AUTH_TARGET_MAPPINGS, authTargetMapping.toJson())));
+                field(AuthTargetMapping.AUTH_TARGET_MAPPINGS, authTargetMapping.toJson()),
+                field(OFFLOADED_TWO_WAY_TLS_HEADER_KEY, offloadedTwoWayTLSHeaderKey)));
     }
 
     public static RestDeploymentConfig fromJson(JsonValue json) {
@@ -139,6 +159,7 @@ public class RestDeploymentConfig {
                 .authTargetMapping(AuthTargetMapping.fromJson(json.get(AUTH_TARGET_MAPPINGS)))
                 .uriElement(json.get(URI_ELEMENT).asString())
                 .realm(json.get(REALM).asString())
+                .offloadedTwoWayTLSHeaderKey(json.get(OFFLOADED_TWO_WAY_TLS_HEADER_KEY).asString())
                 .build();
     }
 

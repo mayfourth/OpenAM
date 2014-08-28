@@ -73,6 +73,9 @@ provided for required attributes upon service registration.
                         <Value>X509|module|cert_module|x509_token_token_auth_target_header_key=client_cert</Value>
                     </DefaultValues>
                 </AttributeSchema>
+                <AttributeSchema name="deployment-offloaded-two-way-tls-header-key"
+                                 type="single" syntax="string" i18nKey="deployment_offloaded_two_way_tls_header_key">
+                </AttributeSchema>
                 <AttributeSchema name="keystore-filename"
                                  type="single" syntax="string" i18nKey="keystore_filename"
                                  validator="RequiredValueValidator">
@@ -187,6 +190,9 @@ provided for required attributes upon service registration.
                             <Value>OPENIDCONNECT|module|oidc|oidc_id_token_auth_target_header_key=oidc_id_token</Value>
                             <Value>X509|module|cert_module|x509_token_token_auth_target_header_key=client_cert</Value>
                         </DefaultValues>
+                    </AttributeSchema>
+                    <AttributeSchema name="deployment-offloaded-two-way-tls-header-key"
+                                     type="single" syntax="string" i18nKey="deployment_offloaded_two_way_tls_header_key">
                     </AttributeSchema>
                     <AttributeSchema name="keystore-filename"
                                      type="single" syntax="string" i18nKey="keystore_filename"
