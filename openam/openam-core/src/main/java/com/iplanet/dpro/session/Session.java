@@ -978,7 +978,7 @@ public class Session extends GeneralTaskRunnable {
      * @param sid Session ID.
      */
     public static void removeSID(SessionID sid) {
-        Session session = sessionTable.get(sid);
+        Session session = readSession(sid);
         if (session != null) {
             if (session.shouldRemoveFromSessionTable()) {
                 deleteSession(sid);
@@ -1092,6 +1092,22 @@ public class Session extends GeneralTaskRunnable {
 
         Session session = readSession(sessionID);
         if (session != null) {
+
+            /**
+             * Reduced crosstalk protection.
+             *
+             * When a user logs out, or the Session is destroyed and crosstalk is reduced, it is possible
+             * for a destroyed session to be recovered by accessing it on a remote server. Instead the
+             * session will be left in the {@link #sessionTable} until it is purged. This check will
+             * detect this condition and indicate to the caller their SessionID is invalid.
+             */
+            if (session.getState(false) == DESTROYED) {
+                SessionService ss = SessionService.getSessionService();
+                if (ss.isSessionFailoverEnabled() && ss.isReducedCrossTalkEnabled()) {
+                    throw new SessionException("Session is in a destroyed state");
+                }
+            }
+
             TokenRestriction restriction = session.getRestriction();
                     /*
                      * In cookie hijacking mode...
@@ -2086,10 +2102,7 @@ public class Session extends GeneralTaskRunnable {
      * @return Null indicates no Session present, otherwise non null.
      */
     static Session readSession(SessionID sessionID) {
-        // if SFO enabled and CrossTalk disabled
-        // if Session is not null
-        // if Session is in deleted state
-        // return null.
+        Reject.ifNull(sessionID);
         return sessionTable.get(sessionID);
     }
 
