@@ -41,28 +41,38 @@ define("org/forgerock/openam/ui/policy/ManageApplicationsView", [
                     return '<a href="#app/' + cellvalue + '">' + cellvalue + '</a>';
                 },
                 policyLinkFormatter = function (cellvalue, options, rowObject) {
-                    return '<a href="#app/' + cellvalue + '/policies/">View</a>';
+                    return '<a href="#app/' + cellvalue + '/policies/" class="icon-search"></a>';
                 };
 
             this.parentRender(function () {
                 var options = {
-                    view: this,
-                    id: '#manageApps',
-                    url: '/openam/json/applications?_queryFilter=true',
-                    colNames: ['Name', 'Realm', 'Type', 'Last Modified', 'Policies'],
-                    colModel: [
-                        {name: 'name', formatter: appLinkFormatter, width: 260},
-                        {name: 'realm', width: 70},
-                        {name: 'applicationType', width: 260},
-                        {name: 'lastModifiedDate', width: 260},
-                        {name: 'name', formatter: policyLinkFormatter,  width: 70}
-                    ],
-                    width: '920',
-                    pager: '#appsPager',
-                    callback: callback
-                };
+                        url: '/openam/json/applications?_queryFilter=true',
+                        colNames: ['Name', 'Description', 'Realm', 'Type', 'Author', 'Created', 'Modified By',
+                            'Last Modified', 'Actions', 'Conditions', 'Resources', 'Subjects', 'Override Rule', 'Policies'],
+                        colModel: [
+                            {name: 'name', width: 250, formatter: appLinkFormatter, frozen: true},
+                            {name: 'description', width: 150},
+                            {name: 'realm', width: 150},
+                            {name: 'applicationType', width: 250},
+                            {name: 'createdBy', width: 250},
+                            {name: 'creationDate', width: 150, formatter: uiUtils.commonJQGridFormatters.dateFormatter},
+                            {name: 'lastModifiedBy', width: 250},
+                            {name: 'lastModifiedDate', width: 150, formatter: uiUtils.commonJQGridFormatters.dateFormatter},
+                            {name: 'actions', width: 250, formatter: uiUtils.commonJQGridFormatters.objectFormatter},
+                            {name: 'conditions', width: 150, formatter: uiUtils.commonJQGridFormatters.arrayFormatter},
+                            {name: 'resources', width: 250, formatter: uiUtils.commonJQGridFormatters.arrayFormatter},
+                            {name: 'subjects', width: 150, formatter: uiUtils.commonJQGridFormatters.arrayFormatter},
+                            {name: 'entitlementCombiner', width: 100},
+                            {name: 'name', width: 30, formatter: policyLinkFormatter}
+                        ],
+                        width: 920,
+                        shrinkToFit: false,
+                        pager: '#appsPager'
 
-                uiUtils.buildRestResponseBasedJQGrid(options);
+                    },
+                    grid = uiUtils.buildRestResponseBasedJQGrid(this, '#manageApps', options, callback);
+
+                grid.jqGrid('setFrozenColumns');
             });
         }
     });
