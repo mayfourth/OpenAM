@@ -973,6 +973,46 @@ public class Session extends GeneralTaskRunnable {
     }
 
     /**
+     * Wrapper method for {@link #removeSID} only to be called when receiving notification of session
+     * destruction from the home server.
+     *
+     * @param info Current state of session on home server
+     */
+    static void removeRemoteSID(SessionInfo info) {
+        SessionID sessionID = new SessionID(info.sid);
+
+        if (isReducedCrossTalkEnabled() && !hasSession(sessionID)) {
+            /**
+             * Reduced crosstalk protection.
+             *
+             * As the indicated session has not yet been loaded, it will be created and added to the
+             * {@link #sessionTable} so that it can remain there in a DESTROYED state until it is purged.
+             */
+            Session session = new Session(sessionID);
+            try {
+                session.update(info);
+                writeSession(sessionID, session);
+            } catch (SessionException e) {
+                // do nothing?
+            }
+        }
+
+        removeSID(sessionID);
+    }
+
+    private static boolean isReducedCrossTalkEnabled() {
+        if (isServerMode()) {
+            SessionService ss = InjectorHolder.getInstance(SessionService.class);
+            return ss.isReducedCrossTalkEnabled();
+        }
+        return false;
+    }
+
+    private static boolean hasSession(SessionID sessionID) {
+        return readSession(sessionID) != null;
+    }
+
+    /**
      * Removes the <code>SessionID</code> from session table.
      *
      * @param sid Session ID.
@@ -980,7 +1020,7 @@ public class Session extends GeneralTaskRunnable {
     public static void removeSID(SessionID sid) {
         Session session = readSession(sid);
         if (session != null) {
-            if (session.shouldRemoveFromSessionTable()) {
+            if (session.canDelete()) {
                 deleteSession(sid);
                 session.cancel();
             }
@@ -999,9 +1039,9 @@ public class Session extends GeneralTaskRunnable {
      * remain in the sessionTable until its maxSessionTime has elapsed. In all other scenarios, this
      * session should be removed from the sessionTable on the first call to removeSID.
      *
-     * @return true if this session should be removed from the sessionTable without delay when destroyed.
+     * @return true if this session can be removed from the sessionTable without delay when destroyed.
      */
-    private boolean shouldRemoveFromSessionTable() {
+    private boolean canDelete() {
         try {
             return maxSessionTimeExceeded ||
                     sessionService == null ||
