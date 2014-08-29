@@ -1323,11 +1323,12 @@ public class InternalSession implements TaskRunnable, Serializable {
             }
         }
 
-        for (String url : sessionEventURLs.keySet()) {
-            if (urls.containsKey(url)) {
-                urls.get(url).addAll(sessionEventURLs.get(url));
+        for (Map.Entry<String,Set<SessionID>> entry : sessionEventURLs.entrySet()) {
+            Set<SessionID> sessionIDs = urls.get(entry.getKey());
+            if (sessionIDs != null) {
+                sessionIDs.addAll(entry.getValue());
             } else {
-                urls.put(url, sessionEventURLs.get(url));
+                urls.put(entry.getKey(), entry.getValue());
             }
         }
 

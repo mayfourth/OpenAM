@@ -2231,7 +2231,7 @@ public class SessionService {
 
                     if (isReducedCrosstalkEnabled) {
                         logoutDestroyBroadcast = SessionBroadcastMode.valueOf(CollectionHelper.getMapAttr(sessionAttrs,
-                                CoreTokenConstants.LOGOUT_DESTROY_BROADCAST, "OFF"));
+                                CoreTokenConstants.LOGOUT_DESTROY_BROADCAST, SessionBroadcastMode.OFF.name()));
                     }
 
                     // Obtain Site Ids
