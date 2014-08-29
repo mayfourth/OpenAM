@@ -32,6 +32,7 @@ import org.forgerock.openam.sts.STSPrincipal;
 import org.forgerock.openam.sts.TokenType;
 import org.forgerock.openam.sts.TokenMarshalException;
 import org.forgerock.openam.sts.XmlMarshaller;
+import org.forgerock.openam.sts.rest.service.RestSTSServiceHttpServletContext;
 import org.forgerock.openam.sts.rest.token.validator.RestCertificateTokenValidator;
 import org.forgerock.openam.sts.service.invocation.ProofTokenState;
 import org.forgerock.openam.sts.service.invocation.SAML2TokenState;
@@ -72,7 +73,8 @@ public class TokenRequestMarshallerImpl implements TokenRequestMarshaller {
         this.logger = logger;
     }
 
-    public ReceivedToken marshallInputToken(JsonValue receivedToken, HttpContext httpContext) throws TokenMarshalException {
+    public ReceivedToken marshallInputToken(JsonValue receivedToken, HttpContext httpContext,
+                                            RestSTSServiceHttpServletContext restSTSServiceHttpServletContext) throws TokenMarshalException {
         Map<String,Object> tokenAsMap = receivedToken.asMap();
         String tokenType = (String)tokenAsMap.get(AMSTSConstants.TOKEN_TYPE_KEY);
         if (tokenType == null) {
@@ -87,7 +89,7 @@ public class TokenRequestMarshallerImpl implements TokenRequestMarshaller {
         } else if (TokenType.OPENIDCONNECT.name().equals(tokenType)) {
             return marshallOpenIdConnectIdToken(tokenAsMap);
         } else if (TokenType.X509.name().equals(tokenType)) {
-            return marshalX509CertToken(httpContext);
+            return marshalX509CertToken(httpContext, restSTSServiceHttpServletContext);
         }
 
         throw new TokenMarshalException(ResourceException.BAD_REQUEST,
@@ -247,36 +249,20 @@ public class TokenRequestMarshallerImpl implements TokenRequestMarshaller {
      * via x509 certificates presented via two-way-tls. This certificate can be obtained via the attribute referenced by
      * the javax.servlet.request.X509Certificate key (if the container is deployed with two-way-tls), or from the header
      * referenced by offloadedTlsClientCertKey, in case OpenAM is deployed behind infrastructure which performs tls-offloading.
-     * This method will first consult the javax.servlet.request.X509Certificate attribute, and then a configured header.
+     * This method will consult header value if configured for this rest-sts instance, and if not configured, the
+     * javax.servlet.request.X509Certificate attribute will be consulted.
      * An exception will be thrown if the client cert cannot be obtained.
      * @param httpContext The HttpContext instance corresponding to this invocation
+     * @param restSTSServiceHttpServletContext The AbstractContext instance which provides access to the HttpServletRequest,
+     *                                         and with it, access to the client cert presented via two-way-tls
      * @throws org.forgerock.openam.sts.TokenMarshalException if the client's X509 token cannot be obtained from the
      * javax.servlet.request.X509Certificate attribute, or from the header referenced by the offloadedTlsClientCertKey value.
      * @return a ReceivedToken instance encapsulating the X509Certificate.
      */
-    private ReceivedToken marshalX509CertToken(HttpContext httpContext) throws TokenMarshalException {
-        X509Certificate certificate = pullClientCertFromRequestAttribute(httpContext);
-        if (certificate == null) {
-            certificate = pullClientCertFromHeader(httpContext);
-        }
-        if (certificate != null) {
-            return marshalX509CertIntoReceivedToken(certificate);
-        } else {
-            throw new TokenMarshalException(ResourceException.BAD_REQUEST, "A token transformation specifying an " +
-                    "x509 token as input must be consumed via two-way-tls. The client's certificate was found neither in the " +
-                    "javax.servlet.request.X509Certificate attribute, nor in the " + offloadedTlsClientCertKey +
-                    " header.");
-        }
-    }
+    private ReceivedToken marshalX509CertToken(HttpContext httpContext, RestSTSServiceHttpServletContext
+            restSTSServiceHttpServletContext) throws TokenMarshalException {
 
-    private X509Certificate pullClientCertFromRequestAttribute(HttpContext httpContext) throws TokenMarshalException {
-        /*
-        TODO - until CREST-173 is fixed, I can't pull the attributes
-         */
-        return null;
-    }
-
-    private X509Certificate pullClientCertFromHeader(HttpContext httpContext) throws TokenMarshalException {
+        X509Certificate certificate = null;
         /*
         In non-offloaded tls deployments, the offloadedTlsClientCertKey won't be set in the RestSTSInstanceConfig. But
         because this value is injected, and the @Nullable attribute is not available(and thus null references cannot be
@@ -284,29 +270,69 @@ public class TokenRequestMarshallerImpl implements TokenRequestMarshaller {
         so I will check to insure that this value has indeed been specified.
          */
         if (!"".equals(offloadedTlsClientCertKey)) {
-            List<String> clientCertHeader = httpContext.getHeader(offloadedTlsClientCertKey);
-            if (clientCertHeader.isEmpty()) {
-                return null;
+            certificate = pullClientCertFromHeader(httpContext);
+        } else {
+            certificate = pullClientCertFromRequestAttribute(restSTSServiceHttpServletContext);
+        }
+
+        if (certificate != null) {
+            return marshalX509CertIntoReceivedToken(certificate);
+        } else {
+            if (!"".equals(offloadedTlsClientCertKey)) {
+                throw new TokenMarshalException(ResourceException.BAD_REQUEST, "A token transformation specifying an " +
+                        "x509 token as input must be consumed via two-way-tls. No header was specified referencing the " +
+                        "certificate, and the client's certificate was not found in the " +
+                        "javax.servlet.request.X509Certificate attribute.");
             } else {
-                if (clientCertHeader.size() > 1) {
-                    logger.warn("In TokenRequestMarshallerImpl#marshalX509CertToken, more than a single header value " +
-                            "corresponding to the header " + offloadedTlsClientCertKey + ". The headers: "
-                            + clientCertHeader + ". Using the first element in the list.");
-                }
-                final String certString = clientCertHeader.get(0);
-                try {
-                    return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(
-                            new ByteArrayInputStream(Base64.decode(certString.getBytes(AMSTSConstants.UTF_8_CHARSET_ID))));
-                } catch (CertificateException e) {
-                    throw new TokenMarshalException(ResourceException.INTERNAL_ERROR,
-                            "Exception caught marshalling X509 cert from value set in " + offloadedTlsClientCertKey + " header: " + e, e);
-                } catch (UnsupportedEncodingException e) {
-                    throw new TokenMarshalException(ResourceException.INTERNAL_ERROR,
-                            "Exception caught marshalling X509 cert from value set in " + offloadedTlsClientCertKey + " header: " + e, e);
-                }
+                throw new TokenMarshalException(ResourceException.BAD_REQUEST, "A token transformation specifying an " +
+                        "x509 token as input must be consumed via two-way-tls. The " + offloadedTlsClientCertKey +
+                        " header was specified in the rest-sts instance configuration as referencing the " +
+                        "certificate, yet no certificate was found referenced by this header value.");
             }
+        }
+    }
+
+    private X509Certificate pullClientCertFromRequestAttribute(RestSTSServiceHttpServletContext restSTSServiceHttpServletContext) throws TokenMarshalException {
+        X509Certificate[] certificates =
+                (X509Certificate[])restSTSServiceHttpServletContext.getHttpServletRequest().getAttribute("javax.servlet.request.X509Certificate");
+        if (certificates != null) {
+            /*
+            The cxf-sts and wss4j convention is to pull the first cert from the array, as it is the leaf of any chain, and
+            all non-leaf certificates should be in the trust store of the ultimate recipient.
+             */
+            return certificates[0];
         } else {
             return null;
+        }
+    }
+
+    private X509Certificate pullClientCertFromHeader(HttpContext httpContext) throws TokenMarshalException {
+        List<String> clientCertHeader = httpContext.getHeader(offloadedTlsClientCertKey);
+        if (clientCertHeader.isEmpty()) {
+            return null;
+        } else {
+            if (clientCertHeader.size() > 1) {
+                logger.warn("In TokenRequestMarshallerImpl#marshalX509CertToken, more than a single header value " +
+                        "corresponding to the header " + offloadedTlsClientCertKey + ". The headers: "
+                        + clientCertHeader + ". Using the first element in the list.");
+            }
+            final String certString = clientCertHeader.get(0);
+            try {
+                /*
+                Note that in the ServletRequest attribute, a X509Certificate[] is returned, but when the value is
+                set in the header, I expect to marshal this state into a single certificate. Here I am following the
+                lead of the com.sun.identity.authentication.modules.cert.Cert class, which also expects to find a
+                single Cert in the header.
+                 */
+                return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(
+                        new ByteArrayInputStream(Base64.decode(certString.getBytes(AMSTSConstants.UTF_8_CHARSET_ID))));
+            } catch (CertificateException e) {
+                throw new TokenMarshalException(ResourceException.INTERNAL_ERROR,
+                        "Exception caught marshalling X509 cert from value set in " + offloadedTlsClientCertKey + " header: " + e, e);
+            } catch (UnsupportedEncodingException e) {
+                throw new TokenMarshalException(ResourceException.INTERNAL_ERROR,
+                        "Exception caught marshalling X509 cert from value set in " + offloadedTlsClientCertKey + " header: " + e, e);
+            }
         }
     }
 
