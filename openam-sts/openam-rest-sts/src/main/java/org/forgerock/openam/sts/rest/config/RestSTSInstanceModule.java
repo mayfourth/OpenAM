@@ -253,8 +253,7 @@ public class RestSTSInstanceModule extends AbstractModule {
         deployment so that, in site deployments, the Rest AuthN and the TGS of the local OpenAM instance is consumed, instead
         of the OpenAM url set when the rest-sts-instance was published.
          */
-        return SystemProperties.get(Constants.AM_SERVER_PROTOCOL) + "://" + SystemProperties.get(Constants.AM_SERVER_HOST) +
-                ":" + SystemProperties.get(Constants.AM_SERVER_PORT) + SystemProperties.get(Constants.AM_SERVICES_DEPLOYMENT_DESCRIPTOR);
+        return SystemProperties.getServerInstanceName();
     }
 
     /*
