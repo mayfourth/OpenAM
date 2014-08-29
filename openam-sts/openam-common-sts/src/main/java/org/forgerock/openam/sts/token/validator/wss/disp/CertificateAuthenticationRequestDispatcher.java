@@ -48,10 +48,10 @@ public class CertificateAuthenticationRequestDispatcher implements TokenAuthenti
 
     @Override
     public Representation dispatch(URI uri, AuthTargetMapping.AuthTarget target, X509Certificate[] certificates) throws TokenValidationException {
-        //TODO: log if there is more than one cert - or do I just dispatch multiple requests, or ??  - for now, just log
-        //and how do I put multiple certs in the callback - just encode the entire chain?? It looks like common practice is just to use the
-        //first element in the array...Confirm this - seems to make sense, as it will be the leaf cert, and all other certs in the chain
-        //should be in the recipient's trust store.
+        /*
+        The common practice in the cxf-sts and wss4j is just to use the first element in the array, as this is the leaf
+        cert, and all others correspond to CAs, which will be in the targeted destination's trust store.
+         */
         if (certificates.length > 1) {
             StringBuilder stringBuilder = new StringBuilder("Dealing with more than a single certificate. Their DNs:");
             for (int ndx = 0; ndx < certificates.length; ndx++) {
