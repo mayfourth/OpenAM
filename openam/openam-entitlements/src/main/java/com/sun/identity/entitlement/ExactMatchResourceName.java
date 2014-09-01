@@ -119,7 +119,7 @@ public class ExactMatchResourceName
         }
     }
 
-    public Set getServiceTypeNames() {
+    public Set<String> getServiceTypeNames() {
         return null;
     }
 

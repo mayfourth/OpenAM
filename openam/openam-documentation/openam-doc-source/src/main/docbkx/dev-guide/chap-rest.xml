@@ -37,14 +37,186 @@
  integration between web client applications and OpenAM.</para>
  
  <section xml:id="about-openam-rest-api">
-  <title>About the RESTful API</title>
+  <title>About the RESTful APIs</title>
 
-  <para>Interface Stability: <link xlink:show="new"
-  xlink:href="admin-guide#interface-stability"
-  xlink:role="http://docbook.org/xlink/role/olink">Evolving</link></para>
+  <para>
+   <link
+    xlink:show="new"
+    xlink:href="http://en.wikipedia.org/wiki/Representational_state_transfer"
+   >Representational State Transfer</link>(REST) is an architectural style
+   that sets certain constraints for designing and building
+   large-scale distributed hypermedia systems.
+   As an architectural style, REST has very broad application.
+   The designs of both HTTP 1.1 and also URIs follow RESTful principles.
+   The World Wide Web is no doubt the largest and best known REST application.
+   Many other web services also follow the REST architectural style.
+   Examples include OAuth 2.0 and OpenID Connect 1.0.
+  </para>
 
-  <para>OpenAM offers a RESTful API for these access and identity management
-  operations:</para>
+  <para>
+   ForgeRock Common REST (CREST) applies RESTful principles
+   to define common verbs for HTTP-based APIs that access web resources
+   and collections of web resources.
+  </para>
+
+  <para>
+   Native OpenAM REST APIs in version 11.0.0 and later use the CREST verbs.
+   (In contrast, OAuth 2.0 and OpenID Connect 1.0 APIs follow the standards.)
+   APIs covered in sections labelled (Legacy API) predate CREST,
+   and there do not use the CREST verbs.
+  </para>
+
+  <para>
+   When using a CREST API, you use the common verbs as query string parameters
+   in resource and resource collection URIs.
+  </para>
+
+  <variablelist>
+   <para>
+    CREST APIs use these verbs.
+   </para>
+
+   <varlistentry>
+    <term>_create</term>
+    <listitem>
+     <para>
+      Add a new resource
+     </para>
+
+     <para>
+      Create maps to HTTP PUT (or POST).
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry>
+    <term>_read</term>
+    <listitem>
+     <para>
+      Retrieve a single resource
+     </para>
+
+     <para>
+      Read maps to HTTP GET.
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry>
+    <term>_update</term>
+    <listitem>
+     <para>
+      Replace an existing resource
+     </para>
+
+     <para>
+      Update maps to HTTP PUT.
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry>
+    <term>_delete</term>
+    <listitem>
+     <para>
+      Remove an existing resource
+     </para>
+
+     <para>
+      Delete maps to HTTP DELETE.
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry>
+    <term>_patch</term>
+    <listitem>
+     <para>
+      Modify part of an existing resource
+     </para>
+
+     <para>
+      Patch maps to HTTP PATCH.
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry>
+    <term>_action</term>
+    <listitem>
+     <para>
+      Perform a predefined action
+     </para>
+
+     <para>
+      Action maps to HTTP POST.
+     </para>
+
+     <para>
+      The generic _action verb extends what the API can do
+      where none of the other standard CREST verbs fit,
+      as in <literal>_action=logout</literal>.
+     </para>
+    </listitem>
+   </varlistentry>
+
+   <varlistentry>
+    <term>_query</term>
+    <listitem>
+     <para>
+      Search a collection of resources
+     </para>
+
+     <para>
+      Query maps to HTTP GET.
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+
+  <para>
+   <acronym>CRUDPAQ</acronym> is an acronym for the verbs.
+   Notice that reserved words in CREST, such as the verbs,
+   start with underscores (<literal>_</literal>).
+  </para>
+
+  <para>
+   In CREST, you can address resources in collections of resources
+   by their unique identifiers, their IDs.
+   IDs are exposed in the resource URIs
+   as in <literal>/users/<replaceable>id</replaceable></literal>
+   and <literal>/groups/<replaceable>id</replaceable></literal>.
+   The ID is also in the "_id" field of the resource.
+  </para>
+
+  <para>
+   In CREST, resources are versioned using revision numbers.
+   A revision is specified in the resource's "_rev" field.
+   Revisions make it possible to figure out whether to apply changes
+   without resource locking and without distributed transactions.
+  </para>
+
+  <para>
+   In CREST, you can explicitly request APIs versions.
+   This means that OpenAM can continue to support older API versions
+   as well as newer API versions as developers migrate their applications
+   to take advantage of capabilities provided by newer APIs.
+  </para>
+
+  <para>
+   Interface Stability:
+   <link
+    xlink:show="new"
+    xlink:href="admin-guide#interface-stability"
+    xlink:role="http://docbook.org/xlink/role/olink"
+   >Evolving</link>
+  </para>
+
+  <para>
+   OpenAM offers RESTful APIs for
+   these access and identity management operations:
+  </para>
+
   <itemizedlist>
    <listitem>
     <para><link linkend="rest-api-auth">Authentication</link> (login)</para>
@@ -402,7 +574,7 @@ $ <userinput>curl \
 
    <para>
     You can use the query string parameter,
-    <literal>sessionUpgrade=<replaceable>tokenId</replaceable></literal>,
+    <literal>sessionUpgradeSSOTokenId=<replaceable>tokenId</replaceable></literal>,
     to request session upgrade.
     For an explanation of session upgrade,
     see the <citetitle>Administration Guide</citetitle> section on,
@@ -1788,16 +1960,22 @@ $ <userinput>curl \
 {
    "type": "NumericAttribute",
    "attributeName": "gidNumber",
-   "caseSensitive": "&lt;=",
+   "operator": "LESS_THAN",
    "value": "1000"
 }
         </programlisting>
 
-        <para><!-- This is my reading of NumericAttributeCondition.java. Looks like a bug. -->
-          <literal>"caseSensitive"</literal> is optional, but if used
-          then it should be set to a comparison operator, one of:
-          <literal>&lt; &lt;= = > >=</literal>.
-          If not specified, then OpenAM checks for equality.
+        <para>
+          <literal>"operator"</literal> is optional, but if used
+          it must be one of the following comparison operators:
+          <literal>LESS_THAN</literal>,
+          <literal>LESS_THAN_OR_EQUAL</literal>,
+          <literal>EQUAL</literal>,
+          <literal>GREATER_THAN_OR_EQUAL</literal>, or
+          <literal>GREATER_THAN</literal>.
+          Note that using symbols such as &lt;, &lt;=,=,&gt;=, or &gt; is not
+         supported.
+          If not specified, then OpenAM checks for equality (<literal>EQUAL</literal>).
          </para>
         </listitem>
 
@@ -5398,6 +5576,25 @@ $ <userinput>curl \
 <computeroutput>{}</computeroutput>
     </screen>
 
+    <para>Note that you can also use the <literal>email</literal> attribute
+     to locate the user. If both <literal>username</literal> and <literal>mail</literal>
+     attributes are used, then a request error is issued. If more
+     than one account has been registered with the same email address,
+     the password reset process does not start.</para>
+
+    <screen>
+$ <userinput>curl \
+ --request POST \
+ --header "Content-Type: application/json" \
+ --data '{
+   "email": "demo@example.com",
+   "subject": "Reset your forgotten password with OpenAM",
+   "message": "Follow this link to reset your password"
+ }' \
+ https://openam.example.com:8443/openam/json/users/?_action=forgotPassword</userinput>
+<computeroutput>{}</computeroutput>
+    </screen>
+
     <para>On success, the response is an empty JSON object <literal>{}</literal>
     as shown in the example.</para>
    </listitem>
@@ -5408,10 +5605,10 @@ $ <userinput>curl \
     but all on one line.</para>
 
     <literallayout class="monospaced"
-    >https://openam.example.com:8443/openam/json/confirmation/forgotPassword
+    >https://openam.example.com:8443/openam/json/XUI/confirm.html
      ?confirmationId=jrUZ3E7CK4UQJM5jnDHGNKH1UaQ=
      &amp;tokenId=M8cVqWqbKtCtpd/UqEAr0x25fxA=
-     &amp;username=demo</literallayout>
+     &amp;username=demo&amp;realm=/</literallayout>
    </listitem>
 
    <listitem>
@@ -5423,7 +5620,9 @@ $ <userinput>curl \
     query string parameters as shown in the following example.</para>
 
     <para>Your POST includes the new password as the value of the "userpassword"
-    field in the JSON payload.</para>
+     field in the JSON payload. You can also use the <literal>email</literal>
+     attribute instead of <literal>username</literal>.
+    </para>
 
     <screen>
 $ <userinput>curl \
@@ -5436,53 +5635,12 @@ $ <userinput>curl \
  "confirmationId":"jrUZ3E7CK4UQJM5jnDHGNKH1UaQ="
  }' \
  https://openam.example.com:8443/openam/json/users?_action=forgotPasswordReset</userinput>
-<computeroutput>{
-    "name": "demo",
-    "realm": "/",
-    "uid": [
-        "demo"
-    ],
-    "mail": [
-        "demo@example.com"
-    ],
-    "sn": [
-        "demo"
-    ],
-    "userPassword": [
-        "{SSHA}zgeBu4yOAy1i9QAgnldMCzW8LWX36ViVj9leig=="
-    ],
-    "cn": [
-        "demo"
-    ],
-    "inetUserStatus": [
-        "Active"
-    ],
-    "objectClass": [
-        "devicePrintProfilesContainer",
-        "person",
-        "sunIdentityServerLibertyPPService",
-        "inetorgperson",
-        "sunFederationManagerDataStore",
-        "iPlanetPreferences",
-        "iplanet-am-auth-configuration-service",
-        "organizationalperson",
-        "sunFMSAML2NameIdentifier",
-        "inetuser",
-        "forgerock-am-dashboard-service",
-        "iplanet-am-managed-person",
-        "iplanet-am-user-service",
-        "sunAMAuthAccountLockout",
-        "top"
-    ],
-    "universalid": [
-        "id=demo,ou=user,dc=openam,dc=forgerock,dc=org"
-    ]
-}</computeroutput>
+<computeroutput>{}</computeroutput>
     </screen>
 
-    <para>On success, the response is the JSON representation of the user
-    profile with the new password hashed according to the password storage
-    scheme for the identity repository.</para>
+    <para>On success or failure, the REST call returns an empty message, so that
+     information is not leaked.
+    </para>
    </listitem>
   </orderedlist>
 
@@ -7307,8 +7465,8 @@ $ <userinput>curl \
 
    <para>OpenAM REST APIs respond to successful requests with HTTP status codes
    in the 2xx range. OpenAM REST APIs respond to error conditions with HTTP
-   status codes in the 4xx and 5xx range. Status codes used are described in the
-   following list.</para>
+   status codes in the 4xx and 5xx range. Status codes used are described in
+   the following list.</para>
 
    <variablelist>
     <varlistentry>
@@ -7332,18 +7490,23 @@ $ <userinput>curl \
     <varlistentry>
      <term>400 Bad Request</term>
      <listitem>
-      <para>The request was malformed as in the following example, which is
-      sending bad data in the payload for the action.</para>
+      <para>The request was malformed. Either parameters required by the
+       action were missing, or as in the following example incorrect data was
+       sent in the payload for the action.</para>
 
-      <screen>
+<screen>
 $ <userinput>curl \
  --request POST \
  --header "Content-Type: application/json" \
  --data '{"bad":"data"}' \
- https://openam.example.com:8443/openam/json/users?_action=forgotPassword</userinput>
-
-<computeroutput>{"code":400,"reason":"Bad Request","message":"Username not provided"}</computeroutput>
-      </screen>
+ https://openam.example.com:8443/openam/json/users?_action=forgotPassword
+</userinput>
+<computeroutput>{
+ "code":400,
+ "reason":"Bad Request",
+ "message":"Username or email not provided in request"
+}</computeroutput>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7353,13 +7516,17 @@ $ <userinput>curl \
       <para>The request requires user authentication as in the following
       example, which is missing an SSO Token value.</para>
 
-      <screen>
+<screen>
 $ <userinput>curl \
  --request POST \
- https://openam.example.com:8443/openam/json/sessions?_action=logout</userinput>
-
-<computeroutput>{ "code": 401, "reason": "Unauthorized", "message": "Access denied" }</computeroutput>
-      </screen>
+ https://openam.example.com:8443/openam/json/sessions?_action=logout
+</userinput>
+<computeroutput>{
+ "code": 401,
+ "reason": "Unauthorized",
+ "message": "Access denied"
+}</computeroutput>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7370,25 +7537,26 @@ $ <userinput>curl \
       following example, which has a regular user trying to read the OpenAM
       administrator profile.</para>
 
-      <screen>
+<screen>
 $ <userinput>curl \
  --request POST \
  --header "X-OpenAM-Username: demo" \
  --header "X-OpenAM-Password: changeit" \
- https://openam.example.com:8443/openam/json/authenticate</userinput>
-
+ https://openam.example.com:8443/openam/json/authenticate
+</userinput>
 <computeroutput>{ "tokenId": "AQIC5w...YyMA..*" }</computeroutput>
 
 $ <userinput>curl \
  --header "iplanetDirectoryPro: AQIC5w...YyMA..*" \
- https://openam.example.com:8443/openam/json/users/amadmin</userinput>
+ https://openam.example.com:8443/openam/json/users/amadmin
+</userinput>
 <computeroutput>{
-    "code": 403,
-    "reason": "Forbidden",
-    "message": "Permission to perform the read operation denied to
-                id=demo,ou=user,dc=openam,dc=forgerock,dc=org"
+ "code": 403,
+ "reason": "Forbidden",
+ "message": "Permission to perform the read operation denied to
+             id=demo,ou=user,dc=openam,dc=forgerock,dc=org"
 }</computeroutput>
-      </screen>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7398,13 +7566,17 @@ $ <userinput>curl \
       <para>The specified resource could not be found as in the following
       example, which is attempting to read a nonexistent user's profile.</para>
 
-      <screen>
+<screen>
 $ <userinput>curl \
  --header "iplanetDirectoryPro: AQIC5w...NTcy*" \
- https://openam.example.com:8443/openam/json/users/missing</userinput>
-
-<computeroutput>{"code":404,"reason":"Not Found","message":"Resource cannot be found."}</computeroutput>
-      </screen>
+ https://openam.example.com:8443/openam/json/users/missing
+</userinput>
+<computeroutput>{
+ "code":404,
+ "reason":"Not Found",
+ "message":"Resource cannot be found."
+}</computeroutput>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7419,7 +7591,47 @@ $ <userinput>curl \
      <term>409 Conflict</term>
      <listitem>
       <para>The request would have resulted in a conflict with the current
-      state of the resource.</para>
+      state of the resource. For example using the Forgot Password feature
+       and specifying the user's email address as in the following
+       example, where multiple users have the same email address.</para>
+
+<screen>
+$ <userinput>curl \
+ --request POST \
+ --header "Content-Type: application/json" \
+ --data '{"email":"demo@example.com"}' \
+ https://openam.example.com:8443/openam/json/users?_action=forgotPassword
+</userinput>
+<computeroutput>{
+ "code":409,
+ "reason":"Conflict",
+ "message":"Multiple users found"
+}</computeroutput>
+</screen>
+     </listitem>
+    </varlistentry>
+
+
+    <varlistentry>
+     <term>410 Gone</term>
+     <listitem>
+      <para>The requested resource is no longer available, and will not
+       become available again. The URI returned for resetting a password may
+       have expired as in the following example.</para>
+
+<screen>
+$ <userinput>curl \
+ --request POST \
+ --header "Content-Type: application/json" \
+ --data '{"username": "demo"}' \
+ https://openam.example.com:8443/openam/json/users/?_action=forgotPassword
+</userinput>
+<computeroutput>{
+ "code":410,
+ "reason":"Gone",
+ "message":"Token not found"
+}</computeroutput>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7441,18 +7653,19 @@ $ <userinput>curl \
       to pass basic authentication credentials as form-encoded data rather than
       query string parameters.</para>
 
-      <screen>
+<screen>
 $ <userinput>curl \
  --request POST \
  --data "username=demo&amp;password=changeit" \
- https://openam.example.com:8443/openam/json/authenticate</userinput>
+ https://openam.example.com:8443/openam/json/authenticate
+</userinput>
 <computeroutput>...
 HTTP Status 415
 ...
 The server refused this request because the request entity is in a
- format not supported by the requested resource for the requested method
+format not supported by the requested resource for the requested method
 ...</computeroutput>
-      </screen>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7470,7 +7683,24 @@ The server refused this request because the request entity is in a
      <term>500 Internal Server Error</term>
      <listitem>
       <para>The server encountered an unexpected condition which prevented it
-      from fulfilling the request.</para>
+      from fulfilling the request. This could be caused by an invalid
+       configuration in the Email Service, or as in the following example the
+       specified user account not  having an associated email address to send
+       the Forgot Password URI to.</para>
+
+<screen>
+$ <userinput>curl \
+ --request POST \
+ --header "Content-Type: application/json" \
+ --data '{"username": "demo"}' \
+ https://openam.example.com:8443/openam/json/users/?_action=forgotPassword
+</userinput>
+<computeroutput>{
+ "code":500,
+ "reason":"Internal Server Error",
+ "message":"No email provided in profile."
+}</computeroutput>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7481,25 +7711,41 @@ The server refused this request because the request entity is in a
       the request as in the following example, which is attempting to delete
       an entry as a delete action instead of using an HTTP DELETE request.</para>
 
-      <screen>
+<screen>
 $ <userinput>curl \
  --request POST \
  --header "iplanetDirectoryPro: AQIC5w...NTcy*" \
- https://openam.example.com:8443/openam/json/users/demo?_action=delete</userinput>
-
+ https://openam.example.com:8443/openam/json/users/demo?_action=delete
+</userinput>
 <computeroutput>{
-    "code": 501,
-    "reason": "Not Implemented",
-    "message": "Actions are not supported for resource instances"
+ "code": 501,
+ "reason": "Not Implemented",
+ "message": "Actions are not supported for resource instances"
 }</computeroutput>
-      </screen>
+</screen>
      </listitem>
     </varlistentry>
 
     <varlistentry>
      <term>503 Service Unavailable</term>
      <listitem>
-      <para>The requested resource was temporarily unavailable.</para>
+      <para>The requested resource was temporarily unavailable. The
+       service may have been disabled, as in the following example,
+       where the Forgot Password functionality has been disabled.</para>
+
+<screen>
+$ <userinput>curl \
+ --request POST \
+ --header "Content-Type: application/json" \
+ --data '{"username": "demo"}' \
+ https://openam.example.com:8443/openam/json/users/?_action=forgotPassword
+</userinput>
+<computeroutput>{
+ "code":503,
+ "reason":"Service Unavailable",
+ "message":"Forgot password is not accessible."
+}</computeroutput>
+</screen>
      </listitem>
     </varlistentry>
    </variablelist>

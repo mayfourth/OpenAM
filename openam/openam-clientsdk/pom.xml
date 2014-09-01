@@ -166,6 +166,7 @@
                                 <include>com/sun/identity/authentication/internal/server/AuthSPrincipal*</include>
                                 <include>com/sun/identity/authentication/internal/util/AuthI18n*</include>
                                 <!-- TODO do we really need all the authentication module's principals here? -->
+                                <include>com/sun/identity/authentication/callbacks/HiddenValueCallback*</include>
                                 <include>com/sun/identity/authentication/callbacks/ScriptTextOutputCallback*</include>
                                 <include>com/sun/identity/authentication/service/AMAuthErrorCode*</include>
                                 <include>com/sun/identity/authentication/service/AuthException*</include>
@@ -249,6 +250,7 @@
                                 <include>org/forgerock/openam/authentication/service/protocol/**</include>
                                 <include>org/forgerock/openam/entitlement/indextree/TreeSaveIndex*</include>
                                 <include>org/forgerock/openam/entitlement/indextree/TreeSearchIndex*</include>
+                                <include>org/forgerock/openam/entitlement/utils/EntitlementUtils*</include>
                                 <include>org/forgerock/openam/services/cdm/**</include>
                                 <include>org/forgerock/openam/security/whitelist/**</include>
                                 <include>org/forgerock/openam/upgrade/UpgradeException*</include>

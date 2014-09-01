@@ -30,6 +30,7 @@ import org.forgerock.oauth2.core.exceptions.InvalidClientException;
 import org.forgerock.oauth2.core.exceptions.InvalidGrantException;
 import org.forgerock.oauth2.core.exceptions.InvalidRequestException;
 import org.forgerock.oauth2.core.exceptions.ServerException;
+import org.forgerock.openam.cts.api.filter.TokenFilter;
 import org.forgerock.openam.cts.exceptions.CoreTokenException;
 import org.forgerock.openam.openidconnect.OpenAMOpenIdConnectToken;
 import org.forgerock.openidconnect.OpenIdConnectClientRegistration;
@@ -284,7 +285,7 @@ public class OpenAMTokenStore implements OpenIdConnectTokenStore {
         query.put(OAuth2Constants.CoreTokenParams.REFRESH_TOKEN, tokenId);
 
         try {
-            results = tokenStore.query(query);
+            results = tokenStore.query(query, TokenFilter.Type.OR);
         } catch (CoreTokenException e) {
             logger.error("Unable to query refresh token corresponding to id: " + tokenId, e);
             throw new InvalidRequestException();
@@ -366,7 +367,7 @@ public class OpenAMTokenStore implements OpenIdConnectTokenStore {
 
         if (token == null) {
             logger.error("Unable to read refresh token corresponding to id: " + tokenId);
-            throw new BadRequestException("Could not find token from CTS");
+            throw new InvalidGrantException("grant is invalid");
         }
 
         return new OpenAMRefreshToken(token);

@@ -31,9 +31,12 @@ import java.util.regex.Pattern;
  * <code>BasePrefixResourceName</code> to provide special handling to URL type prefix resource
  * names in <code>canonicalize</code> method like validating port, assigning default port of
  * 80, if port absent etc.
+ * @param <T> The type that the compare method is going to return instances of.
+ * @param <E> The exception type thrown by the canonicalize method.
+ * @see org.forgerock.openam.shared.resourcename.BaseResourceName
+ * @see org.forgerock.openam.shared.resourcename.BasePrefixResourceName
  */
-public abstract class BaseURLResourceName<T, E extends Exception> extends BasePrefixResourceName<T, E>
-        implements Comparator {
+public abstract class BaseURLResourceName<T, E extends Exception> extends BasePrefixResourceName<T, E> {
 
     protected BaseURLResourceName(Debug debug, T exactMatch, T noMatch, T subResourceMatch, T superResourceMatch,
             T wildcardMatch) {
@@ -48,7 +51,63 @@ public abstract class BaseURLResourceName<T, E extends Exception> extends BasePr
     private static final String DEFAULT_PORT = "80";
     private static final String SECURE_PORT = "443";
     private static final Pattern ACCEPTABLE_URLS = Pattern.compile("^(http|https)\\**://.*$");
-    private static final Pattern WILDCARD_HOST_PORT = Pattern.compile("^[^/]+://[^/]+\\*(/)");
+    private static final Pattern WILDCARD_HOST_PORT = Pattern.compile("^[^/]+://[^/]*\\*[^/]*(/)");
+
+    /**
+     * Specific comparison for URLs, where a wildcard in the host/port should not match any of the path.
+     *
+     * @param requestResource name of the resource which will be compared
+     * @param targetResource name of the resource which will be compared with
+     * @param wildcardCompare flag for wildcard comparison
+     * @return If a wildcard is in the host/port, separately compares the path/query and scheme/host/port, returning
+     * NO_MATCH if either don't match, WILDCARD_MATCH if the path is an EXACT_MATCH, and otherwise (host etc. must be
+     * WILDCARD_MATCH) returns the match of the path/query.
+     */
+    @Override
+    public T compare(String requestResource, String targetResource, boolean wildcardCompare) {
+        if (!wildcardCompare) {
+            return super.compare(requestResource, targetResource, wildcardCompare);
+        }
+
+        Matcher wildcardHostPort = WILDCARD_HOST_PORT.matcher(targetResource);
+        if (!wildcardHostPort.find()) {
+            return super.compare(requestResource, targetResource, wildcardCompare);
+        }
+
+        String targetSchemeHostPort = targetResource.substring(0, wildcardHostPort.start(1));
+        String targetPath = targetResource.substring(wildcardHostPort.start(1));
+
+        int schemeEnd = requestResource.indexOf("//");
+        if (schemeEnd == -1) {
+            return super.compare(requestResource, targetResource, wildcardCompare);
+        }
+        int requestPathIndex = requestResource.indexOf("/", schemeEnd + 2);
+        if (requestPathIndex == -1) {
+            return super.compare(requestResource, targetResource, wildcardCompare);
+        }
+
+        String requestSchemeHostPort = requestResource.substring(0, requestPathIndex);
+        String requestPath = requestResource.substring(requestPathIndex);
+
+        T schemeHostPortMatch = super.compare(requestSchemeHostPort, targetSchemeHostPort, true);
+        if (noMatch.equals(schemeHostPortMatch)) {
+            return noMatch;
+        }
+
+        T pathMatch = super.compare(requestPath, targetPath, true);
+        if (noMatch.equals(pathMatch)) {
+            return noMatch;
+        }
+
+        // schemeHostPortMatch should now be wildcardMatch given the regex above
+        if (!wildcardMatch.equals(schemeHostPortMatch)) {
+            throw new IllegalStateException("We know the targetSchemeHostPort ends in *, so should be wildcardMatch");
+        }
+        if (exactMatch.equals(pathMatch)) {
+            return wildcardMatch;
+        }
+        return pathMatch;
+    }
 
     /**
      * This method is used to canonicalize a url string. It removes leading delimiters after the protocol
@@ -217,18 +276,6 @@ public abstract class BaseURLResourceName<T, E extends Exception> extends BasePr
         if (debug.messageEnabled()) {
             debug.message("URLResourceName: portString = " + portString);
         }
-    }
-
-    /**
-     * This is provided to honor the API provided by the descendant URLResourceName classes, which
-     * did not previously inherit from a common ancestor.
-     * @param o1 A query parameter string.
-     * @param o2 Another query parameter string.
-     * @return Their comparison result.
-     * @see org.forgerock.openam.shared.resourcename.BaseURLResourceName.QueryParameterComparator
-     */
-    public int compare(Object o1, Object o2) {
-        return comparator.compare((String)o1, (String)o2);
     }
 
     /**

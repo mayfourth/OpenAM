@@ -30,25 +30,51 @@
 
 define("org/forgerock/openam/ui/policy/ManageApplicationsView", [
     "org/forgerock/commons/ui/common/main/AbstractView",
-    "org/forgerock/openam/ui/policy/ListView",
-    "org/forgerock/openam/ui/policy/PolicyDelegate"
-], function (AbstractView, listView, policyDelegate) {
+    "org/forgerock/commons/ui/common/util/UIUtils"
+], function (AbstractView, uiUtils) {
     var ManageApplicationsView = AbstractView.extend({
         baseTemplate: "templates/policy/BaseTemplate.html",
         template: "templates/policy/ManageApplicationsTemplate.html",
 
         render: function (args, callback) {
-            var self = this;
+            var appLinkFormatter = function (cellvalue, options, rowObject) {
+                    return '<a href="#app/' + cellvalue + '">' + cellvalue + '</a>';
+                },
+                policyLinkFormatter = function (cellvalue, options, rowObject) {
+                    return '<a href="#app/' + rowObject.name + '/policies/" class="icon-search"></a>';
+                };
 
             this.parentRender(function () {
-                policyDelegate.getAllApplications().done(function (data) {
-                    self.listApplications(data, callback, self.$el.find('#manageApps'));
-                });
-            });
-        },
+                var options = {
+                        url: '/openam/json/applications?_queryFilter=true',
+                        colNames: ['Name', 'Description', 'Realm', 'Type', 'Author', 'Created', 'Modified By',
+                            'Last Modified', 'Actions', 'Conditions', 'Resources', 'Subjects', 'Override Rule', 'Policies'],
+                        colModel: [
+                            {name: 'name', width: 250, formatter: appLinkFormatter, frozen: true},
+                            {name: 'description', sortable: false, width: 150},
+                            {name: 'realm', width: 150},
+                            {name: 'applicationType', width: 250},
+                            {name: 'createdBy', width: 250},
+                            {name: 'creationDate', width: 150, formatter: uiUtils.commonJQGridFormatters.dateFormatter},
+                            {name: 'lastModifiedBy', width: 250},
+                            {name: 'lastModifiedDate', width: 150, formatter: uiUtils.commonJQGridFormatters.dateFormatter},
+                            {name: 'actions', width: 250, sortable: false, formatter: uiUtils.commonJQGridFormatters.objectFormatter},
+                            {name: 'conditions', width: 150, sortable: false, formatter: uiUtils.commonJQGridFormatters.arrayFormatter},
+                            {name: 'resources', width: 250, sortable: false, formatter: uiUtils.commonJQGridFormatters.arrayFormatter},
+                            {name: 'subjects', width: 150, sortable: false, formatter: uiUtils.commonJQGridFormatters.arrayFormatter},
+                            {name: 'entitlementCombiner', width: 100},
+                            {name: 'policy', width: 60, sortable: false, formatter: policyLinkFormatter}
+                        ],
+                        sortname: 'name',
+                        width: 920,
+                        shrinkToFit: false,
+                        pager: '#appsPager'
 
-        listApplications: function (data, callback, element) {
-            listView.render(data, callback, element, "templates/policy/ListApplicationsTemplate.html");
+                    },
+                    grid = uiUtils.buildRestResponseBasedJQGrid(this, '#manageApps', options, callback);
+
+                grid.jqGrid('setFrozenColumns');
+            });
         }
     });
 

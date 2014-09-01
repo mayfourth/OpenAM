@@ -16,6 +16,7 @@
 
 package org.forgerock.openam.rest.router;
 
+import com.sun.identity.security.AdminTokenAction;
 import com.sun.identity.shared.debug.Debug;
 import com.sun.identity.sm.ServiceConfig;
 import com.sun.identity.sm.ServiceConfigManager;
@@ -24,6 +25,7 @@ import org.forgerock.openam.forgerockrest.ServiceConfigUtils;
 import org.forgerock.openam.rest.DefaultVersionBehaviour;
 
 import javax.inject.Inject;
+import java.security.AccessController;
 
 /**
  * A {@code ServiceListener} to listen for changes to the default version behaviour configuration and update a
@@ -32,14 +34,36 @@ import javax.inject.Inject;
 public class VersionBehaviourConfigListener implements ServiceListener {
 
     static final String VERSION_BEHAVIOUR_ATTRIBUTE = "openam-rest-apis-default-version";
-    private static Debug debug = Debug.getInstance("frRest");
-    private final VersionedRouter<?> router;
+    static final String WARNING_BEHAVIOUR_ATTRIBUTE = "openam-rest-apis-header-warning";
 
+    private static final String SERVICE_NAME = "RestApisService";
+    private static final String SERVICE_VERSION = "1.0";
+    private static Debug debug = Debug.getInstance("frRest");
+
+    private final VersionedRouter<?> router;
     private ServiceConfigManager mgr;
 
     @Inject
     public VersionBehaviourConfigListener(VersionedRouter<?> router) {
         this.router = router;
+    }
+
+    /**
+     * Registers a new instance of this {@link ServiceListener} with a {@link ServiceConfigManager} so that the
+     * provided {@link org.forgerock.openam.rest.router.VersionedRouter} can be kept in sync with changes to the
+     * default version behaviour.
+     *
+     * @param router The VersionedRouter to update when default version behaviour changes
+     */
+    public static void bindToServiceConfigManager(VersionedRouter<?> router) {
+        try {
+            VersionBehaviourConfigListener configListener = new VersionBehaviourConfigListener(router);
+            ServiceConfigManager mgr = new ServiceConfigManager(
+                    AccessController.doPrivileged(AdminTokenAction.getInstance()), SERVICE_NAME, SERVICE_VERSION);
+            configListener.register(mgr);
+        } catch (Exception e) {
+            debug.error("Cannot get ServiceConfigManager - cannot register default version config listener", e);
+        }
     }
 
     /**
@@ -50,7 +74,7 @@ public class VersionBehaviourConfigListener implements ServiceListener {
         this.mgr = mgr;
         updateSettings();
         if (mgr.addListener(this) == null) {
-            debug.error("Could not add listener to ServiceConfigManager instance. Version behaviour changes will not" +
+            debug.error("Could not add listener to ServiceConfigManager instance. Version behaviour changes will not " +
                     "be dynamically updated");
         }
     }
@@ -59,7 +83,10 @@ public class VersionBehaviourConfigListener implements ServiceListener {
         try {
             ServiceConfig serviceConfig = mgr.getGlobalConfig(null);
             String versionBehaviour = ServiceConfigUtils.getStringAttribute(serviceConfig, VERSION_BEHAVIOUR_ATTRIBUTE);
-            router.setVersioning(DefaultVersionBehaviour.valueOf(versionBehaviour));
+            router.setVersioning(DefaultVersionBehaviour.valueOf(versionBehaviour.toUpperCase()));
+            final boolean warningBehaviour = ServiceConfigUtils.getBooleanAttribute(serviceConfig,
+                    WARNING_BEHAVIOUR_ATTRIBUTE);
+            router.setHeaderWarningEnabled(warningBehaviour);
             if (debug.messageEnabled()) {
                 debug.message("Successfully updated rest version behaviour settings to " + versionBehaviour);
             }
@@ -90,7 +117,7 @@ public class VersionBehaviourConfigListener implements ServiceListener {
      */
     @Override
     public void globalConfigChanged(String serviceName, String version, String groupName, String serviceComponent,
-            int type) {
+                                    int type) {
         updateSettings();
     }
 
