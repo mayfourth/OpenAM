@@ -963,6 +963,12 @@ public class SessionService {
         return is;
     }
 
+    /**
+     * Checks if the provided SessionID actually represents a session handle.
+     *
+     * @param sid A SessionID that may represent a standard session id or a session handle.
+     * @return true if SessionID is actually a session handle.
+     */
     public static boolean isSessionHandle(SessionID sid) {
         return sid.toString().startsWith(SHANDLE_SCHEME_PREFIX);
     }

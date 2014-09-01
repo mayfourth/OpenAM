@@ -991,9 +991,9 @@ public class Session extends GeneralTaskRunnable {
             Session session = new Session(sessionID);
             try {
                 session.update(info);
-                writeSession(sessionID, session);
+                writeSession(session);
             } catch (SessionException e) {
-                // do nothing?
+                sessionDebug.error("Exception reading remote SessionInfo", e);
             }
         }
 
@@ -1006,10 +1006,6 @@ public class Session extends GeneralTaskRunnable {
             return ss.isReducedCrossTalkEnabled();
         }
         return false;
-    }
-
-    private static boolean hasSession(SessionID sessionID) {
-        return readSession(sessionID) != null;
     }
 
     /**
@@ -1049,6 +1045,7 @@ public class Session extends GeneralTaskRunnable {
                     !sessionService.isReducedCrossTalkEnabled() ||
                     sessionService.checkSessionLocal(sessionID);
         } catch (SessionException e) {
+            sessionDebug.error("Exception when checking if session can be deleted", e);
             return true;
         }
     }
@@ -1141,11 +1138,8 @@ public class Session extends GeneralTaskRunnable {
              * session will be left in the {@link #sessionTable} until it is purged. This check will
              * detect this condition and indicate to the caller their SessionID is invalid.
              */
-            if (session.getState(false) == DESTROYED) {
-                SessionService ss = SessionService.getSessionService();
-                if (ss.isSessionFailoverEnabled() && ss.isReducedCrossTalkEnabled()) {
-                    throw new SessionException("Session is in a destroyed state");
-                }
+            if (session.getState(false) == DESTROYED && isReducedCrossTalkEnabled()) {
+                throw new SessionException("Session is in a destroyed state");
             }
 
             TokenRestriction restriction = session.getRestriction();
@@ -1182,7 +1176,7 @@ public class Session extends GeneralTaskRunnable {
         }
         session.context = RestrictedTokenContext.getCurrent();
 
-        writeSession(sessionID, session);
+        writeSession(session);
         if (!isPollingEnabled()) {
             session.addInternalSessionListener();
         }
@@ -1198,7 +1192,7 @@ public class Session extends GeneralTaskRunnable {
             if (scheduledExecutionTime() > timeoutTime) {
                 cancel();
             }
-            if (! isScheduled()) {
+            if (!isScheduled()) {
                 SystemTimerPool.getTimerPool().schedule(this, new Date(timeoutTime));
             }
         } else {
@@ -1208,7 +1202,7 @@ public class Session extends GeneralTaskRunnable {
                 if (scheduledExecutionTime() > timeoutTime) {
                     cancel();
                 }
-                if (! isScheduled()) {
+                if (!isScheduled()) {
                     SystemTimerPool.getTimerPool().schedule(this, new Date(timeoutTime));
                 }
             }
@@ -1551,7 +1545,7 @@ public class Session extends GeneralTaskRunnable {
         long oldMaxIdleTime = maxIdleTime;
         long oldMaxSessionTime = maxSessionTime;
         update(info);
-        if ((! isScheduled()) || (oldMaxCachingTime > maxCachingTime) ||
+        if ((!isScheduled()) || (oldMaxCachingTime > maxCachingTime) ||
                 (oldMaxIdleTime > maxIdleTime) || (oldMaxSessionTime > maxSessionTime)) {
             scheduleToTimerPool();
         }
@@ -1915,7 +1909,7 @@ public class Session extends GeneralTaskRunnable {
      * Set the cookie Mode based on whether the request has cookies or not. This
      * method is called from <code>createSSOToken(request)</code> method in
      * <code>SSOTokenManager</code>.
-     * 
+     *
      * @param cookieMode whether request has cookies or not.
      */
     public void setCookieMode(Boolean cookieMode) {
@@ -2117,7 +2111,7 @@ public class Session extends GeneralTaskRunnable {
                         long oldMaxIdleTime = session.maxIdleTime;
                         long oldMaxSessionTime = session.maxSessionTime;
                         session.update(info);
-                        if ((! isScheduled()) ||
+                        if ((!isScheduled()) ||
                             (oldMaxCachingTime > session.maxCachingTime) ||
                             (oldMaxIdleTime > session.maxIdleTime) ||
                             (oldMaxSessionTime > session.maxSessionTime)) {
@@ -2137,6 +2131,16 @@ public class Session extends GeneralTaskRunnable {
     }
 
     /**
+     * Checks for a Session in the Session table.
+     * @param sessionID Non null sessionID of the Session to lookup.
+     * @return boolean true indicates Session is present.
+     */
+    private static boolean hasSession(SessionID sessionID) {
+        Reject.ifNull(sessionID);
+        return sessionTable.get(sessionID) != null;
+    }
+
+    /**
      * Reads a Session from the Session table.
      * @param sessionID Non null sessionID of the Session to lookup.
      * @return Null indicates no Session present, otherwise non null.
@@ -2149,13 +2153,12 @@ public class Session extends GeneralTaskRunnable {
     /**
      * Store a Session in the table.
      *
-     * @param sessionID SessionID to key the Session in the table. Non nul.
      * @param session The Session to store. Non null.
      */
-    private static void writeSession(SessionID sessionID, Session session) {
-        Reject.ifNull(sessionID);
+    private static void writeSession(Session session) {
         Reject.ifNull(session);
-        sessionTable.put(sessionID, session);
+        Reject.ifNull(session.getID());
+        sessionTable.put(session.getID(), session);
     }
 
     /**
