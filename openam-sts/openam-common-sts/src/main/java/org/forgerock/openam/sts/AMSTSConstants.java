@@ -353,7 +353,6 @@ public class AMSTSConstants {
 
     /**
      * Used in context of a @Named annotation to identify the String identifying the version of targeted CREST services.
-     * Currently 'protocol=1.0, resource=1.0'.
      */
     public static final String CREST_VERSION = "crest_version";
 }
