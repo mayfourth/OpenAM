@@ -61,6 +61,7 @@ import com.sun.identity.session.util.SessionUtils;
 import com.sun.identity.shared.Constants;
 import com.sun.identity.shared.debug.Debug;
 import org.forgerock.guice.core.InjectorHolder;
+import org.forgerock.openam.cts.api.CoreTokenConstants;
 import org.forgerock.util.Reject;
 import org.forgerock.util.thread.listener.ShutdownListener;
 import org.forgerock.util.thread.listener.ShutdownManager;
@@ -76,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The <code>Session</code> class represents a session. It contains session
@@ -144,11 +146,6 @@ public class Session extends GeneralTaskRunnable {
     private long maxSessionTime;
 
     /**
-     * Flag to indicate that maxSessionTime minutes have elapsed since this object was created.
-     */
-    private volatile boolean maxSessionTimeExceeded = false;
-
-    /**
      * Maximum idle time allowed for the session, in minutes.
      */
     private long maxIdleTime;
@@ -186,11 +183,22 @@ public class Session extends GeneralTaskRunnable {
     private int sessionState;
 
     /**
+     * This is the time value (computed as System.currentTimeMillis()) when a DESTROYED
+     * session should be removed from the {@link #sessionTable}.
+     *
+     * It will be set to {@link SessionService#getReducedCrosstalkPurgeDelay() } minutes after the time
+     * {@link #removeRemoteSID } is called.
+     *
+     * Value zero means the session has not been destroyed or cross-talk is not being reduced.
+     */
+    private volatile long purgeAt = 0;
+
+    /**
      * If this is a Remote session that has been destroyed but not yet removed from the
      * sessionTable, this flag is used to avoid repeated notification of the DESTROY event
      * to session listeners.
      */
-    private volatile boolean removed = false;
+    private AtomicBoolean removed = new AtomicBoolean(false);
 
     /**
      * All session related properties are stored as key-value pair in this
@@ -217,9 +225,8 @@ public class Session extends GeneralTaskRunnable {
     /**
      * Session Tracking Cookie Name
      */
-    private static final String httpSessionTrackingCookieName = SystemProperties
-            .get(Constants.AM_SESSION_HTTP_SESSION_TRACKING_COOKIE_NAME,
-                    "JSESSIONID");
+    private static final String httpSessionTrackingCookieName =
+            SystemProperties.get(Constants.AM_SESSION_HTTP_SESSION_TRACKING_COOKIE_NAME, "JSESSIONID");
 
     /**
      * Indicates whether the latest access time need to be reset on the session.
@@ -253,15 +260,13 @@ public class Session extends GeneralTaskRunnable {
     public static final String SESSION_SERVICE = "session";
 
     private static String cookieName =
-	SystemProperties.get("com.iplanet.am.cookie.name");
+	        SystemProperties.get("com.iplanet.am.cookie.name");
 
     public static String lbCookieName =
-        SystemProperties.get(Constants.AM_LB_COOKIE_NAME,"amlbcookie");
+            SystemProperties.get(Constants.AM_LB_COOKIE_NAME,"amlbcookie");
 
-    private static final boolean resetLBCookie = 
-        Boolean.valueOf(SystemProperties.
-                 get("com.sun.identity.session.resetLBCookie", "false"))
-                  .booleanValue();
+    private static final boolean resetLBCookie =
+            SystemProperties.getAsBoolean("com.sun.identity.session.resetLBCookie", false);
     
     private String cookieStr;
 
@@ -294,10 +299,8 @@ public class Session extends GeneralTaskRunnable {
     /**
      * Indicates whether to enable or disable the session cleanup thread.
      */
-    private static boolean sessionCleanupEnabled = 
-        Boolean.valueOf(SystemProperties.
-                get("com.iplanet.am.session.client.cleanup.enable", "true"))
-                .booleanValue();
+    private static boolean sessionCleanupEnabled =
+            SystemProperties.getAsBoolean("com.iplanet.am.session.client.cleanup.enable", true);
 
     /**
      * The session table indexed by Session ID objects.
@@ -329,31 +332,16 @@ public class Session extends GeneralTaskRunnable {
     private static ThreadPool threadPool = null;
     private static final int DEFAULT_POOL_SIZE = 5;
     private static final int DEFAULT_THRESHOLD = 10000;
-    private static boolean cacheBasedPolling = Boolean.valueOf(
-            SystemProperties
-                    .get("com.iplanet.am.session.client.polling.cacheBased",
-                            "false")).booleanValue();
+    private static boolean cacheBasedPolling =
+            SystemProperties.getAsBoolean("com.iplanet.am.session.client.polling.cacheBased", false);
 
     private static long appSSOTokenRefreshTime;
     
     private SessionPollerSender sender = null;    
 
     static {
-        String purgeDelayProperty = SystemProperties.get(
-                "com.iplanet.am.session.purgedelay", "120");
-        try {
-            purgeDelay = Long.parseLong(purgeDelayProperty);
-        } catch (Exception le) {
-            purgeDelay = 120;
-        }        
-        String appSSOTokenRefreshTimeProperty = SystemProperties.get(
-            "com.iplanet.am.client.appssotoken.refreshtime", "3");
-        try {
-            appSSOTokenRefreshTime = Long.parseLong(
-                appSSOTokenRefreshTimeProperty);
-        } catch (Exception le) {
-            appSSOTokenRefreshTime = 3;
-        }
+        purgeDelay = SystemProperties.getAsLong("com.iplanet.am.session.purgedelay", 120);
+        appSSOTokenRefreshTime = SystemProperties.getAsLong("com.iplanet.am.client.appssotoken.refreshtime", 3);
     }
 
     private Requests requests;
@@ -395,10 +383,7 @@ public class Session extends GeneralTaskRunnable {
         // implementation for making the session properties
         // hot-swappable is in place    	
         if (!isServerMode()) {
-            pollingEnabled = 
-                Boolean.valueOf(SystemProperties
-                    .get(ENABLE_POLLING_PROPERTY, 
-                        "false")).booleanValue();
+            pollingEnabled = SystemProperties.getAsBoolean(ENABLE_POLLING_PROPERTY, false);
         }
         if (sessionDebug.messageEnabled()) {
             sessionDebug.message("Session.isPollingEnabled is "
@@ -407,23 +392,10 @@ public class Session extends GeneralTaskRunnable {
         
         if(!pollerPoolInitialized){
             if (pollingEnabled) {
-                int poolSize;
-                int threshold;
-                try {
-                    poolSize = Integer.parseInt(SystemProperties.get(
-                        Constants.POLLING_THREADPOOL_SIZE));
-                } catch (Exception e) {
-                    poolSize = DEFAULT_POOL_SIZE;
-                }
-                try {
-                    threshold = Integer.parseInt(SystemProperties.get(
-                        Constants.POLLING_THREADPOOL_THRESHOLD));
-                } catch (Exception e) {
-                    threshold = DEFAULT_THRESHOLD;
-                }
+                int poolSize = SystemProperties.getAsInt(Constants.POLLING_THREADPOOL_SIZE, DEFAULT_POOL_SIZE);
+                int threshold = SystemProperties.getAsInt(Constants.POLLING_THREADPOOL_THRESHOLD, DEFAULT_THRESHOLD);
                 ShutdownManager shutdownMan = com.sun.identity.common.ShutdownManager.getInstance();
-                threadPool = new ThreadPool("amSessionPoller", poolSize,
-                    threshold, true, sessionDebug);
+                threadPool = new ThreadPool("amSessionPoller", poolSize, threshold, true, sessionDebug);
                 shutdownMan.addShutdownListener(
                     new ShutdownListener() {
                         public void shutdown() {
@@ -538,17 +510,25 @@ public class Session extends GeneralTaskRunnable {
                 sessionDebug.error("Exception encountered while polling", ex);
             }
         } else {
-            // schedule at the max session time
-            long expectedTime = -1;
-            if (willExpire(maxSessionTime)) {
-                expectedTime = (latestRefreshTime + (maxSessionTime * 60)) * 1000;
+            if (purgeAt > 0) {
+                // destroyed session scheduled for purge
+                if (purgeAt > scheduledExecutionTime()) {
+                    SystemTimerPool.getTimerPool().schedule(this, new Date(purgeAt));
+                    return;
+                }
+            } else {
+                // schedule at the max session time
+                long expectedTime = -1;
+                if (willExpire(maxSessionTime)) {
+                    expectedTime = (latestRefreshTime + (maxSessionTime * 60)) * 1000;
+                }
+                if (expectedTime > scheduledExecutionTime()) {
+                    SystemTimerPool.getTimerPool().schedule(this, new Date(expectedTime));
+                    return;
+                }
             }
-            if (expectedTime > scheduledExecutionTime()) {
-                SystemTimerPool.getTimerPool().schedule(this, new Date(expectedTime));
-                return;
-            }
+
             try {
-                maxSessionTimeExceeded = true;
                 Session.removeSID(sessionID);
                 if (sessionDebug.messageEnabled()) {
                     sessionDebug.message("Session Destroyed, Caching time exceeded the Max Session Time");
@@ -580,8 +560,7 @@ public class Session extends GeneralTaskRunnable {
     public static String getLBCookie(SessionID sid)
              throws SessionException {
         String cookieValue = null;
-        lbCookieName =
-            SystemProperties.get(Constants.AM_LB_COOKIE_NAME,"amlbcookie");
+        lbCookieName = SystemProperties.get(Constants.AM_LB_COOKIE_NAME, "amlbcookie");
         if(sessionDebug.messageEnabled()){
             sessionDebug.message("Session.getLBCookie()" +
                 "lbCookieName is:" + lbCookieName);
@@ -976,36 +955,51 @@ public class Session extends GeneralTaskRunnable {
      * Wrapper method for {@link #removeSID} only to be called when receiving notification of session
      * destruction from the home server.
      *
+     * This method should only be called when the identified session has another instance
+     * of OpenAM as its home server.
+     *
      * @param info Current state of session on home server
      */
     static void removeRemoteSID(SessionInfo info) {
         SessionID sessionID = new SessionID(info.sid);
 
-        if (isReducedCrossTalkEnabled() && !hasSession(sessionID)) {
-            /**
-             * Reduced crosstalk protection.
-             *
-             * As the indicated session has not yet been loaded, it will be created and added to the
-             * {@link #sessionTable} so that it can remain there in a DESTROYED state until it is purged.
-             */
-            Session session = new Session(sessionID);
-            try {
-                session.update(info);
-                writeSession(session);
-            } catch (SessionException e) {
-                sessionDebug.error("Exception reading remote SessionInfo", e);
+        long purgeDelay = getPurgeDelayForReducedCrosstalk();
+
+        if (purgeDelay > 0) {
+
+            Session session = readSession(sessionID);
+            if (session == null) {
+                /**
+                 * Reduced crosstalk protection.
+                 *
+                 * As the indicated session has not yet been loaded, it will be created and added to the
+                 * {@link #sessionTable} so that it can remain there in a DESTROYED state until it is purged.
+                 */
+                session = new Session(sessionID);
+                try {
+                    session.update(info);
+                    writeSession(session);
+                } catch (SessionException e) {
+                    sessionDebug.error("Exception reading remote SessionInfo", e);
+                }
             }
+
+            session.purgeAt = System.currentTimeMillis() + (purgeDelay * 60 * 1000);
+            SystemTimerPool.getTimerPool().schedule(session, new Date(session.purgeAt));
+
         }
 
         removeSID(sessionID);
     }
 
-    private static boolean isReducedCrossTalkEnabled() {
+    private static long getPurgeDelayForReducedCrosstalk() {
         if (isServerMode()) {
             SessionService ss = InjectorHolder.getInstance(SessionService.class);
-            return ss.isReducedCrossTalkEnabled();
+            if (ss.isReducedCrossTalkEnabled()) {
+                return ss.getReducedCrosstalkPurgeDelay();
+            }
         }
-        return false;
+        return 0;
     }
 
     /**
@@ -1016,37 +1010,22 @@ public class Session extends GeneralTaskRunnable {
     public static void removeSID(SessionID sid) {
         Session session = readSession(sid);
         if (session != null) {
-            if (session.canDelete()) {
+
+            long eventTime = System.currentTimeMillis();
+
+            // remove from sessionTable if there is no purge delay or it has elapsed
+            if (session.purgeAt <= eventTime) {
                 deleteSession(sid);
                 session.cancel();
             }
-            if (!session.removed) {
+
+            // ensure session has destroyed state and observers are notified (exactly once)
+            boolean alreadyRemoved = session.removed.getAndSet(true);
+            if (!alreadyRemoved) {
                 session.setState(Session.DESTROYED);
-                long eventTime = System.currentTimeMillis();
                 SessionEvent event = new SessionEvent(session, SessionEvent.DESTROY, eventTime);
                 invokeListeners(event);
             }
-            session.removed = true;
-        }
-    }
-
-    /**
-     * If Session Failover is enabled, cross-talk is disabled, and this session is not local, it should
-     * remain in the sessionTable until its maxSessionTime has elapsed. In all other scenarios, this
-     * session should be removed from the sessionTable on the first call to removeSID.
-     *
-     * @return true if this session can be removed from the sessionTable without delay when destroyed.
-     */
-    private boolean canDelete() {
-        try {
-            return maxSessionTimeExceeded ||
-                    sessionService == null ||
-                    !sessionService.isSessionFailoverEnabled() ||
-                    !sessionService.isReducedCrossTalkEnabled() ||
-                    sessionService.checkSessionLocal(sessionID);
-        } catch (SessionException e) {
-            sessionDebug.error("Exception when checking if session can be deleted", e);
-            return true;
         }
     }
 
@@ -1138,7 +1117,7 @@ public class Session extends GeneralTaskRunnable {
              * session will be left in the {@link #sessionTable} until it is purged. This check will
              * detect this condition and indicate to the caller their SessionID is invalid.
              */
-            if (session.getState(false) == DESTROYED && isReducedCrossTalkEnabled()) {
+            if (session.getState(false) == DESTROYED && getPurgeDelayForReducedCrosstalk() > 0) {
                 throw new SessionException("Session is in a destroyed state");
             }
 

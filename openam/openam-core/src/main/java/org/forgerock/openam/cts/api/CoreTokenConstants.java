@@ -140,4 +140,9 @@ public class CoreTokenConstants {
      * Where to broadcast session logout/destroy to.
      */
     public static final String LOGOUT_DESTROY_BROADCAST = "iplanet-am-session-logout-destroy-broadcast";
+
+    /**
+     * The number of minutes to retain Sessions in DESTROYED state while waiting for delete replication to occur.
+     */
+    public static final String REDUCED_CROSSTALK_PURGE_DELAY = "iplanet-am-session-reduced-crosstalk-purge-delay";
 }

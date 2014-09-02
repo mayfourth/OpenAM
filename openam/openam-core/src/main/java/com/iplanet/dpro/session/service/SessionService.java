@@ -355,6 +355,12 @@ public class SessionService {
     private static volatile boolean isReducedCrosstalkEnabled = true;
 
     /**
+     * The number of minutes to retain {@link Session} objects in DESTROYED state while waiting
+     * for delete replication to occur if reduced cross-talk is enabled.
+     */
+    private static volatile long reducedCrosstalkPurgeDelay = 5;
+
+    /**
      * Indicates what broadcast to undertake on session logout/destroy
      */
     private static volatile SessionBroadcastMode logoutDestroyBroadcast = SessionBroadcastMode.OFF;
@@ -828,6 +834,14 @@ public class SessionService {
      */
     public boolean isReducedCrossTalkEnabled() {
         return isSessionFailoverEnabled && isReducedCrosstalkEnabled;
+    }
+
+    /**
+     * The number of minutes to retain {@link Session} objects in DESTROYED state while waiting
+     * for delete replication to occur if reduced cross-talk is enabled.
+     */
+    public long getReducedCrosstalkPurgeDelay() {
+        return reducedCrosstalkPurgeDelay;
     }
 
     /**
@@ -2239,6 +2253,9 @@ public class SessionService {
                         logoutDestroyBroadcast = SessionBroadcastMode.valueOf(CollectionHelper.getMapAttr(sessionAttrs,
                                 CoreTokenConstants.LOGOUT_DESTROY_BROADCAST, SessionBroadcastMode.OFF.name()));
                     }
+
+                    reducedCrosstalkPurgeDelay = CollectionHelper.getLongMapAttr(sessionAttrs,
+                            CoreTokenConstants.REDUCED_CROSSTALK_PURGE_DELAY, 5, sessionDebug);
 
                     // Obtain Site Ids
                     Set<String> serverIDs = WebtopNaming.getSiteNodes(sessionServerID);
