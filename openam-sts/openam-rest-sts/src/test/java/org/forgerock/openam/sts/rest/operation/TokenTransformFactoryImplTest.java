@@ -153,6 +153,12 @@ public class TokenTransformFactoryImplTest {
         String getOffloadedTwoWayTLSHeaderKey() {
             return "client_cert";
         }
+
+        @Provides
+        @Named(AMSTSConstants.CREST_VERSION)
+        String getCrestVersion() {
+            return "protocol=1.0, resource=1.0";
+        }
     }
 
     @BeforeTest

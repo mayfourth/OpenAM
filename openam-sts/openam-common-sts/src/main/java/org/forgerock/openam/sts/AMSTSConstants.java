@@ -346,4 +346,14 @@ public class AMSTSConstants {
      */
     public static final String OFFLOADED_TWO_WAY_TLS_HEADER_KEY = SharedSTSConstants.OFFLOADED_TWO_WAY_TLS_HEADER_KEY;
 
+    /**
+     * The name of the CREST header identifying the version of a targeted service.
+     */
+    public static final String CREST_VERSION_HEADER_KEY = "Accept-API-Version";
+
+    /**
+     * Used in context of a @Named annotation to identify the String identifying the version of targeted CREST services.
+     * Currently 'protocol=1.0, resource=1.0'.
+     */
+    public static final String CREST_VERSION = "crest_version";
 }

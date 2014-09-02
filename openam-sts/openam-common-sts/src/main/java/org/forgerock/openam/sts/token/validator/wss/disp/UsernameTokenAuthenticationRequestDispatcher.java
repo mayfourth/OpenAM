@@ -26,6 +26,8 @@ import org.restlet.resource.ClientResource;
 import org.restlet.resource.ResourceException;
 import org.restlet.util.Series;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.net.URI;
 /**
  * This class is responsible for dispatching the credential state encapsulated in UsernameTokens to the
@@ -34,6 +36,13 @@ import java.net.URI;
 public class UsernameTokenAuthenticationRequestDispatcher implements TokenAuthenticationRequestDispatcher<UsernameToken> {
     private static final String USERNAME = "X-OpenAM-Username";
     private static final String PASSWORD = "X-OpenAM-Password";
+
+    private final String crestVersion;
+
+    @Inject
+    UsernameTokenAuthenticationRequestDispatcher(@Named(AMSTSConstants.CREST_VERSION) String crestVersion) {
+        this.crestVersion = crestVersion;
+    }
 
     @Override
     public Representation dispatch(URI uri, AuthTargetMapping.AuthTarget target, UsernameToken token) throws TokenValidationException {
@@ -47,6 +56,7 @@ public class UsernameTokenAuthenticationRequestDispatcher implements TokenAuthen
         headers.set(USERNAME, token.getName());
         headers.set(PASSWORD, token.getPassword());
         headers.set(AMSTSConstants.CONTENT_TYPE, AMSTSConstants.APPLICATION_JSON);
+        headers.set(AMSTSConstants.CREST_VERSION_HEADER_KEY, crestVersion);
         try {
             return resource.post(null);
         } catch (ResourceException e) {

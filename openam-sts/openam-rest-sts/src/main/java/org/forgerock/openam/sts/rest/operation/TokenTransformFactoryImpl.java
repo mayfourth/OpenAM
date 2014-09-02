@@ -73,6 +73,7 @@ public class TokenTransformFactoryImpl implements TokenTransformFactory {
     private final XMLUtilities xmlUtilities;
     private final TokenGenerationServiceConsumer tokenGenerationServiceConsumer;
     private final AuthnContextMapper authnContextMapper;
+    private final String crestVersion;
     private final Logger logger;
 
     @Inject
@@ -94,6 +95,7 @@ public class TokenTransformFactoryImpl implements TokenTransformFactory {
             XMLUtilities xmlUtilities,
             TokenGenerationServiceConsumer tokenGenerationServiceConsumer,
             AuthnContextMapper authnContextMapper,
+            @Named(AMSTSConstants.CREST_VERSION) String crestVersion,
             Logger logger) {
 
         this.amDeploymentUrl = amDeploymentUrl;
@@ -113,6 +115,7 @@ public class TokenTransformFactoryImpl implements TokenTransformFactory {
         this.xmlUtilities = xmlUtilities;
         this.tokenGenerationServiceConsumer = tokenGenerationServiceConsumer;
         this.authnContextMapper = authnContextMapper;
+        this.crestVersion = crestVersion;
         this.logger = logger;
     }
 
@@ -182,7 +185,7 @@ public class TokenTransformFactoryImpl implements TokenTransformFactory {
             try {
                 final AMSessionInvalidator sessionInvalidator =
                         new AMSessionInvalidatorImpl(amDeploymentUrl, jsonRestRoot, realm, restLogoutUriElement,
-                                amSessionCookieName, urlConstituentCatenator, logger);
+                                amSessionCookieName, urlConstituentCatenator, crestVersion, logger);
                 return new AMSAMLTokenProvider(tokenGenerationServiceConsumer, sessionInvalidator,
                         threadLocalAMTokenCache, stsInstanceId, realm, xmlUtilities, authnContextMapper, logger);
             } catch (URISyntaxException e) {

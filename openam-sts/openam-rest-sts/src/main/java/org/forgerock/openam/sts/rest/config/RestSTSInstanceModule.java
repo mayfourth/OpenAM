@@ -417,5 +417,19 @@ public class RestSTSInstanceModule extends AbstractModule {
         }
         return headerKey;
     }
+
+    /**
+     * The value corresponding to the Accept-API-Version header specifying the version of CREST services to consume. Note
+     * that the rest-sts run-time consumes the rest authN (classes in the wss/disp package), the token generation
+     * service (TokenGenerationServiceConsumerImpl), the service to obtain a principal from a session (PrincipalFromSessionImpl),
+     * and the session invalidation service (AMSessionInvalidatorImpl).
+     * All of these will specify the version returned below. If different versions need to be consumed, different strings
+     * can be @Named and provided for the various clients.
+     */
+    @Provides
+    @Named(AMSTSConstants.CREST_VERSION)
+    String getCrestVersion() {
+        return "protocol=1.0, resource=1.0";
+    }
 }
 

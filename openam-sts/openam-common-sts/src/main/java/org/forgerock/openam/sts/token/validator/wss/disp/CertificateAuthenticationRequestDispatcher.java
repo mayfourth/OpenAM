@@ -33,16 +33,21 @@ import java.net.URI;
 import org.restlet.util.Series;
 import org.slf4j.Logger;
 
+import javax.inject.Named;
+
 /**
  * Class which encapsulates knowledge as to how to post a x509 certificate to the OpenAM REST authN context. This class
  * will initiate the authN process to receive the json callback with a placeholder for an X509Certificate, and set this
  * reference, and return the json callback state.
  */
 public class CertificateAuthenticationRequestDispatcher implements TokenAuthenticationRequestDispatcher<X509Certificate[]> {
+    private final String crestVersion;
     private final Logger logger;
 
     @Inject
-    public CertificateAuthenticationRequestDispatcher(Logger logger) {
+    public CertificateAuthenticationRequestDispatcher(@Named(AMSTSConstants.CREST_VERSION) String crestVersion,
+                                                      Logger logger) {
+        this.crestVersion = crestVersion;
         this.logger = logger;
     }
 
@@ -78,6 +83,8 @@ public class CertificateAuthenticationRequestDispatcher implements TokenAuthenti
             resource.getRequestAttributes().put(AMSTSConstants.RESTLET_HEADER_KEY, headers);
         }
         headers.set(AMSTSConstants.CONTENT_TYPE, AMSTSConstants.APPLICATION_JSON);
+        headers.set(AMSTSConstants.CREST_VERSION_HEADER_KEY, crestVersion);
+
         if (target == null) {
             throw new TokenValidationException(org.forgerock.json.resource.ResourceException.BAD_REQUEST,
                     "When validatating X509 Certificates, an AuthTarget needs to be configured with a Map containing a String " +
