@@ -82,6 +82,18 @@
             <fieldhelp name="helpDeploymentTwoWayTLSHeaderKey" defaultValue="rest.sts.deployment.TwoWayTLSHeaderKey.help" />
         </property>
 
+        <property>
+            <label name="lblDeploymentTLSOffloadEngineHosts"
+                   defaultValue="rest.sts.deployment.TLSOffloadEngineHosts"
+                   labelFor="deployment-tls-offload-engine-hosts"/>
+            <cc name="deployment-tls-offload-engine-hosts"
+                tagclass="com.sun.web.ui.taglib.editablelist.CCEditableListTag">
+                <attribute name="name" value="list" />
+                <attribute name="listboxLabel" value="label.current.value" />
+                <attribute name="textboxLabel" value="label.new.value" />
+            </cc>
+            <fieldhelp name="helpDeploymentTLSOffloadEngineHosts" defaultValue="rest.sts.deployment.TLSOffloadEngineHosts.help" />
+        </property>
     </section>
 
     <section name="Keystore" defaultValue="rest.sts.keystore.section.title">

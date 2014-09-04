@@ -59,6 +59,7 @@ import java.util.Set;
  */
 public class TokenRequestMarshallerImpl implements TokenRequestMarshaller {
     private static final String X509_CERTIFICATE_ATTRIBUTE = "javax.servlet.request.X509Certificate";
+    private static final String ANY_HOST = "any";
     private final XmlMarshaller<OpenAMSessionToken> amSessionTokenXmlMarshaller;
     private final XmlMarshaller<OpenIdConnectIdToken> openIdConnectXmlMarshaller;
     private final String offloadedTlsClientCertKey;
@@ -279,7 +280,8 @@ public class TokenRequestMarshallerImpl implements TokenRequestMarshaller {
         so I will check to insure that this value has indeed been specified.
          */
         if (!"".equals(offloadedTlsClientCertKey)) {
-            if (!tlsOffloadEngineHosts.contains(restSTSServiceHttpServletContext.getHttpServletRequest().getRemoteAddr())) {
+            if (!tlsOffloadEngineHosts.contains(restSTSServiceHttpServletContext.getHttpServletRequest().getRemoteAddr()) &&
+                    !tlsOffloadEngineHosts.contains(ANY_HOST)) {
                 logger.error("A x509-based token transformation is being rejected because the client cert was to be referenced in " +
                         "the  " + offloadedTlsClientCertKey + " header, but the caller was not in the list of TLS offload engines." +
                         " The caller: " + restSTSServiceHttpServletContext.getHttpServletRequest().getRemoteAddr() +
