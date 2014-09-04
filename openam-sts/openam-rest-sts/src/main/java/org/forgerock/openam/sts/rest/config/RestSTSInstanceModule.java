@@ -419,6 +419,19 @@ public class RestSTSInstanceModule extends AbstractModule {
     }
 
     /**
+     * If a rest-sts instance is configured to support a token transformation with a x509 Certificate as an input token
+     * type, and the OpenAM instance is deployed in a TLS-offloaded-environment, the TLS-offload-engines will be able
+     * to provide the client's certificate, validated by a two-way-TLS handshake, to the rest-sts instance via a
+     * header value only if the ip address of the host of the TLS-offload-engine is specified in the list below.
+     * @return
+     */
+    @Provides
+    @Named(AMSTSConstants.TLS_OFFLOAD_ENGINE_HOSTS)
+    Set<String> getTlsOffloadEngineHostIpAddrs() {
+        return stsInstanceConfig.getDeploymentConfig().getTlsOffloadEngineHostIpAddrs();
+    }
+
+    /**
      * The value corresponding to the Accept-API-Version header specifying the version of CREST services to consume. Note
      * that the rest-sts run-time consumes the rest authN (classes in the wss/disp package), the token generation
      * service (TokenGenerationServiceConsumerImpl), the service to obtain a principal from a session (PrincipalFromSessionImpl),
