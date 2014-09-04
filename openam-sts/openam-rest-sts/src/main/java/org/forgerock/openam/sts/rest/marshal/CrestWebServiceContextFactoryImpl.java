@@ -158,8 +158,7 @@ public class CrestWebServiceContextFactoryImpl implements WebServiceContextFacto
 
         @Override
         public Principal getUserPrincipal() {
-            //don't throw exception here - this request can be satisfied in straightforward fashion.
-            return restSTSServiceHttpServletContext.getHttpServletRequest().getUserPrincipal();
+            throw new IllegalStateException("getUserPrincipal called on the faux WebServiceContext.");
         }
 
         @Override
