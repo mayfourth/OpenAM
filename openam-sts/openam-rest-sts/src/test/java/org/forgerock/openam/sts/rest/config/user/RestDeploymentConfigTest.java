@@ -18,14 +18,24 @@ package org.forgerock.openam.sts.rest.config.user;
 
 import org.forgerock.openam.sts.TokenType;
 import org.testng.Assert;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.AssertJUnit.assertEquals;
 
 import org.forgerock.openam.sts.config.user.AuthTargetMapping;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 public class RestDeploymentConfigTest {
     private static final String CLIENT_CERT = "client_cert";
+    private final Set<String> tlsOffloadEngineHostIpAddrs;
+
+    public RestDeploymentConfigTest() {
+        tlsOffloadEngineHostIpAddrs = buildTLSOffloadHostIpSet();
+    }
+
     @Test
     public void testEquals() {
         AuthTargetMapping atm = AuthTargetMapping.builder()
@@ -35,6 +45,7 @@ public class RestDeploymentConfigTest {
                 .realm("a")
                 .uriElement("b")
                 .offloadedTwoWayTLSHeaderKey(CLIENT_CERT)
+                .tlsOffloadEngineHostIpAddrs(tlsOffloadEngineHostIpAddrs)
                 .authTargetMapping(atm)
                 .build();
 
@@ -42,6 +53,7 @@ public class RestDeploymentConfigTest {
                 .realm("a")
                 .uriElement("b")
                 .offloadedTwoWayTLSHeaderKey(CLIENT_CERT)
+                .tlsOffloadEngineHostIpAddrs(tlsOffloadEngineHostIpAddrs)
                 .authTargetMapping(atm)
                 .build();
         assertEquals(dc1, dc2);
@@ -96,13 +108,15 @@ public class RestDeploymentConfigTest {
                 .uriElement("b")
                 .authTargetMapping(atm)
                 .offloadedTwoWayTLSHeaderKey(CLIENT_CERT)
+                .tlsOffloadEngineHostIpAddrs(tlsOffloadEngineHostIpAddrs)
                 .build();
-        Assert.assertEquals(rdc, RestDeploymentConfig.fromJson(rdc.toJson()));
 
+        Assert.assertEquals(rdc, RestDeploymentConfig.fromJson(rdc.toJson()));
     }
 
     @Test
     public void testMapMarshalRoundTrip() {
+
         AuthTargetMapping atm = AuthTargetMapping.builder()
                 .addMapping(TokenType.USERNAME, "module", "untmodule")
                 .build();
@@ -123,8 +137,44 @@ public class RestDeploymentConfigTest {
                 .uriElement("b")
                 .authTargetMapping(atm)
                 .offloadedTwoWayTLSHeaderKey(CLIENT_CERT)
+                .tlsOffloadEngineHostIpAddrs(tlsOffloadEngineHostIpAddrs)
+                .build();
+        assertEquals(rdc, RestDeploymentConfig.marshalFromAttributeMap(rdc.marshalToAttributeMap()));
+
+        atm = AuthTargetMapping.builder()
+                .addMapping(TokenType.USERNAME, "module", "untmodule")
+                .addMapping(TokenType.X509, "module", "x509module")
+                .build();
+        rdc = RestDeploymentConfig.builder()
+                .realm("a")
+                .uriElement("b")
+                .authTargetMapping(atm)
+                .offloadedTwoWayTLSHeaderKey(CLIENT_CERT)
+                .tlsOffloadEngineHostIpAddrs(tlsOffloadEngineHostIpAddrs)
                 .build();
 
         assertEquals(rdc, RestDeploymentConfig.marshalFromAttributeMap(rdc.marshalToAttributeMap()));
+
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void testHeaderSetButNoOffloadIps() {
+        AuthTargetMapping atm = AuthTargetMapping.builder()
+                .addMapping(TokenType.USERNAME, "module", "untmodule")
+                .build();
+        RestDeploymentConfig rdc = RestDeploymentConfig.builder()
+                .realm("a")
+                .uriElement("b")
+                .offloadedTwoWayTLSHeaderKey(CLIENT_CERT)
+                .authTargetMapping(atm)
+                .build();
+    }
+
+    private Set<String> buildTLSOffloadHostIpSet() {
+        LinkedHashSet<String> hostAddrs = new LinkedHashSet<String>(3);
+        hostAddrs.add("15.23.44.32");
+        hostAddrs.add("16.45.66.54");
+        hostAddrs.add("15.88.67.88");
+        return hostAddrs;
     }
 }

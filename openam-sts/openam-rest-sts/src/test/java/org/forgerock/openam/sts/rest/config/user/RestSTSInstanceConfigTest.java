@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -154,7 +155,7 @@ public class RestSTSInstanceConfigTest {
 
         SAML2Config saml2Config = null;
         if (withSaml2Config) {
-            List<String> audiences = new ArrayList<String>();
+            Set<String> audiences = new HashSet<String>();
             audiences.add("bobo_entity_id");
             audiences.add("dodo_entity_id");
             Map<String,String> attributeMap = new HashMap<String, String>();
