@@ -31,10 +31,6 @@ import static org.forgerock.json.fluent.JsonValue.object;
  */
 public class X509TokenState {
 
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof X509TokenState;
-    }
 
     public static X509TokenState fromJson(JsonValue jsonValue) throws TokenMarshalException {
         return new X509TokenState();
@@ -42,5 +38,15 @@ public class X509TokenState {
 
     public JsonValue toJson() throws IllegalStateException {
         return json(object(field(AMSTSConstants.TOKEN_TYPE_KEY, TokenType.X509.name())));
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof X509TokenState;
+    }
+
+    @Override
+    public int hashCode() {
+        return TokenType.X509.name().hashCode();
     }
 }
