@@ -52,24 +52,33 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @see org.forgerock.openam.sts.rest.marshal.TokenRequestMarshaller
  */
 public class TokenRequestMarshallerImpl implements TokenRequestMarshaller {
+    private static final String X509_CERTIFICATE_ATTRIBUTE = "javax.servlet.request.X509Certificate";
     private final XmlMarshaller<OpenAMSessionToken> amSessionTokenXmlMarshaller;
     private final XmlMarshaller<OpenIdConnectIdToken> openIdConnectXmlMarshaller;
     private final String offloadedTlsClientCertKey;
+    /*
+    A list containing the IP addresses of the hosts trusted to present client certificates in headers. Will correspond
+    to the TLS-offload engines fronting an OpenAM deployment.
+     */
+    private final Set<String> tlsOffloadEngineHosts;
     private final Logger logger;
 
     @Inject
     TokenRequestMarshallerImpl(XmlMarshaller<OpenAMSessionToken> amSessionTokenXmlMarshaller,
                                XmlMarshaller<OpenIdConnectIdToken> openIdConnectXmlMarshaller,
                                @Named(AMSTSConstants.OFFLOADED_TWO_WAY_TLS_HEADER_KEY) String  offloadedTlsClientCertKey,
+                               @Named(AMSTSConstants.TLS_OFFLOAD_ENGINE_HOSTS) Set<String> tlsOffloadEngineHosts,
                                Logger logger) {
         this.amSessionTokenXmlMarshaller = amSessionTokenXmlMarshaller;
         this.openIdConnectXmlMarshaller = openIdConnectXmlMarshaller;
         this.offloadedTlsClientCertKey = offloadedTlsClientCertKey;
+        this.tlsOffloadEngineHosts = tlsOffloadEngineHosts;
         this.logger = logger;
     }
 
@@ -270,6 +279,15 @@ public class TokenRequestMarshallerImpl implements TokenRequestMarshaller {
         so I will check to insure that this value has indeed been specified.
          */
         if (!"".equals(offloadedTlsClientCertKey)) {
+            if (!tlsOffloadEngineHosts.contains(restSTSServiceHttpServletContext.getHttpServletRequest().getRemoteAddr())) {
+                logger.error("A x509-based token transformation is being rejected because the client cert was to be referenced in " +
+                        "the  " + offloadedTlsClientCertKey + " header, but the caller was not in the list of TLS offload engines." +
+                        " The caller: " + restSTSServiceHttpServletContext.getHttpServletRequest().getRemoteAddr() +
+                        "; The list of TLS offload engine hosts: " + tlsOffloadEngineHosts);
+                throw new TokenMarshalException(ResourceException.BAD_REQUEST, "In a x509 Certificate token transformation, " +
+                        " the caller was not among the list of IP addresses corresponding to the TLS offload-engine hosts. " +
+                        "Insure that your published rest-sts instance is configured with a complete list of TLS offload-engine hosts.");
+            }
             certificate = pullClientCertFromHeader(httpContext);
         } else {
             certificate = pullClientCertFromRequestAttribute(restSTSServiceHttpServletContext);
@@ -294,7 +312,7 @@ public class TokenRequestMarshallerImpl implements TokenRequestMarshaller {
 
     private X509Certificate pullClientCertFromRequestAttribute(RestSTSServiceHttpServletContext restSTSServiceHttpServletContext) throws TokenMarshalException {
         X509Certificate[] certificates =
-                (X509Certificate[])restSTSServiceHttpServletContext.getHttpServletRequest().getAttribute("javax.servlet.request.X509Certificate");
+                (X509Certificate[])restSTSServiceHttpServletContext.getHttpServletRequest().getAttribute(X509_CERTIFICATE_ATTRIBUTE);
         if (certificates != null) {
             /*
             The cxf-sts and wss4j convention is to pull the first cert from the array, as it is the leaf of any chain, and

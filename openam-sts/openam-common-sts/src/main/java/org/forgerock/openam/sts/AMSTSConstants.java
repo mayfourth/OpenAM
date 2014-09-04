@@ -347,6 +347,17 @@ public class AMSTSConstants {
     public static final String OFFLOADED_TWO_WAY_TLS_HEADER_KEY = SharedSTSConstants.OFFLOADED_TWO_WAY_TLS_HEADER_KEY;
 
     /**
+     * If a rest-sts instance is configured to support a token transformation with an x509 token as an input token type, the
+     * instance must be invoked via a two-way TLS exchange (i.e. where the client presents their certificate). If OpenAM
+     * is deployed behind a tls-offloading engine, the client certificate won't be set as a HttpServetRequest attribute
+     * referenced by the javax.servlet.request.X509Certificate key, but rather the rest sts instance must be configured
+     * with the name of the http header where the tls-offloading engine will store the client certificate prior to invoking
+     * OpenAM. The rest-sts instance will undertake the further check to determine if the ip address invoking the rest-sts
+     * corresponds to the set of IP-addresses corresponding to the TLS-offload-engine hosts.
+     */
+    public static final String TLS_OFFLOAD_ENGINE_HOSTS = SharedSTSConstants.TLS_OFFLOAD_ENGINE_HOSTS;
+
+    /**
      * The name of the CREST header identifying the version of a targeted service.
      */
     public static final String CREST_VERSION_HEADER_KEY = "Accept-API-Version";

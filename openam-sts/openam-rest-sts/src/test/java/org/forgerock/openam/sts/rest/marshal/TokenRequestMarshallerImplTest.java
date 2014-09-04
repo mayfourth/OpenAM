@@ -51,6 +51,8 @@ import java.io.UnsupportedEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.Set;
 
 import static org.forgerock.json.fluent.JsonValue.field;
 import static org.forgerock.json.fluent.JsonValue.json;
@@ -84,6 +86,12 @@ public class TokenRequestMarshallerImplTest {
         @Named(AMSTSConstants.OFFLOADED_TWO_WAY_TLS_HEADER_KEY)
         String getOffloadedTwoWayTLSHeaderKey() {
             return "";
+        }
+
+        @Provides
+        @Named(AMSTSConstants.TLS_OFFLOAD_ENGINE_HOSTS)
+        Set<String> getTlsOffloadEngineHosts() {
+            return Collections.EMPTY_SET;
         }
 
         @Provides
