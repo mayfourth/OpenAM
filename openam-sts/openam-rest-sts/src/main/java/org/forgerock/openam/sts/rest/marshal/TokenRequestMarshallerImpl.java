@@ -39,6 +39,7 @@ import org.forgerock.openam.sts.service.invocation.SAML2TokenState;
 import org.forgerock.openam.sts.token.SAML2SubjectConfirmation;
 import org.forgerock.openam.sts.token.model.OpenAMSessionToken;
 import org.forgerock.openam.sts.token.model.OpenIdConnectIdToken;
+import org.forgerock.openam.utils.ClientUtils;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -280,11 +281,11 @@ public class TokenRequestMarshallerImpl implements TokenRequestMarshaller {
         so I will check to insure that this value has indeed been specified.
          */
         if (!"".equals(offloadedTlsClientCertKey)) {
-            if (!tlsOffloadEngineHosts.contains(restSTSServiceHttpServletContext.getHttpServletRequest().getRemoteAddr()) &&
-                    !tlsOffloadEngineHosts.contains(ANY_HOST)) {
+            String clientIpAddress = ClientUtils.getClientIPAddress(restSTSServiceHttpServletContext.getHttpServletRequest());
+            if (!tlsOffloadEngineHosts.contains(clientIpAddress) && !tlsOffloadEngineHosts.contains(ANY_HOST)) {
                 logger.error("A x509-based token transformation is being rejected because the client cert was to be referenced in " +
                         "the  " + offloadedTlsClientCertKey + " header, but the caller was not in the list of TLS offload engines." +
-                        " The caller: " + restSTSServiceHttpServletContext.getHttpServletRequest().getRemoteAddr() +
+                        " The caller: " + clientIpAddress +
                         "; The list of TLS offload engine hosts: " + tlsOffloadEngineHosts);
                 throw new TokenMarshalException(ResourceException.BAD_REQUEST, "In a x509 Certificate token transformation, " +
                         " the caller was not among the list of IP addresses corresponding to the TLS offload-engine hosts. " +

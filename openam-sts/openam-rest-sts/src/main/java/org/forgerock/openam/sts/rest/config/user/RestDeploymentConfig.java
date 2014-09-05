@@ -21,15 +21,11 @@ import org.forgerock.openam.shared.sts.SharedSTSConstants;
 import org.forgerock.openam.sts.config.user.AuthTargetMapping;
 
 import org.forgerock.openam.sts.MapMarshallUtils;
-import org.forgerock.openam.utils.JsonValueBuilder;
 import org.forgerock.util.Reject;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -196,7 +192,8 @@ public class RestDeploymentConfig {
                 .uriElement(json.get(URI_ELEMENT).asString())
                 .realm(json.get(REALM).asString())
                 .offloadedTwoWayTLSHeaderKey(json.get(OFFLOADED_TWO_WAY_TLS_HEADER_KEY).asString())
-                .tlsOffloadEngineHostIpAddrs(json.get(TLS_OFFLOAD_ENGINE_HOSTS).isSet() ? json.get(TLS_OFFLOAD_ENGINE_HOSTS).asSet(String.class) : null)
+                .tlsOffloadEngineHostIpAddrs(json.get(TLS_OFFLOAD_ENGINE_HOSTS).isCollection() ?
+                        new HashSet<String>(json.get(TLS_OFFLOAD_ENGINE_HOSTS).asCollection(String.class)) : null)
                 .build();
     }
 

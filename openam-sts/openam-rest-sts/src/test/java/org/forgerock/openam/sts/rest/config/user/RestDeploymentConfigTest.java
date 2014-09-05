@@ -112,6 +112,8 @@ public class RestDeploymentConfigTest {
                 .build();
 
         Assert.assertEquals(rdc, RestDeploymentConfig.fromJson(rdc.toJson()));
+        Assert.assertEquals(rdc.getOffloadedTwoWayTlsHeaderKey(), CLIENT_CERT);
+        Assert.assertEquals(rdc.getTlsOffloadEngineHostIpAddrs(), tlsOffloadEngineHostIpAddrs);
     }
 
     @Test
@@ -140,6 +142,8 @@ public class RestDeploymentConfigTest {
                 .tlsOffloadEngineHostIpAddrs(tlsOffloadEngineHostIpAddrs)
                 .build();
         assertEquals(rdc, RestDeploymentConfig.marshalFromAttributeMap(rdc.marshalToAttributeMap()));
+        Assert.assertEquals(rdc.getOffloadedTwoWayTlsHeaderKey(), CLIENT_CERT);
+        Assert.assertEquals(rdc.getTlsOffloadEngineHostIpAddrs(), tlsOffloadEngineHostIpAddrs);
 
         atm = AuthTargetMapping.builder()
                 .addMapping(TokenType.USERNAME, "module", "untmodule")
@@ -154,6 +158,8 @@ public class RestDeploymentConfigTest {
                 .build();
 
         assertEquals(rdc, RestDeploymentConfig.marshalFromAttributeMap(rdc.marshalToAttributeMap()));
+        Assert.assertEquals(rdc.getOffloadedTwoWayTlsHeaderKey(), CLIENT_CERT);
+        Assert.assertEquals(rdc.getTlsOffloadEngineHostIpAddrs(), tlsOffloadEngineHostIpAddrs);
 
     }
 

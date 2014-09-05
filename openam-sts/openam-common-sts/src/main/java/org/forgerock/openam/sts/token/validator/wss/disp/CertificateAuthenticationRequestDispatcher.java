@@ -89,14 +89,14 @@ public class CertificateAuthenticationRequestDispatcher implements TokenAuthenti
             throw new TokenValidationException(org.forgerock.json.resource.ResourceException.BAD_REQUEST,
                     "When validatating X509 Certificates, an AuthTarget needs to be configured with a Map containing a String " +
                             "entry referenced by key" + AMSTSConstants.X509_TOKEN_AUTH_TARGET_HEADER_KEY +
-                            " which specifies the header name which will reference the OIDC ID Token.");
+                            " which specifies the header name which will reference the client's X509 Certificate.");
         }
         Object headerKey = target.getContext().get(AMSTSConstants.X509_TOKEN_AUTH_TARGET_HEADER_KEY);
         if (!(headerKey instanceof String)) { //checks both for null and String
             throw new TokenValidationException(org.forgerock.json.resource.ResourceException.BAD_REQUEST,
                     "When validatating X509 Certificates, an AuthTarget needs to be configured with a Map containing a String " +
                             "entry referenced by key" + AMSTSConstants.X509_TOKEN_AUTH_TARGET_HEADER_KEY +
-                            " which specifies the header name which will reference the OIDC ID Token.");
+                            " which specifies the header name which will reference the client's X509 Certificate.");
         }
         headers.set((String)headerKey, base64Certificate);
         try {
