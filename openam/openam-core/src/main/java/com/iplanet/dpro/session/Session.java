@@ -510,7 +510,19 @@ public class Session extends GeneralTaskRunnable {
                 sessionDebug.error("Exception encountered while polling", ex);
             }
         } else {
+
             if (purgeAt > 0) {
+                /**
+                 * Reduced crosstalk protection.
+                 *
+                 * In order to prevent sessions from being (re)created from CTS on remote servers before
+                 * the destroyed state has been propagated, remote sessions are kept in memory for a configurable
+                 * amount of time {@link CoreTokenConstants.REDUCED_CROSSTALK_PURGE_DELAY }.
+                 *
+                 * This delay introduced to cover the CTS replication lag is only required when running as an
+                 * OpenAM server with a 'remote' copy of a session; therefore, this feature is not required
+                 * when polling is enabled - since polling is only ever used by non-OpenAM clients.
+                 */
                 // destroyed session scheduled for purge
                 if (purgeAt > scheduledExecutionTime()) {
                     SystemTimerPool.getTimerPool().schedule(this, new Date(purgeAt));
@@ -1020,8 +1032,7 @@ public class Session extends GeneralTaskRunnable {
             }
 
             // ensure session has destroyed state and observers are notified (exactly once)
-            boolean alreadyRemoved = session.removed.getAndSet(true);
-            if (!alreadyRemoved) {
+            if (session.removed.compareAndSet(false, true)) {
                 session.setState(Session.DESTROYED);
                 SessionEvent event = new SessionEvent(session, SessionEvent.DESTROY, eventTime);
                 invokeListeners(event);

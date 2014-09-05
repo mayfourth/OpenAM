@@ -63,7 +63,7 @@
    Native OpenAM REST APIs in version 11.0.0 and later use the CREST verbs.
    (In contrast, OAuth 2.0 and OpenID Connect 1.0 APIs follow the standards.)
    APIs covered in sections labelled (Legacy API) predate CREST,
-   and there do not use the CREST verbs.
+   and do not use the CREST verbs.
   </para>
 
   <para>
@@ -197,7 +197,7 @@
   </para>
 
   <para>
-   In CREST, you can explicitly request APIs versions.
+   In CREST, you can explicitly request API versions.
    This means that OpenAM can continue to support older API versions
    as well as newer API versions as developers migrate their applications
    to take advantage of capabilities provided by newer APIs.
@@ -264,10 +264,218 @@
    </listitem>
   </itemizedlist>
 
-  <para>This chapter also includes a section on <xref linkend="rest-api-status-codes" />.</para>
+  <para>This chapter also includes a section on <link
+   linkend="rest-api-status-codes">REST Status Codes</link>.</para>
 
   <para>In this chapter, long URLs are wrapped to fit the printed page, as some
   of the output is formatted for easier reading.</para>
+ </section>
+
+ <section xml:id="rest-api-versioning">
+  <title>REST API Versioning</title>
+
+  <para>
+   In OpenAM 12.0.0 and later, REST API features are assigned version numbers.
+  </para>
+
+  <para>Providing version numbers in the REST API helps ensure compatibility
+   between OpenAM releases. The version number of a feature increases when OpenAM
+   introduces a non-backwards-compatible change that affects clients making use
+   of the feature.</para>
+
+  <variablelist>
+  <para>
+   OpenAM provides versions for the following aspects of the REST API.
+  </para>
+
+  <varlistentry>
+   <term><emphasis>resource</emphasis></term>
+   <listitem>
+    <para>
+     Any changes to the structure or syntax of a returned response will incur
+     a <emphasis>resource</emphasis> version change. For example changing
+     <literal>"errorMessage"</literal> to <literal>"message"</literal> in a
+     JSON response.
+    </para>
+   </listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><emphasis>protocol</emphasis></term>
+   <listitem>
+    <para>
+     Any changes to the methods used to make REST API calls will incur
+     a <emphasis>protocol</emphasis> version change. For example changing <literal>_action</literal>
+     to <literal>$action</literal> in the required parameters of an API feature.
+    </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+
+  <section xml:id="rest-api-versioning-supported-versions">
+   <title>Supported REST API Versions</title>
+
+   <para>The REST API version numbers supported in OpenAM 12.0.0
+    are as follows.</para>
+<variablelist>
+   <varlistentry>
+    <term><emphasis>Supported protocol versions</emphasis></term>
+    <listitem>
+     <para>The <emphasis>protocol</emphasis> versions supported in OpenAM 12.0.0
+      are:</para>
+      <simplelist>
+       <member><literal>1.0</literal></member>
+      </simplelist>
+    </listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><emphasis>Supported resource versions</emphasis></term>
+    <listitem>
+     <para>The <emphasis>resource</emphasis> versions supported in OpenAM 12.0.0
+      are shown in the following table.</para>
+     <table xml:id="rest-api-supported-resource-versions" pgwide="1">
+      <title>Supported <emphasis>resource</emphasis> Versions</title>
+      <tgroup cols="3">
+       <thead>
+        <row>
+         <entry>Base</entry>
+         <entry>End Point</entry>
+         <entry>Supported Versions</entry>
+        </row>
+       </thead>
+       <tbody>
+        <row>
+         <entry>/json</entry>
+         <entry>/authenticate</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/users</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/groups</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/agents</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/realms</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/dashboard</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/sessions</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/tokens</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/serverinfo</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/users/<emphasis>{user-id}</emphasis>/devices/trusted</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/applications</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/policies</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/applicationtypes</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/conditiontypes</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/subjecttypes</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/decisioncombiners</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry>/frrest</entry>
+         <entry>/token</entry>
+         <entry>1.0</entry>
+        </row>
+        <row>
+         <entry> </entry>
+         <entry>/client</entry>
+         <entry>1.0</entry>
+        </row>
+       </tbody>
+      </tgroup>
+     </table>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+    <para>The <citetitle>OpenAM Release Notes</citetitle> section,
+     <link
+      xlink:show="new"
+      xlink:href="release-notes#chap-compatibility"
+      xlink:role="http://docbook.org/xlink/role/olink"
+      ><citetitle>OpenAM Changes &amp; Deprecated Functionality</citetitle></link>
+     describes the differences between API versions.</para>
+  </section>
+
+  <section xml:id="rest-api-explicit-version">
+   <title>Specifying an Explicit REST API Version</title>
+
+   <para>You can specify which version of the REST API to use by adding an
+    <literal>Accept-API-Version</literal> header to the request, as in the
+    following example, which is requesting <emphasis>resource</emphasis> version
+    1.0 and <emphasis>protocol</emphasis> version 1.0.</para>
+
+   <screen>
+   $ <userinput>curl \
+    --request POST \
+    --header "Content-Type: application/json" \
+    --header "X-OpenAM-Username: demo" \
+    --header "X-OpenAM-Password: changeit" \
+    --header "Accept-API-Version: resource=1.0, protocol=1.0" \
+    https://openam.example.com:8443/openam/json/authenticate</userinput>
+  </screen>
+
+   <para>You can configure the default behavior OpenAM will take when a REST
+    call does not specify explicit version information. For more
+    information, see <link
+     xlink:show="new"
+     xlink:href="admin-guide#chap-rest"
+     xlink:role="http://docbook.org/xlink/role/olink"
+     ><citetitle>Configuring REST APIs</citetitle></link>
+    in the <citetitle>OpenAM Administration Guide</citetitle>.</para>
+  </section>
+
  </section>
 
  <section xml:id="c66-encoding">
@@ -7466,8 +7674,7 @@ $ <userinput>curl \
    <para>OpenAM REST APIs respond to successful requests with HTTP status codes
    in the 2xx range. OpenAM REST APIs respond to error conditions with HTTP
    status codes in the 4xx and 5xx range. Status codes used are described in
-    the
-   following list.</para>
+   the following list.</para>
 
    <variablelist>
     <varlistentry>
@@ -7491,18 +7698,23 @@ $ <userinput>curl \
     <varlistentry>
      <term>400 Bad Request</term>
      <listitem>
-      <para>The request was malformed as in the following example, which is
-      sending bad data in the payload for the action.</para>
+      <para>The request was malformed. Either parameters required by the
+       action were missing, or as in the following example incorrect data was
+       sent in the payload for the action.</para>
 
-      <screen>
+<screen>
 $ <userinput>curl \
  --request POST \
  --header "Content-Type: application/json" \
  --data '{"bad":"data"}' \
- https://openam.example.com:8443/openam/json/users?_action=forgotPassword</userinput>
-
-<computeroutput>{"code":400,"reason":"Bad Request","message":"Username not provided"}</computeroutput>
-      </screen>
+ https://openam.example.com:8443/openam/json/users?_action=forgotPassword
+</userinput>
+<computeroutput>{
+ "code":400,
+ "reason":"Bad Request",
+ "message":"Username or email not provided in request"
+}</computeroutput>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7512,13 +7724,17 @@ $ <userinput>curl \
       <para>The request requires user authentication as in the following
       example, which is missing an SSO Token value.</para>
 
-      <screen>
+<screen>
 $ <userinput>curl \
  --request POST \
- https://openam.example.com:8443/openam/json/sessions?_action=logout</userinput>
-
-<computeroutput>{ "code": 401, "reason": "Unauthorized", "message": "Access denied" }</computeroutput>
-      </screen>
+ https://openam.example.com:8443/openam/json/sessions?_action=logout
+</userinput>
+<computeroutput>{
+ "code": 401,
+ "reason": "Unauthorized",
+ "message": "Access denied"
+}</computeroutput>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7529,25 +7745,26 @@ $ <userinput>curl \
       following example, which has a regular user trying to read the OpenAM
       administrator profile.</para>
 
-      <screen>
+<screen>
 $ <userinput>curl \
  --request POST \
  --header "X-OpenAM-Username: demo" \
  --header "X-OpenAM-Password: changeit" \
- https://openam.example.com:8443/openam/json/authenticate</userinput>
-
+ https://openam.example.com:8443/openam/json/authenticate
+</userinput>
 <computeroutput>{ "tokenId": "AQIC5w...YyMA..*" }</computeroutput>
 
 $ <userinput>curl \
  --header "iplanetDirectoryPro: AQIC5w...YyMA..*" \
- https://openam.example.com:8443/openam/json/users/amadmin</userinput>
+ https://openam.example.com:8443/openam/json/users/amadmin
+</userinput>
 <computeroutput>{
-    "code": 403,
-    "reason": "Forbidden",
-    "message": "Permission to perform the read operation denied to
-                id=demo,ou=user,dc=openam,dc=forgerock,dc=org"
+ "code": 403,
+ "reason": "Forbidden",
+ "message": "Permission to perform the read operation denied to
+             id=demo,ou=user,dc=openam,dc=forgerock,dc=org"
 }</computeroutput>
-      </screen>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7557,13 +7774,17 @@ $ <userinput>curl \
       <para>The specified resource could not be found as in the following
       example, which is attempting to read a nonexistent user's profile.</para>
 
-      <screen>
+<screen>
 $ <userinput>curl \
  --header "iplanetDirectoryPro: AQIC5w...NTcy*" \
- https://openam.example.com:8443/openam/json/users/missing</userinput>
-
-<computeroutput>{"code":404,"reason":"Not Found","message":"Resource cannot be found."}</computeroutput>
-      </screen>
+ https://openam.example.com:8443/openam/json/users/missing
+</userinput>
+<computeroutput>{
+ "code":404,
+ "reason":"Not Found",
+ "message":"Resource cannot be found."
+}</computeroutput>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7578,7 +7799,47 @@ $ <userinput>curl \
      <term>409 Conflict</term>
      <listitem>
       <para>The request would have resulted in a conflict with the current
-      state of the resource.</para>
+      state of the resource. For example using the Forgot Password feature
+       and specifying the user's email address as in the following
+       example, where multiple users have the same email address.</para>
+
+<screen>
+$ <userinput>curl \
+ --request POST \
+ --header "Content-Type: application/json" \
+ --data '{"email":"demo@example.com"}' \
+ https://openam.example.com:8443/openam/json/users?_action=forgotPassword
+</userinput>
+<computeroutput>{
+ "code":409,
+ "reason":"Conflict",
+ "message":"Multiple users found"
+}</computeroutput>
+</screen>
+     </listitem>
+    </varlistentry>
+
+
+    <varlistentry>
+     <term>410 Gone</term>
+     <listitem>
+      <para>The requested resource is no longer available, and will not
+       become available again. The URI returned for resetting a password may
+       have expired as in the following example.</para>
+
+<screen>
+$ <userinput>curl \
+ --request POST \
+ --header "Content-Type: application/json" \
+ --data '{"username": "demo"}' \
+ https://openam.example.com:8443/openam/json/users/?_action=forgotPassword
+</userinput>
+<computeroutput>{
+ "code":410,
+ "reason":"Gone",
+ "message":"Token not found"
+}</computeroutput>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7600,18 +7861,19 @@ $ <userinput>curl \
       to pass basic authentication credentials as form-encoded data rather than
       query string parameters.</para>
 
-      <screen>
+<screen>
 $ <userinput>curl \
  --request POST \
  --data "username=demo&amp;password=changeit" \
- https://openam.example.com:8443/openam/json/authenticate</userinput>
+ https://openam.example.com:8443/openam/json/authenticate
+</userinput>
 <computeroutput>...
 HTTP Status 415
 ...
 The server refused this request because the request entity is in a
- format not supported by the requested resource for the requested method
+format not supported by the requested resource for the requested method
 ...</computeroutput>
-      </screen>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7629,7 +7891,24 @@ The server refused this request because the request entity is in a
      <term>500 Internal Server Error</term>
      <listitem>
       <para>The server encountered an unexpected condition which prevented it
-      from fulfilling the request.</para>
+      from fulfilling the request. This could be caused by an invalid
+       configuration in the Email Service, or as in the following example the
+       specified user account not  having an associated email address to send
+       the Forgot Password URI to.</para>
+
+<screen>
+$ <userinput>curl \
+ --request POST \
+ --header "Content-Type: application/json" \
+ --data '{"username": "demo"}' \
+ https://openam.example.com:8443/openam/json/users/?_action=forgotPassword
+</userinput>
+<computeroutput>{
+ "code":500,
+ "reason":"Internal Server Error",
+ "message":"No email provided in profile."
+}</computeroutput>
+</screen>
      </listitem>
     </varlistentry>
 
@@ -7640,25 +7919,41 @@ The server refused this request because the request entity is in a
       the request as in the following example, which is attempting to delete
       an entry as a delete action instead of using an HTTP DELETE request.</para>
 
-      <screen>
+<screen>
 $ <userinput>curl \
  --request POST \
  --header "iplanetDirectoryPro: AQIC5w...NTcy*" \
- https://openam.example.com:8443/openam/json/users/demo?_action=delete</userinput>
-
+ https://openam.example.com:8443/openam/json/users/demo?_action=delete
+</userinput>
 <computeroutput>{
-    "code": 501,
-    "reason": "Not Implemented",
-    "message": "Actions are not supported for resource instances"
+ "code": 501,
+ "reason": "Not Implemented",
+ "message": "Actions are not supported for resource instances"
 }</computeroutput>
-      </screen>
+</screen>
      </listitem>
     </varlistentry>
 
     <varlistentry>
      <term>503 Service Unavailable</term>
      <listitem>
-      <para>The requested resource was temporarily unavailable.</para>
+      <para>The requested resource was temporarily unavailable. The
+       service may have been disabled, as in the following example,
+       where the Forgot Password functionality has been disabled.</para>
+
+<screen>
+$ <userinput>curl \
+ --request POST \
+ --header "Content-Type: application/json" \
+ --data '{"username": "demo"}' \
+ https://openam.example.com:8443/openam/json/users/?_action=forgotPassword
+</userinput>
+<computeroutput>{
+ "code":503,
+ "reason":"Service Unavailable",
+ "message":"Forgot password is not accessible."
+}</computeroutput>
+</screen>
      </listitem>
     </varlistentry>
    </variablelist>

@@ -45,7 +45,9 @@ define("org/forgerock/openam/ui/policy/EditApplicationView", [
         events: {
             'change #appType': 'handleAppTypeChange',
             'click input[name=nextButton]': 'openNextStep',
-            'click input[name=submitForm]': 'submitForm'
+            'click input[name=submitForm]': 'submitForm',
+            'click .review-row': 'reviewRowClick',
+            'keyup .review-row': 'reviewRowClick'
         },
         data: {},
         REVIEW_INFO_STEP: 6,
@@ -71,7 +73,7 @@ define("org/forgerock/openam/ui/policy/EditApplicationView", [
                     self.processConditions(data, envConditions[0].result, subjConditions[0].result);
 
                     data.options = {};
-                    data.options.entitlementCombiner = self.getAvailableDecisionCombiner(decisionCombiners);
+                    data.entity.entitlementCombiner = self.getAvailableDecisionCombiner(decisionCombiners);
 
                     // Available resource patterns are supposed to be defined by the selected application type. For now we
                     // assume any resource might be created, hence we hard code the '*'.
@@ -235,6 +237,19 @@ define("org/forgerock/openam/ui/policy/EditApplicationView", [
          */
         openNextStep: function (e) {
             this.accordion.setActive(this.accordion.getActive() + 1);
+        },
+
+        reviewRowClick:function (e) {
+            if (e.type === 'keyup' && e.keyCode !== 13) { return;}
+            var reviewRows = this.$el.find('.review-row'),
+                targetIndex = -1;
+                _.find(reviewRows, function(reviewRow, index){
+                    if(reviewRow === e.currentTarget){
+                        targetIndex = index;
+                    }
+                });
+
+            this.accordion.setActive(targetIndex);
         },
 
         submitForm: function () {

@@ -128,6 +128,23 @@ Agreement (yes/no): [no]:</screen>
   </listitem>
 
   <listitem>
+   <para>   <!-- Epic: AME-2707 -->
+    <emphasis role="bold">RESTful Security Token Service</emphasis>. OpenAM
+    now include support for the RESTful Security Token Service, inspired by the
+    WS-Trust STS. Given the variety of token types in use today, it can be
+    helpful to have a configurable service that transform tokens.
+   </para>
+
+   <para>
+    For more information, see <link
+    xlink:href="admin-guide#chap-rest-sts"
+    xlink:role="http://docbook.org/xlink/role/olink"
+    xlink:show="new"><citetitle>The RESTful Security Token Service</citetitle>.
+   </link>
+   </para>
+
+  </listitem>
+  <listitem>
    <para><!-- Enhancement: AME-3299 -->
     <emphasis role="bold">CORS support for OpenAM APIs</emphasis>.
     OpenAM now supports cross-origin resource sharing (CORS)
@@ -175,6 +192,20 @@ Agreement (yes/no): [no]:</screen>
      xlink:href="dev-guide#rest-api-authz"
      xlink:role="http://docbook.org/xlink/role/olink"
      xlink:show="new"><citetitle>Authorization</citetitle></link>.
+   </para>
+  </listitem>
+
+
+  <listitem>
+   <para>
+    <emphasis role="bold">REST API Versioning</emphasis>.
+    OpenAM now assigns REST API features version numbers, to help with
+    backwards-compatibility. For details, see the <citetitle>Developer Guide</citetitle>
+    section on
+    <link
+     xlink:href="dev-guide#rest-api-versioning"
+     xlink:role="http://docbook.org/xlink/role/olink"
+     xlink:show="new"><citetitle>REST API Versioning</citetitle></link>.
    </para>
   </listitem>
 
@@ -248,6 +279,21 @@ Agreement (yes/no): [no]:</screen>
     </para>
    </listitem>
 
+  <listitem><!-- AME-4028 -->
+   <para>
+    <emphasis role="bold">Fine-Grained Settings for LDAP Connections</emphasis>.
+    OpenAM now provides additional options for tuning
+    LDAP connection pool sizes and timeouts related to the Core Token Service
+    and to other components that use LDAP connections.
+    For details, see the <citetitle>Administration Guide</citetitle> section on
+    <link
+     xlink:show="new"
+     xlink:href="admin-guide#tuning-ldap-settings-cts"
+     xlink:role="http://docbook.org/xlink/role/olink"
+    ><citetitle>Tuning LDAP CTS &amp; Configuration Store Settings</citetitle></link>.
+   </para>
+  </listitem>
+
   <listitem><!-- AME-2975 -->
    <para>
      <emphasis role="bold">OAuth 2.0 Scope Conditions</emphasis>.
@@ -304,17 +350,13 @@ Agreement (yes/no): [no]:</screen>
     </para>
   </listitem>
 
-  <listitem>
+  <listitem><!-- OPENAM-3918 -->
     <para>
      <emphasis role="bold">Whitelist for Custom Login URIs</emphasis>.
      OpenAM now includes a property that specifies
      a whitelist for custom login URIs
      so that the CDCServlet and the Distributed Authentication UI (DAS)
-     can check login URI values against those in the whitelist
-     (<link
-       xlink:show="new"
-       xlink:href="https://bugster.forgerock.org/jira/browse/OPENAM-3918"
-      >OPENAM-3918</link>).
+     can check login URI values against those in the whitelist.
     </para>
 
     <para>

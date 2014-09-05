@@ -49,7 +49,9 @@ define("org/forgerock/openam/ui/policy/EditPolicyView", [
         template: "templates/policy/EditPolicyTemplate.html",
         events: {
             'click input[name=nextButton]': 'openNextStep',
-            'click input[name=submitForm]': 'submitForm'
+            'click input[name=submitForm]': 'submitForm',
+            'click .review-row': 'reviewRowClick',
+            'keyup .review-row': 'reviewRowClick'
         },
         data:{},
 
@@ -58,7 +60,7 @@ define("org/forgerock/openam/ui/policy/EditPolicyView", [
         render: function (args, callback) {
             var self = this,
                 data = self.data,
-                appName = args[0],
+                appName = decodeURI(args[0]),
                 policyName = args[1],
                 policyPromise = this.getPolicy(policyName),
                 appPromise = policyDelegate.getApplicationByName(appName),
@@ -67,23 +69,12 @@ define("org/forgerock/openam/ui/policy/EditPolicyView", [
 
             $.when(policyPromise, appPromise, allSubjectsPromise, allEnvironmentsPromise).done(function (policy, app, allSubjects, allEnvironments) {
                 var actions = [],
-                    resources = [],
-                    exceptions = [],
                     subjects = [],
                     environments = [];
 
                 if (policyName) {
-                    _.each(policy.resources.included, function (value) {
-                        resources.push(value);
-                    });
-
-                    _.each(policy.resources.excluded, function (value) {
-                        exceptions.push(value);
-                    });
 
                     policy.actions = policy.actionValues;
-                    policy.resources = resources;
-                    policy.exceptions = exceptions;
 
                     data.entity = policy;
                     data.entityName = policyName;
@@ -196,12 +187,24 @@ define("org/forgerock/openam/ui/policy/EditPolicyView", [
             this.accordion.setActive(this.accordion.getActive() + 1);
         },
 
+        reviewRowClick:function (e) {
+            if (e.type === 'keyup' && e.keyCode !== 13) { return;}
+            var reviewRows = this.$el.find('.review-row'),
+                targetIndex = -1;
+                _.find(reviewRows, function(reviewRow, index){
+                    if(reviewRow === e.currentTarget){
+                        targetIndex = index;
+                    }
+                });
+
+            this.accordion.setActive(targetIndex);
+        },
+
         submitForm: function () {
             var policy = this.data.entity,
                 persistedPolicy = _.clone(policy);
 
             persistedPolicy.actions = {};
-            persistedPolicy.resources = {};
 
             _.each(policy.actions, function (action) {
                 if (action.selected) {
@@ -210,17 +213,15 @@ define("org/forgerock/openam/ui/policy/EditPolicyView", [
             });
 
             persistedPolicy.actionValues = persistedPolicy.actions;
-            persistedPolicy.resources.included = policy.resources;
-            persistedPolicy.resources.excluded = policy.exceptions;
 
             if (this.data.entityName) {
                 policyDelegate.updatePolicy(this.data.entityName, persistedPolicy).done(function () {
-                    router.routeTo(router.configuration.routes.managePolicies, {args: [persistedPolicy.applicationName], trigger: true});
+                    router.routeTo(router.configuration.routes.managePolicies, {args: [encodeURI(persistedPolicy.applicationName)], trigger: true});
                     eventManager.sendEvent(constants.EVENT_DISPLAY_MESSAGE_REQUEST, "policyUpdated");
                 });
             } else {
                 policyDelegate.createPolicy(persistedPolicy).done(function () {
-                    router.routeTo(router.configuration.routes.managePolicies, {args: [persistedPolicy.applicationName], trigger: true});
+                    router.routeTo(router.configuration.routes.managePolicies, {args: [encodeURI(persistedPolicy.applicationName)], trigger: true});
                     eventManager.sendEvent(constants.EVENT_DISPLAY_MESSAGE_REQUEST, "policyCreated");
                 });
             }

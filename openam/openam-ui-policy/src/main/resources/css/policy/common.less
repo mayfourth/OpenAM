@@ -172,6 +172,7 @@
         border-radius: 3px;
         border:1px solid #bebebe;
         cursor:pointer;
+        overflow-x:auto;
 
         h2 {
             float: left;
@@ -198,19 +199,9 @@
             float: left;
         }
 
-        .icon-pencil{
-            float:right;
-            opacity:0;
-            padding:8px 0 0 0;
-            transition:opacity 200ms linear;
-        }
-
         &:hover, &:focus{
-            background: @active-background-color;
+            background: #bebebe;
             box-shadow:none;
-            .icon-pencil{
-                opacity:0.5;
-            }
         }
 
     }
@@ -247,19 +238,28 @@
         white-space: nowrap;
         overflow: hidden;
     }
-    #manageApps td[aria-describedby="manageApps_name"] {
-        text-align: center;
-        .icon-search{
-            text-decoration: none;
-            font-size: 16px;
-            vertical-align: middle;
-            color: #80b7ab;
+
+    #manageApps {
+        cursor: pointer;
+
+        td[aria-describedby="manageApps_name"] {
+            text-align: center;
+            .icon-search {
+                text-decoration: none;
+                font-size: 16px;
+                vertical-align: middle;
+                color: #80b7ab;
+            }
         }
     }
+
+    #manageApps_frozen {
+        cursor: pointer;
+    }
+
     .ui-state-hover a{
         color: #fff !important;
     }
-
 }
 
 .frozen-bdiv.ui-jqgrid-bdiv {
