@@ -997,7 +997,10 @@ public class Session extends GeneralTaskRunnable {
             }
 
             session.purgeAt = System.currentTimeMillis() + (purgeDelay * 60 * 1000);
-            SystemTimerPool.getTimerPool().schedule(session, new Date(session.purgeAt));
+            session.cancel();
+            if (!session.isScheduled()) {
+                SystemTimerPool.getTimerPool().schedule(session, new Date(session.purgeAt));
+            }
 
         }
 
